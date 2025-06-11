@@ -5,14 +5,20 @@
     <div v-for="(post, index) in allPosts" :key="index">
       <v-card class="instagram-card" flat>
         <!-- 헤더 -->
-        <v-card-title class="d-flex align-center justify-space-between px-3 py-2">
+        <v-card-title
+          class="d-flex align-center justify-space-between px-3 py-2"
+        >
           <div class="d-flex align-center">
             <v-avatar size="32">
               <v-img :src="post.userAvatar" />
             </v-avatar>
             <div class="ml-3">
-              <div class="text-subtitle-2 font-weight-medium">{{ post.account.name }}</div>
-              <div class="text-caption text-grey-lighten-1">{{ post.created_at.slice(0, 10) }}</div>
+              <div class="text-subtitle-2 font-weight-medium">
+                {{ post.account.name }}
+              </div>
+              <div class="text-caption text-grey-lighten-1">
+                {{ post.created_at.slice(0, 10) }}
+              </div>
             </div>
           </div>
           <v-icon size="20">mdi-dots-horizontal</v-icon>
@@ -29,7 +35,9 @@
           >
           <v-btn icon variant="text"><v-icon>mdi-share-outline</v-icon></v-btn>
           <v-spacer />
-          <v-btn icon variant="text"><v-icon>mdi-bookmark-outline</v-icon></v-btn>
+          <v-btn icon variant="text"
+            ><v-icon>mdi-bookmark-outline</v-icon></v-btn
+          >
         </v-card-actions>
 
         <!-- 본문 -->
@@ -39,7 +47,9 @@
             <!-- <span class="font-weight-medium">{{ post.username }}</span> -->
             {{ post.description }}
           </div>
-          <div class="text-caption text-grey">댓글 {{ post.post_comments.length }}개 모두 보기</div>
+          <div class="text-caption text-grey">
+            댓글 {{ post.post_comments.length }}개 모두 보기
+          </div>
         </v-card-text>
       </v-card>
     </div>
@@ -62,8 +72,15 @@
           <v-col cols="6" class="d-flex flex-column">
             <v-card-title class="text-h6">댓글</v-card-title>
             <v-divider />
-            <v-card-text class="flex-grow-1 overflow-y-auto" style="max-height: 300px">
-              <div v-for="(comment, index) in selectedPost.post_comments" :key="index" class="mb-2">
+            <v-card-text
+              class="flex-grow-1 overflow-y-auto"
+              style="max-height: 300px"
+            >
+              <div
+                v-for="(comment, index) in selectedPost.post_comments"
+                :key="index"
+                class="mb-2"
+              >
                 <strong>{{ comment.account.name }}</strong
                 >: {{ comment.message }}
               </div>
@@ -77,7 +94,9 @@
                 class="flex-grow-1"
                 density="compact"
               />
-              <v-btn variant="text" @click="submitComment(selectedPost)">게시</v-btn>
+              <v-btn variant="text" @click="submitComment(selectedPost)"
+                >게시</v-btn
+              >
             </v-card-actions>
           </v-col>
         </v-row>
@@ -87,11 +106,11 @@
 </template>
 
 <script setup lang="ts">
-import { getBaseUrl } from '@/@core/composable/createUrl';
-import axios from 'axios';
-import { computed, onMounted, ref } from 'vue';
-import { useAccountStore } from '@/stores/useAccountStore';
-import { usePostStore } from '@/stores/usePostSotre';
+import { getBaseUrl } from "@/@core/composable/createUrl";
+import axios from "axios";
+import { computed, onMounted, ref } from "vue";
+import { useAccountStore } from "@/stores/useAccountStore";
+import { usePostStore } from "@/stores/usePostSotre";
 
 interface Post {
   username: string;
@@ -117,18 +136,18 @@ const accountStore = useAccountStore();
 
 function addPost() {
   posts.value.unshift({
-    username: 'juliusdein',
-    userAvatar: 'https://randomuser.me/api/portraits/men/75.jpg',
-    time: '방금 전',
-    image: 'https://picsum.photos/800/600?random=' + Math.random(),
+    username: "juliusdein",
+    userAvatar: "https://randomuser.me/api/portraits/men/75.jpg",
+    time: "방금 전",
+    image: "https://picsum.photos/800/600?random=" + Math.random(),
     likes: Math.floor(Math.random() * 1000) + 1,
-    caption: 'New Post! #awesome',
+    caption: "New Post! #awesome",
     comments: Math.floor(Math.random() * 200),
   });
 }
 
 const commentDialog = ref(false);
-const newComment = ref('');
+const newComment = ref("");
 const selectedPost = ref<any>(null);
 
 function openDialog(post: any) {
@@ -140,16 +159,19 @@ async function submitComment(item: any) {
   if (!newComment.value.trim()) return;
 
   try {
-    const response = await axios.post(`${getBaseUrl('DATA')}/postcomment/create`, {
-      post_id: item.id,
-      account_id: accountStore.id,
-      message: newComment.value,
-    });
+    const response = await axios.post(
+      `${getBaseUrl("DATA")}/postcomment/create`,
+      {
+        post_id: item.id,
+        account_id: accountStore.id,
+        message: newComment.value,
+      }
+    );
 
     selectedPost.value.post_comments.unshift(response.data.datas); // 맨 앞에 추가
-    newComment.value = '';
+    newComment.value = "";
   } catch (error: any) {
-    console.error('댓글 등록 실패:', error);
+    console.error("댓글 등록 실패:", error);
   }
 }
 
