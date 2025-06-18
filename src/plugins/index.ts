@@ -8,6 +8,7 @@
 import vuetify from './vuetify';
 import pinia from '../stores';
 import router from '../router';
+import i18n from './i18n';
 
 // Types
 import type { App } from 'vue';

@@ -20,9 +20,7 @@
       <v-spacer />
 
       <v-col cols="auto">
-        <v-btn color="secondary" @click="$router.push(MATCH_PATH.ADD)">
-          "ADD"
-        </v-btn>
+        <v-btn color="secondary" @click="$router.push(MATCH_PATH.ADD)"> "ADD" </v-btn>
       </v-col>
     </v-row>
 
@@ -35,6 +33,12 @@
       :search="search"
       @update:options="loadItems"
     >
+      <template #item.name="{ item }">
+        <router-link :to="MATCH_PATH.VIEW(item.id)" class="account-link">
+          {{ item.name }}
+        </router-link>
+      </template>
+
       <template #item.actions="{ item }">
         <v-tooltip text="수정">
           <template #activator="{ props }">
@@ -98,66 +102,25 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from "vue";
-import { useRouter } from "vue-router";
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 //import { MERCHANDISE_PATH } from '@/router/merchandise/type';
-import { getBaseUrl } from "@/@core/composable/createUrl";
-//import api from '@/@core/composable/useAxios';
-import type { VDataTableServer } from "vuetify/components";
-import { MATCH_PATH } from "@/router/match/type";
+import { getBaseUrl } from '@/@core/composable/createUrl';
+import api from '@/@core/composable/useAxios';
+import type { VDataTableServer } from 'vuetify/components';
+import { MATCH_PATH } from '@/router/match/type';
 //import ServerDataTable from '@/components/common/ServerDataTable.vue';
 
-const search = ref<string>("");
-//const serverItems = ref<Customer[]>([]);
+const search = ref<string>('');
+const serverItems = ref<Match[]>([]);
 const loading = ref<boolean>(false);
 const totalItems = ref<number>(0);
 const router = useRouter();
 
-const serverItems = ref<Customer[]>([
-  {
-    id: 1,
-    name: "세운세운의 내전",
-    company: {
-      name: "오토크립트",
-    },
-    created_at: "2025-06-01T10:00:00Z",
-    updated_at: "2025-06-05T15:00:00Z",
-  },
-  {
-    id: 2,
-    name: "김차라님의 내전",
-    company: {
-      name: "현대오토에버",
-    },
-    created_at: "2025-05-20T09:30:00Z",
-    updated_at: "2025-06-03T12:45:00Z",
-  },
-  {
-    id: 3,
-    name: "김민재님의 내전",
-    company: {
-      name: "삼성SDS",
-    },
-    created_at: "2025-04-15T14:00:00Z",
-    updated_at: "2025-06-02T08:20:00Z",
-  },
-  {
-    id: 4,
-    name: "갈리오의 자유랭크",
-    company: {
-      name: "LG CNS",
-    },
-    created_at: "2025-03-12T11:10:00Z",
-    updated_at: "2025-06-01T16:50:00Z",
-  },
-]);
-
-interface Customer {
+interface Match {
   id: number;
   name: string;
-  company: {
-    name: string;
-  };
+  type: string;
   created_at: string;
   updated_at: string;
 }
@@ -166,58 +129,63 @@ interface FetchParams {
   keyword: string;
   page: number;
   itemsPerPage: number;
-  sortBy: { key: keyof Customer; order: "asc" | "desc" }[];
+  sortBy: { key: keyof Match; order: 'asc' | 'desc' }[];
 }
 
 interface FetchResponse {
-  items: Customer[];
+  items: Match[];
   total: number;
 }
 
 const itemsPerPage = ref<number>(10);
-const headers = ref<VDataTableServer["headers"]>([
+const headers = ref<VDataTableServer['headers']>([
   {
-    title: "name",
+    title: 'name',
     sortable: true,
-    key: "name",
+    key: 'name',
   },
-  { title: "Created", key: "created_at", sortable: true },
-  { title: "Updated", key: "updated_at", sortable: true },
   {
-    title: "Actions",
-    key: "actions",
+    title: 'type',
+    sortable: true,
+    key: 'type',
+  },
+  { title: 'Created', key: 'created_at', sortable: true },
+  { title: 'Updated', key: 'updated_at', sortable: true },
+  {
+    title: 'Actions',
+    key: 'actions',
     sortable: false,
-    align: "center",
-    width: "1px",
+    align: 'center',
+    width: '1px',
   },
 ]);
 
 // ✅ 데이터 로드 함수
 async function loadItems(options: FetchParams) {
   try {
-    const sortKey = options.sortBy[0]?.key || "created_at";
-    const sortOrder = options.sortBy[0]?.order || "desc";
+    const sortKey = options.sortBy[0]?.key || 'created_at';
+    const sortOrder = options.sortBy[0]?.order || 'desc';
 
-    // const response = await api.get(
-    //   `${getBaseUrl('DATA')}/merchandise/search?keyword=${search.value}&page=${
-    //     options.page
-    //   }&itemsPerPage=${options.itemsPerPage}&sortBy=${sortKey}&orderBy=${sortOrder}`,
-    // );
+    const response = await api.get(
+      `${getBaseUrl('DATA')}/match/search?keyword=${search.value}&page=${
+        options.page
+      }&itemsPerPage=${options.itemsPerPage}&sortBy=${sortKey}&orderBy=${sortOrder}`
+    );
 
-    // loading.value = true;
-    // serverItems.value = response.data.datas;
-    // totalItems.value = response.data.totalCount;
-    // loading.value = false;
+    loading.value = true;
+    serverItems.value = response.data.datas;
+    totalItems.value = response.data.totalCount;
+    loading.value = false;
   } catch (error) {
-    console.error("기업 목록 불러오기 실패:", error);
+    console.error('기업 목록 불러오기 실패:', error);
   }
 }
 
-function modifyItem(item: Customer) {
+function modifyItem(item: Match) {
   //router.push(MERCHANDISE_PATH.MODIFY(item.id));
 }
 
-async function deleteItem(item: Customer) {
+async function deleteItem(item: Match) {
   if (confirm(`정말로 '${item.name}'을(를) 삭제하시겠습니까?`)) {
     try {
       //   await api.post(`${getBaseUrl('DATA')}/merchandise/delete`, { id: item.id });
@@ -229,8 +197,8 @@ async function deleteItem(item: Customer) {
       //     sortBy: [],
       //   }); // 목록 갱신
     } catch (error) {
-      console.error("삭제 실패:", error);
-      alert("삭제 중 오류가 발생했습니다.");
+      console.error('삭제 실패:', error);
+      alert('삭제 중 오류가 발생했습니다.');
     }
   }
 }
@@ -245,9 +213,19 @@ function handleSearch() {
 }
 
 function handleClear() {
-  search.value = "";
+  search.value = '';
   handleSearch();
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+.name-link {
+  color: inherit;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+.name-link:hover {
+  color: #2196f3; /* Vuetify primary color */
+}
+</style>

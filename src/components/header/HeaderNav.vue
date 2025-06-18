@@ -4,11 +4,7 @@
     <v-row dense>
       <v-col v-for="(item, index) in menuItems" :key="item.key" cols="auto">
         <!-- 드롭다운 메뉴 -->
-        <v-menu
-          v-if="(item as MenuItem).children"
-          v-model="openIndex[index]"
-          offset-y
-        >
+        <v-menu v-if="(item as MenuItem).children" v-model="openIndex[index]" offset-y>
           <template #activator="{ props }">
             <v-btn
               variant="text"
@@ -51,13 +47,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { useRouter } from "vue-router";
+import { computed, ref } from 'vue';
+import { useRouter } from 'vue-router';
 
 const router = useRouter();
 
 const openIndex = ref<Record<number, boolean>>({});
-const currentTab = ref("");
+const currentTab = ref('');
 
 interface MenuItem {
   key: string;
@@ -71,18 +67,18 @@ const menuItems = computed(() => {
   const items = [];
 
   items.push({
-    key: "home",
-    title: "Home",
-    icon: "mdi-home",
-    to: "/home",
+    key: 'home',
+    title: 'Home',
+    icon: 'mdi-home',
+    to: '/home',
   });
 
-  // items.push({
-  //   key: "project",
-  //   title: "Project",
-  //   icon: "mdi-briefcase",
-  //   to: "/project",
-  // });
+  items.push({
+    key: 'match',
+    title: 'Match',
+    icon: 'mdi-briefcase',
+    to: '/match',
+  });
 
   // const solutionChildren = [];
 

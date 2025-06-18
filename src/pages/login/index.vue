@@ -3,9 +3,7 @@
     <v-row align="center" justify="center">
       <v-col cols="12" sm="8" md="4">
         <v-card class="pa-6" elevation="10" rounded="lg">
-          <v-card-title class="text-h5 font-weight-bold justify-center">
-            Sign In
-          </v-card-title>
+          <v-card-title class="text-h5 font-weight-bold justify-center"> Sign In </v-card-title>
 
           <v-card-text>
             <v-form ref="formRef" v-model="valid">
@@ -28,25 +26,18 @@
                 required
               />
 
-              <v-btn color="primary" block class="mt-4" @click="login">
-                Login
-              </v-btn>
+              <v-btn color="primary" block class="mt-4" @click="login"> Login </v-btn>
 
               <!-- 소셜 로그인 영역 -->
               <v-divider class="my-4" />
 
               <v-btn
-                color="#FEE500"
-                class="mb-2 text-black"
-                block
                 @click="redirectToMicrosoft"
+                block
+                color="#FEE500"
+                class="mb-2 text-black font-weight-bold"
               >
-                <v-avatar left size="24" class="mr-2">
-                  <img
-                    src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/kakaotalk/kakaotalk-original.svg"
-                    alt="kakao"
-                  />
-                </v-avatar>
+                <v-icon left color="black" size="20">mdi-chat</v-icon>
                 카카오 로그인
               </v-btn>
 
@@ -70,34 +61,34 @@
 </template>
 
 <script setup lang="ts">
-import axios from "axios";
-import { ref } from "vue";
-import { useRouter } from "vue-router";
-import Cookies from "js-cookie";
-import { getBaseUrl } from "@/@core/composable/createUrl";
+import axios from 'axios';
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import Cookies from 'js-cookie';
+import { getBaseUrl } from '@/@core/composable/createUrl';
 
 const router = useRouter();
 
 const valid = ref(false);
 const formRef = ref();
 
-const email = ref("");
-const password = ref("");
+const email = ref('');
+const password = ref('');
 
 const snackbar = ref({
   visible: false,
-  message: "",
+  message: '',
 });
 
 const rules = {
-  required: (v: string) => !!v || "Required field.",
-  email: (v: string) => /.+@.+\..+/.test(v) || "Enter a valid email address.",
+  required: (v: string) => !!v || 'Required field.',
+  email: (v: string) => /.+@.+\..+/.test(v) || 'Enter a valid email address.',
 };
 
 async function redirectToMicrosoft() {
-  location.href = `${getBaseUrl("AUTH")}/oauth2/authorization/kakao`;
-  Cookies.remove("accessToken");
-  Cookies.remove("idToken");
+  location.href = `${getBaseUrl('AUTH')}/auth/redirect/kakao`;
+  Cookies.remove('accessToken');
+  Cookies.remove('idToken');
 }
 
 async function login() {
@@ -106,7 +97,7 @@ async function login() {
 
   try {
     const response = await axios.post(
-      `${getBaseUrl("AUTH")}/auth/signin`,
+      `${getBaseUrl('AUTH')}/auth/signin`,
       {
         email: email.value,
         password: password.value,
@@ -115,15 +106,15 @@ async function login() {
     );
 
     if (response.data.result) {
-      Cookies.remove("accessToken");
-      Cookies.remove("idToken");
+      Cookies.remove('accessToken');
+      Cookies.remove('idToken');
       router.push(response.data.redirectUrl);
     } else {
-      snackbar.value.message = "Invalid username or password.";
+      snackbar.value.message = 'Invalid username or password.';
       snackbar.value.visible = true;
     }
   } catch (error) {
-    console.error("기업 추가 실패:", error);
+    console.error('기업 추가 실패:', error);
   }
 }
 </script>

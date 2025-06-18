@@ -3,11 +3,17 @@
     <h1>Add Match</h1>
 
     <v-form ref="form" v-model="valid">
-      <v-text-field
-        v-model="merchandise_name"
-        label="Match Name"
+      <v-text-field v-model="match_name" label="Match Name" required></v-text-field>
+
+      <v-select
+        v-model="project_type"
+        :items="projectTypeOptions"
+        item-title="label"
+        item-value="value"
+        label="Project Type"
         required
-      ></v-text-field>
+        :rules="[rules.required]"
+      ></v-select>
 
       <!-- 유저 추가 다이얼로그 -->
       <ProjectMemberDialog @added="handleAdd" />
@@ -32,10 +38,8 @@
 
       <!-- 버튼 영역 -->
       <div class="mt-6 text-right">
-        <v-btn color="secondary" class="mr-2" @click="createCompany">Add</v-btn>
-        <v-btn color="secondary" @click="$router.push(MATCH_PATH.BASE)"
-          >CANCEL</v-btn
-        >
+        <v-btn color="secondary" class="mr-2" @click="createMatch">Add</v-btn>
+        <v-btn color="secondary" @click="$router.push(MATCH_PATH.BASE)">CANCEL</v-btn>
       </div>
     </v-form>
 
@@ -46,17 +50,37 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-import ProjectMemberDialog from "@/components/dialogs/ProjectMemberDialog.vue";
-import { useRouter } from "vue-router";
-import { MATCH_PATH } from "@/router/match/type";
+import { onMounted, ref } from 'vue';
+import ProjectMemberDialog from '@/components/dialogs/ProjectMemberDialog.vue';
+import api from '@/@core/composable/useAxios';
+import { useRouter } from 'vue-router';
+import { MATCH_PATH } from '@/router/match/type';
+import { rules } from '@/@core/validation/rules';
+import { getBaseUrl } from '@/@core/composable/createUrl';
 
 const router = useRouter();
-const merchandise_name = ref("");
+const match_name = ref('');
 const valid = ref(false);
 
 const errorSnackbar = ref(false);
-const errorMessage = ref("");
+const errorMessage = ref('');
+
+type ProjectType = 'RANDOM' | 'POSITION' | 'DUORANK' | 'FREERANK' | 'SPEEDWIND';
+
+interface ProjectTypeOption {
+  label: string;
+  value: ProjectType;
+}
+
+const projectTypeOptions: ProjectTypeOption[] = [
+  { label: '무작위내전', value: 'RANDOM' },
+  { label: '포지션내전', value: 'POSITION' },
+  { label: '솔랭듀오', value: 'DUORANK' },
+  { label: '자유랭크', value: 'FREERANK' },
+  { label: '칼바람', value: 'SPEEDWIND' },
+];
+
+const project_type = ref<ProjectType | ''>('');
 
 // 유저 선택 관련 상태
 interface UserOption {
@@ -66,99 +90,37 @@ interface UserOption {
   display: string;
 }
 
-const selectedUsers = ref<UserOption[]>([
-  {
-    id: 1,
-    name: "김민재",
-    email: "minjae.kim@example.com",
-    display: "김민재 (minjae.kim@example.com)",
-  },
-  {
-    id: 2,
-    name: "소라",
-    email: "sora@example.com",
-    display: "소라 (sora@example.com)",
-  },
-  {
-    id: 1,
-    name: "김차라",
-    email: "minjae.kim@example.com",
-    display: "김민재 (minjae.kim@example.com)",
-  },
-  {
-    id: 2,
-    name: "이대얼짱효리미",
-    email: "sora@example.com",
-    display: "소라 (sora@example.com)",
-  },
-  {
-    id: 1,
-    name: "으라",
-    email: "minjae.kim@example.com",
-    display: "김민재 (minjae.kim@example.com)",
-  },
-  {
-    id: 2,
-    name: "아쿠아",
-    email: "sora@example.com",
-    display: "소라 (sora@example.com)",
-  },
-  {
-    id: 1,
-    name: "THE ZD",
-    email: "minjae.kim@example.com",
-    display: "김민재 (minjae.kim@example.com)",
-  },
-  {
-    id: 2,
-    name: "썜질문있어요",
-    email: "sora@example.com",
-    display: "소라 (sora@example.com)",
-  },
-  {
-    id: 1,
-    name: "몽실몽실",
-    email: "minjae.kim@example.com",
-    display: "김민재 (minjae.kim@example.com)",
-  },
-  {
-    id: 2,
-    name: "Crazy the top",
-    email: "sora@example.com",
-    display: "소라 (sora@example.com)",
-  },
-]);
+const selectedUsers = ref<UserOption[]>([]);
 
-// function handleAdd(users: UserOption[]) {
-//   // 중복 제거 후 추가
-//   const newIds = new Set(selectedUsers.value.map((u) => u.id));
-//   const filtered = users.filter((u) => !newIds.has(u.id));
-//   selectedUsers.value.push(...filtered);
-// }
+function handleAdd(users: UserOption[]) {
+  // 중복 제거 후 추가
 
-function handleAdd() {}
+  const newIds = new Set(selectedUsers.value.map((u) => u.id));
+  const filtered = users.filter((u) => !newIds.has(u.id));
+  selectedUsers.value.push(...filtered);
+}
 
 function removeUser(user: UserOption) {
   selectedUsers.value = selectedUsers.value.filter((u) => u.id !== user.id);
 }
 
-async function createCompany() {
-  if (!merchandise_name.value.trim()) {
-    alert("Match 이름을 입력해주세요!");
+async function createMatch() {
+  if (!match_name.value.trim()) {
+    alert('Match 이름을 입력해주세요!');
     return;
   }
 
   try {
-    // const response = await api.post(`${getBaseUrl('DATA')}/match/create`, {
-    //   name: merchandise_name.value,
-    //   members: selectedUsers.value.map(u => u.id),
-    // });
-    // router.push(MATCH_PATH.BASE);
+    const response = await api.post(`${getBaseUrl('DATA')}/match/create`, {
+      name: match_name.value,
+      type: project_type.value,
+      match_members: selectedUsers.value.map((u) => u.id),
+    });
+    router.push(MATCH_PATH.BASE);
   } catch (error: any) {
-    errorMessage.value =
-      error?.response?.data?.message ?? "알 수 없는 오류 발생";
+    errorMessage.value = error?.response?.data?.message ?? '알 수 없는 오류 발생';
     errorSnackbar.value = true;
-    console.error("Match 생성 실패:", error);
+    console.error('Match 생성 실패:', error);
   }
 }
 </script>
