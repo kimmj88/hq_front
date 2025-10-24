@@ -46,24 +46,30 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from "vue";
-import HeaderBar from "@/components/header/Header.vue";
+import { ref, computed } from 'vue';
+import HeaderBar from '@/components/header/Header.vue';
 
 const menuItems = computed(() => {
   const items = [];
 
   items.push({
-    title: "Account",
-    icon: "mdi-account-supervisor-circle",
-    to: "/config/account",
+    title: 'Account',
+    icon: 'mdi-account-supervisor-circle',
+    to: '/config/account',
   });
 
   items.push({
-    title: "Permission",
-    icon: "mdi-shield-lock-outline",
+    title: 'Player',
+    icon: 'mdi-account-supervisor-circle',
+    to: '/config/player',
+  });
+
+  items.push({
+    title: 'Permission',
+    icon: 'mdi-shield-lock-outline',
     children: [
-      { title: "System", to: "/config/permission/system" },
-      { title: "Project", to: "/config/permission/project" },
+      { title: 'System', to: '/config/permission/system' },
+      { title: 'Project', to: '/config/permission/project' },
     ],
   });
 

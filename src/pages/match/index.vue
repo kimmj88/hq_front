@@ -166,12 +166,14 @@ async function loadItems(options: FetchParams) {
     const sortKey = options.sortBy[0]?.key || 'created_at';
     const sortOrder = options.sortBy[0]?.order || 'desc';
 
+    debugger;
     const response = await api.get(
       `${getBaseUrl('DATA')}/match/search?keyword=${search.value}&page=${
         options.page
       }&itemsPerPage=${options.itemsPerPage}&sortBy=${sortKey}&orderBy=${sortOrder}`
     );
 
+    debugger;
     loading.value = true;
     serverItems.value = response.data.datas;
     totalItems.value = response.data.totalCount;

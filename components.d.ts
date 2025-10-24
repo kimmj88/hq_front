@@ -7,9 +7,11 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    copy: typeof import('./src/components/dialogs/ProjectMemberDialog copy.vue')['default']
     Header: typeof import('./src/components/header/Header.vue')['default']
     HeaderNav: typeof import('./src/components/header/HeaderNav.vue')['default']
     HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
+    PlayerMemberDialog: typeof import('./src/components/dialogs/PlayerMemberDialog.vue')['default']
     ProjectMemberDialog: typeof import('./src/components/dialogs/ProjectMemberDialog.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']

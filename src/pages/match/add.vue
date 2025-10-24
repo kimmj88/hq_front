@@ -32,7 +32,7 @@
           <v-avatar left>
             <v-icon>mdi-account</v-icon>
           </v-avatar>
-          {{ user.name }}
+          {{ user.nickname }}
         </v-chip>
       </div>
 
@@ -85,9 +85,9 @@ const project_type = ref<ProjectType | ''>('');
 // 유저 선택 관련 상태
 interface UserOption {
   id: number;
-  name: string;
-  email: string;
-  display: string;
+  nickname: string;
+  tagname: string;
+  point: number;
 }
 
 const selectedUsers = ref<UserOption[]>([]);
@@ -111,6 +111,7 @@ async function createMatch() {
   }
 
   try {
+    debugger;
     const response = await api.post(`${getBaseUrl('DATA')}/match/create`, {
       name: match_name.value,
       type: project_type.value,

@@ -51,9 +51,9 @@ const emit = defineEmits<{
 
 interface UserOption {
   id: number;
-  name: string;
-  email: string;
-  display: string;
+  nickname: string;
+  tagnake: string;
+  porint: number;
 }
 
 const dialog = ref(false);
@@ -79,10 +79,10 @@ watch(selectedUsers, () => {
 
 onMounted(async () => {
   try {
-    const res = await api.get(`${getBaseUrl('DATA')}/account/all`); // 예: 전체 사용자 리스트
+    const res = await api.get(`${getBaseUrl('DATA')}/player/all`); // 예: 전체 사용자 리스트
     allUsers.value = res.data.datas.map((user: any) => ({
       ...user,
-      display: `${user.name} (${user.email})`,
+      display: `${user.nickname}#${user.tagname}`,
     }));
   } catch (e) {
     console.error('사용자 목록 로드 실패', e);

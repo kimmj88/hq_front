@@ -6,10 +6,7 @@
     </div>
 
     <div class="d-flex justify-center">
-      <v-simple-table
-        class="text-center full-width-table"
-        style="max-width: 1000px"
-      >
+      <v-simple-table class="text-center full-width-table" style="max-width: 1000px">
         <thead>
           <tr>
             <th>Position</th>
@@ -25,12 +22,7 @@
         <tbody>
           <tr v-for="i in team1.length" :key="i">
             <td>
-              <v-btn
-                :color="getPositionColor(team1[i - 1].position)"
-                small
-                block
-                class="text-wrap"
-              >
+              <v-btn :color="getPositionColor(team1[i - 1].position)" small block class="text-wrap">
                 {{ team1[i - 1].position }}
               </v-btn>
             </td>
@@ -67,12 +59,7 @@
               </v-btn>
             </td>
             <td>
-              <v-btn
-                :color="getPositionColor(team2[i - 1].position)"
-                small
-                block
-                class="text-wrap"
-              >
+              <v-btn :color="getPositionColor(team2[i - 1].position)" small block class="text-wrap">
                 {{ team2[i - 1].position }}
               </v-btn>
             </td>
@@ -84,56 +71,56 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from "vue";
+import { ref } from 'vue';
 
 const team1 = ref([
-  { position: "Top", name: "벨치스", point: 70, tier: "Platinum 2" },
-  { position: "Jg", name: "쌤질문있어요", point: 75, tier: "Emerald 4" },
-  { position: "Mid", name: "으랏", point: 77, tier: "Emerald 2" },
-  { position: "Adc", name: "꺼병", point: 55, tier: "Silver 3" },
-  { position: "Sup", name: "ADC", point: 95, tier: "Grandmaster" },
+  { position: 'Top', name: '아라베스크#12311', point: 0, tier: 'Platinum 2' },
+  { position: 'Jg', name: '힐링큐#여 잡 새', point: 0, tier: 'Platinum 3' },
+  { position: 'Mid', name: '우정지수#kr1', point: 0, tier: 'Gold 4' },
+  { position: 'Adc', name: '새콤도끼#kr1', point: 0, tier: 'Silver 3' },
+  { position: 'Sup', name: '아구몬#신나리', point: 0, tier: 'Emerald 2' },
 ]);
 
 const team2 = ref([
-  { position: "Top", name: "김민재", point: 68, tier: "Platinum 4" },
-  { position: "Jg", name: "Fku1", point: 85, tier: "Diamond 1" },
-  { position: "Mid", name: "몽실몽실계란찜", point: 68, tier: "Platinum 4" },
-  { position: "Adc", name: "차라", point: 75, tier: "Emerald 4" },
-  { position: "Sup", name: "소라", point: 77, tier: "Emerald 2" },
+  { position: 'Top', name: '댕 체#kr1', point: 0, tier: 'Gold 2' },
+  { position: 'Jg', name: '이병하#이병하', point: 0, tier: 'Gold 4' },
+  { position: 'Mid', name: '개그맨님#kr1', point: 0, tier: 'Gold 4' },
+  { position: 'Adc', name: '김갈붕#영웅출현', point: 0, tier: 'Platinum 4' },
+  { position: 'Sup', name: 'netgate#kr1', point: 0, tier: 'Gold 2' },
 ]);
 
 function getPositionColor(position: string) {
   switch (position) {
-    case "Top":
-      return "deep-purple";
-    case "Jg":
-      return "green";
-    case "Mid":
-      return "blue";
-    case "Adc":
-      return "red";
-    case "Sup":
-      return "pink";
+    case 'Top':
+      return 'deep-purple';
+    case 'Jg':
+      return 'green';
+    case 'Mid':
+      return 'blue';
+    case 'Adc':
+      return 'red';
+    case 'Sup':
+      return 'pink';
     default:
-      return "grey";
+      return 'grey';
   }
 }
 
 function getTierColor(tier: string): string {
-  if (!tier) return "grey";
+  if (!tier) return 'grey';
 
   const key = tier.toLowerCase();
-  if (key.includes("iron")) return "#615F5F";
-  if (key.includes("bronze")) return "#AD5600";
-  if (key.includes("silver")) return "#A0A0A0";
-  if (key.includes("gold")) return "#FFD700";
-  if (key.includes("platinum")) return "#00BBA3";
-  if (key.includes("emerald")) return "#00D66B";
-  if (key.includes("diamond")) return "#00BFFF";
-  if (key.includes("master")) return "#C42AFF";
-  if (key.includes("grandmaster")) return "#FF4D4D";
-  if (key.includes("challenger")) return "#007BFF";
-  return "black";
+  if (key.includes('iron')) return '#615F5F';
+  if (key.includes('bronze')) return '#AD5600';
+  if (key.includes('silver')) return '#A0A0A0';
+  if (key.includes('gold')) return '#FFD700';
+  if (key.includes('platinum')) return '#00BBA3';
+  if (key.includes('emerald')) return '#00D66B';
+  if (key.includes('diamond')) return '#00BFFF';
+  if (key.includes('master')) return '#C42AFF';
+  if (key.includes('grandmaster')) return '#FF4D4D';
+  if (key.includes('challenger')) return '#007BFF';
+  return 'black';
 }
 
 function shuffleTeams() {

@@ -4,7 +4,7 @@
  * Automatic routes for `./src/pages/*.vue`
  */
 
-import { CONFIG_ACCOUNT_PATH } from '@/router/config/type';
+import { CONFIG_ACCOUNT_PATH, CONFIG_PLAYER_PATH } from '@/router/config/type';
 // Composables
 import { createRouter, createWebHistory } from 'vue-router/auto';
 import { routes } from 'vue-router/auto-routes';
@@ -13,6 +13,8 @@ import Home from '@/pages/Home.vue';
 import Config from '@/pages/config/index.vue';
 import Account from '@/pages/config/account/index.vue';
 import AccountView from '@/pages/config/account/view.vue';
+
+import Player from '@/pages/config/player/index.vue';
 
 //DefaultLayout
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
@@ -52,6 +54,7 @@ const router = createRouter({
           component: AccountView,
           props: true,
         },
+        { path: CONFIG_PLAYER_PATH.BASE, component: Player },
       ],
     },
     {
@@ -68,18 +71,19 @@ const router = createRouter({
 });
 
 router.beforeEach(async (to, from, next) => {
-  // const auth = useAuthStore();
-  // const account = useAccountStore();
-  // const refreshToken = Cookies.get('refreshToken');
-  // let accessToken = auth.$state.accessToken || Cookies.get('accessToken');
+  const auth = useAuthStore();
+  const account = useAccountStore();
+  const refreshToken = Cookies.get('refreshToken');
+  let accessToken = auth.$state.accessToken || Cookies.get('accessToken');
 
-  // Cookies.remove('accessToken');
-  // if (to.path === '/login') {
-  //   if (refreshToken) {
-  //     return next('/');
-  //   }
-  //   return next();
-  // }
+  Cookies.remove('accessToken');
+  auth.setTokens(accessToken as string);
+  if (to.path === '/login') {
+    if (refreshToken) {
+      return next('/');
+    }
+    return next();
+  }
 
   // if (refreshToken && !accessToken) {
   //   try {
