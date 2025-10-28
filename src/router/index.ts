@@ -4,7 +4,7 @@
  * Automatic routes for `./src/pages/*.vue`
  */
 
-import { CONFIG_ACCOUNT_PATH, CONFIG_PLAYER_PATH } from '@/router/config/type';
+import { CONFIG_ACCOUNT_PATH, CONFIG_PLAYER_PATH, CONFIG_TIER_PATH } from '@/router/config/type';
 // Composables
 import { createRouter, createWebHistory } from 'vue-router/auto';
 import { routes } from 'vue-router/auto-routes';
@@ -15,6 +15,7 @@ import Account from '@/pages/config/account/index.vue';
 import AccountView from '@/pages/config/account/view.vue';
 
 import Player from '@/pages/config/player/index.vue';
+import Tier from '@/pages/config/tier/index.vue';
 
 //DefaultLayout
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
@@ -29,12 +30,9 @@ import MatchView from '@/pages/match/view.vue';
 //Login
 import Login from '@/pages/login/index.vue';
 
-import axios from 'axios';
 import Cookies from 'js-cookie';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useAccountStore } from '@/stores/useAccountStore';
-
-import { getBaseUrl } from '@/@core/composable/createUrl';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -55,6 +53,7 @@ const router = createRouter({
           props: true,
         },
         { path: CONFIG_PLAYER_PATH.BASE, component: Player },
+        { path: CONFIG_TIER_PATH.BASE, component: Tier },
       ],
     },
     {

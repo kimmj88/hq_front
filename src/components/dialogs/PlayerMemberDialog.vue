@@ -172,7 +172,6 @@ async function searchPlayer() {
       )
       .then((value) => {
         console.log(value);
-        debugger;
         tier.value = value.data[0].tier;
         rank.value = value.data[0].rank;
         point.value = value.data[0].leaguePoints;

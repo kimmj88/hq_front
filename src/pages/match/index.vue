@@ -166,14 +166,12 @@ async function loadItems(options: FetchParams) {
     const sortKey = options.sortBy[0]?.key || 'created_at';
     const sortOrder = options.sortBy[0]?.order || 'desc';
 
-    debugger;
     const response = await api.get(
       `${getBaseUrl('DATA')}/match/search?keyword=${search.value}&page=${
         options.page
       }&itemsPerPage=${options.itemsPerPage}&sortBy=${sortKey}&orderBy=${sortOrder}`
     );
 
-    debugger;
     loading.value = true;
     serverItems.value = response.data.datas;
     totalItems.value = response.data.totalCount;
@@ -190,14 +188,14 @@ function modifyItem(item: Match) {
 async function deleteItem(item: Match) {
   if (confirm(`정말로 '${item.name}'을(를) 삭제하시겠습니까?`)) {
     try {
-      //   await api.post(`${getBaseUrl('DATA')}/merchandise/delete`, { id: item.id });
-      //   alert('삭제 완료!');
-      //   loadItems({
-      //     keyword: '',
-      //     page: 1,
-      //     itemsPerPage: itemsPerPage.value,
-      //     sortBy: [],
-      //   }); // 목록 갱신
+      await api.post(`${getBaseUrl('DATA')}/match/delete`, { id: item.id });
+      alert('삭제 완료!');
+      loadItems({
+        keyword: '',
+        page: 1,
+        itemsPerPage: itemsPerPage.value,
+        sortBy: [],
+      }); // 목록 갱신
     } catch (error) {
       console.error('삭제 실패:', error);
       alert('삭제 중 오류가 발생했습니다.');

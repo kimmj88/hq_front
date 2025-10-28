@@ -111,7 +111,6 @@ async function createMatch() {
   }
 
   try {
-    debugger;
     const response = await api.post(`${getBaseUrl('DATA')}/match/create`, {
       name: match_name.value,
       type: project_type.value,

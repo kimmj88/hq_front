@@ -65,6 +65,12 @@ const menuItems = computed(() => {
   });
 
   items.push({
+    title: 'Tier',
+    icon: 'mdi-account-supervisor-circle',
+    to: '/config/tier',
+  });
+
+  items.push({
     title: 'Permission',
     icon: 'mdi-shield-lock-outline',
     children: [

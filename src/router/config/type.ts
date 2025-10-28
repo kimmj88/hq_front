@@ -6,3 +6,7 @@ export const CONFIG_ACCOUNT_PATH = {
 export const CONFIG_PLAYER_PATH = {
   BASE: '/config/player/',
 };
+
+export const CONFIG_TIER_PATH = {
+  BASE: '/config/tier/',
+};
