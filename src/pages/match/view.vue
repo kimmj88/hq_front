@@ -4,7 +4,6 @@
 
     <div class="d-flex justify-center gap-2 mb-2">
       <v-btn color="indigo" @click="onShot" :disabled="!canShot">SHOT</v-btn>
-      <v-btn variant="tonal" @click="updateTotals">합계 새로고침</v-btn>
       <v-btn color="success" :disabled="!canConfirm" @click="openConfirm" prepend-icon="mdi-check">
         확정
       </v-btn>
@@ -38,23 +37,27 @@
             <v-btn
               size="small"
               prepend-icon="mdi-trophy"
-              :disabled="!isConfirmed || winnerSaving"
+              :disabled="!isConfirmed || winnerSaving || isFinished"
               :loading="winnerSaving && winnerTeam === 1"
               :color="
                 !isConfirmed
-                  ? 'grey-darken-1' // 비활성 시 회색
-                  : match?.winner_team === 1
-                  ? 'success' // 선택됨
-                  : 'primary' // 활성 + 미선택: 선명한 파랑
+                  ? 'grey-darken-1'
+                  : winnerChosen === 1
+                  ? 'success'
+                  : isFinished
+                  ? 'grey-darken-1'
+                  : 'primary'
               "
               :variant="
                 !isConfirmed
-                  ? 'tonal' // 비활성 느낌
-                  : match?.winner_team === 1
-                  ? 'flat' // 선택됨
-                  : 'elevated' // 활성 + 미선택: 입체감
+                  ? 'tonal'
+                  : winnerChosen === 1
+                  ? 'flat'
+                  : isFinished
+                  ? 'tonal'
+                  : 'elevated'
               "
-              :ripple="isConfirmed"
+              :ripple="isConfirmed && !isFinished"
               @click="setWinner(1)"
             >
               1팀 승리
@@ -78,13 +81,27 @@
             <v-btn
               size="small"
               prepend-icon="mdi-trophy"
-              :disabled="!isConfirmed || winnerSaving"
+              :disabled="!isConfirmed || winnerSaving || isFinished"
               :loading="winnerSaving && winnerTeam === 2"
               :color="
-                !isConfirmed ? 'grey-darken-1' : match?.winner_team === 2 ? 'error' : 'primary'
+                !isConfirmed
+                  ? 'grey-darken-1'
+                  : winnerChosen === 2
+                  ? 'error'
+                  : isFinished
+                  ? 'grey-darken-1'
+                  : 'primary'
               "
-              :variant="!isConfirmed ? 'tonal' : match?.winner_team === 2 ? 'flat' : 'elevated'"
-              :ripple="isConfirmed"
+              :variant="
+                !isConfirmed
+                  ? 'tonal'
+                  : winnerChosen === 2
+                  ? 'flat'
+                  : isFinished
+                  ? 'tonal'
+                  : 'elevated'
+              "
+              :ripple="isConfirmed && !isFinished"
               @click="setWinner(2)"
             >
               2팀 승리
@@ -92,7 +109,7 @@
           </div>
 
           <!-- 확정 전 안내 -->
-          <div v-if="!isConfirmed.value" class="text-caption text-medium-emphasis mt-1">
+          <div v-if="!isConfirmed" class="text-caption text-medium-emphasis mt-1">
             팀을 확정하면 승리 버튼이 활성화됩니다.
           </div>
         </div>
@@ -266,11 +283,15 @@ function getPositionColor(position: string) {
 }
 
 function setWinner(team: 1 | 2) {
+  debugger;
   if (!isConfirmed.value) {
     snackbar.value = { show: true, msg: '먼저 팀을 확정하세요.' };
     return;
   }
-  // 버튼 클릭 → 선택 설정 → 즉시 저장
+  if (isFinished.value) {
+    snackbar.value = { show: true, msg: '이미 승리 팀이 확정되었습니다.' };
+    return;
+  }
   winnerTeam.value = team;
   saveWinner();
 }
@@ -308,11 +329,11 @@ function onShot() {
   updateTotals();
 }
 
-async function fetchAccount() {
+async function fetch() {
   try {
     const response = await api.get(`${getBaseUrl('DATA')}/match/find?id=${route.params.id}`);
 
-    match.value = response.data.datas.match as Match;
+    match.value = response.data.datas as Match;
 
     // ✅ 여기서 확정 상태를 ref에 정확히 반영
     isConfirmed.value = truthy(match.value?.is_confirm);
@@ -334,6 +355,13 @@ const canConfirm = computed<boolean>(
     team2.value.length === 5 &&
     (t1Total.value > 0 || t2Total.value > 0)
 );
+
+const isFinished = computed<boolean>(() => {
+  const serverWinner = match.value?.winner_team;
+  return (
+    serverWinner === 1 || serverWinner === 2 || winnerTeam.value === 1 || winnerTeam.value === 2
+  );
+});
 
 const canShot = computed<boolean>(() => !isConfirmed.value);
 
@@ -380,18 +408,15 @@ async function handleConfirm() {
 }
 
 async function saveWinner() {
-  if (!canSaveWinner.value) return;
+  //if (!isConfirmed.value || isFinished.value) return;
   try {
     winnerSaving.value = true;
-
     debugger;
     await api.post(`${getBaseUrl('DATA')}/match/update`, {
       id: +route.params.id,
-      winner_team: winnerTeam.value, // 서버에서 1 또는 2만 허용하도록 (CHECK 제약권장)
+      winner_team: winnerTeam.value,
     });
-
     if (match.value) match.value.winner_team = winnerTeam.value as 1 | 2;
-
     snackbar.value = { show: true, msg: `승리 팀이 ${winnerTeam.value}팀으로 저장되었습니다.` };
   } catch (e) {
     console.error(e);
@@ -401,7 +426,7 @@ async function saveWinner() {
   }
 }
 
-onMounted(fetchAccount);
+onMounted(fetch);
 </script>
 
 <style scoped>

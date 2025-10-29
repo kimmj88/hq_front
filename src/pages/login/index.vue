@@ -31,7 +31,7 @@
               <!-- 소셜 로그인 영역 -->
               <v-divider class="my-4" />
 
-              <v-btn
+              <!-- <v-btn
                 @click="redirectToMicrosoft"
                 block
                 color="#FEE500"
@@ -39,7 +39,7 @@
               >
                 <v-icon left color="black" size="20">mdi-chat</v-icon>
                 카카오 로그인
-              </v-btn>
+              </v-btn> -->
 
               <!-- 추후 구글 로그인 버튼 여기에 -->
               <!--
@@ -86,13 +86,16 @@ const rules = {
 };
 
 async function redirectToMicrosoft() {
+  debugger;
   location.href = `${getBaseUrl('AUTH')}/auth/redirect/kakao`;
   Cookies.remove('accessToken');
   Cookies.remove('idToken');
 }
 
 async function login() {
+  debugger;
   const { valid: isValid } = await formRef.value?.validate();
+
   if (!isValid) return;
 
   try {

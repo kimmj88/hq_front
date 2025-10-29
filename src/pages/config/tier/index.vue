@@ -41,7 +41,7 @@
             <v-img :src="item.avatar" />
           </template>
           <template v-else>
-            <span class="text-caption font-weight-bold">
+            <span :style="{ color: getTierColor(item.name), fontWeight: 'bold' }">
               {{ item.name }}
             </span>
           </template>
@@ -178,6 +178,22 @@ const search = ref<string>('');
 const serverItems = ref<Tier[]>([]);
 const loading = ref<boolean>(true);
 const totalItems = ref<number>(0);
+
+function getTierColor(tier: string): string {
+  if (!tier) return 'grey';
+  const key = tier.toLowerCase();
+  if (key.includes('iron')) return '#615F5F';
+  if (key.includes('bronze')) return '#AD5600';
+  if (key.includes('silver')) return '#A0A0A0';
+  if (key.includes('gold')) return '#FFD700';
+  if (key.includes('platinum')) return '#00BBA3';
+  if (key.includes('emerald')) return '#00D66B';
+  if (key.includes('diamond')) return '#00BFFF';
+  if (key.includes('grandmaster')) return '#FF4D4D';
+  if (key.includes('master')) return '#C42AFF';
+  if (key.includes('challenger')) return '#007BFF';
+  return 'black';
+}
 
 const headers: VDataTableServer['headers'] = [
   { title: 'NAME', key: 'name' },

@@ -108,11 +108,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue';
-import axios from 'axios';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import { useRoute } from 'vue-router';
 import api from '@/@core/composable/useAxios';
+import type { Tier } from '@/data/types/tier';
 const route = useRoute();
+
+const tiers = ref<Tier[]>([]);
 
 const emit = defineEmits<{
   (e: 'added', users: UserOption[]): void;
@@ -158,38 +160,60 @@ watch(selectedUsers, () => {
   prevLength.value = selectedUsers.value.length;
 });
 
-onMounted(async () => {});
+onMounted(fetch);
 
 async function searchPlayer() {
   try {
     const res = await api.get(
-      `https://asia.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${searchId.value}/${searchTag.value}?api_key=RGAPI-63ade448-72f1-4214-84c0-ed4661410203`
+      `https://asia.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${searchId.value}/${searchTag.value}?api_key=RGAPI-ee1558af-f139-456c-aaf5-0e7b82135e35`
     ); // 예: 전체 사용자 리스트
 
     const res2 = await api
       .get(
-        `https://kr.api.riotgames.com/lol/league/v4/entries/by-puuid/${res.data.puuid}?api_key=RGAPI-63ade448-72f1-4214-84c0-ed4661410203`
+        `https://kr.api.riotgames.com/lol/league/v4/entries/by-puuid/${res.data.puuid}?api_key=RGAPI-ee1558af-f139-456c-aaf5-0e7b82135e35`
       )
       .then((value) => {
-        console.log(value);
-        tier.value = value.data[0].tier;
-        rank.value = value.data[0].rank;
-        point.value = value.data[0].leaguePoints;
-        win.value = value.data[0].wins;
-        lose.value = value.data[0].losses;
+        for (const item of value.data) {
+          if (item.queueType == 'RANKED_SOLO_5x5') {
+            tier.value = item.tier;
+            rank.value = item.rank;
+            point.value = item.leaguePoints;
+            win.value = item.wins;
+            lose.value = item.losses;
 
-        searched.value = true;
-        lastKey.value = currentKey.value;
+            searched.value = true;
+            lastKey.value = currentKey.value;
+          }
+        }
       });
   } catch (e) {
     console.error('사용자 목록 로드 실패', e);
   }
 }
 
+async function fetch() {
+  try {
+    const response = await api.get(`${getBaseUrl('DATA')}/tier/all`);
+    tiers.value = response.data.datas;
+  } catch (error) {
+    console.error('매치 정보 불러오기 실패:', error);
+  }
+}
+
 async function handleAdd() {
+  debugger;
+  let findID = 0;
+  for (const item of tiers.value) {
+    if (item.name == `${tier.value} ${rank.value}`) {
+      findID = item.id;
+    }
+  }
   const response = await api.post(`${getBaseUrl('DATA')}/player/create`, {
     nickname: searchId.value,
     tagname: searchTag.value,
+    tier: {
+      id: findID,
+    },
   });
 
   searchId.value = '';

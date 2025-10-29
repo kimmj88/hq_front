@@ -73,16 +73,17 @@ router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore();
   const account = useAccountStore();
   const refreshToken = Cookies.get('refreshToken');
+  debugger;
   let accessToken = auth.$state.accessToken || Cookies.get('accessToken');
 
-  Cookies.remove('accessToken');
-  auth.setTokens(accessToken as string);
-  if (to.path === '/login') {
-    if (refreshToken) {
-      return next('/');
-    }
-    return next();
-  }
+  // Cookies.remove('accessToken');
+  // auth.setTokens(accessToken as string);
+  // if (to.path === '/login') {
+  //   if (refreshToken) {
+  //     return next('/');
+  //   }
+  //   return next();
+  // }
 
   // if (refreshToken && !accessToken) {
   //   try {

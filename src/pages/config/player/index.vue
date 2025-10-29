@@ -55,6 +55,19 @@
         </div>
       </template>
 
+      <template #item.tier="{ item }">
+        <div class="d-flex align-center">
+          <span :style="{ color: getTierColor(item.tier.name), fontWeight: 'bold' }">
+            {{ item.tier.name }}
+          </span>
+          <div></div>
+        </div>
+      </template>
+
+      <template #item.created_at="{ item }">
+        {{ item.created_at.slice(0, 10) }}
+      </template>
+
       <template #item.actions="{ item }">
         <v-menu location="bottom">
           <template #activator="{ props }">
@@ -93,7 +106,9 @@ const totalItems = ref<number>(0);
 
 const headers: VDataTableServer['headers'] = [
   { title: 'NAME', key: 'name' },
+  { title: 'TIER', key: 'tier' },
   { title: 'POINT', key: 'point' },
+  { title: 'Created', key: 'created_at', sortable: true },
   { title: 'ACTIONS', key: 'actions', sortable: false, align: 'center', width: '1px' },
 ] as const;
 
@@ -102,6 +117,22 @@ interface FetchParams {
   page: number;
   itemsPerPage: number;
   sortBy: { key: keyof Account; order: 'asc' | 'desc' }[];
+}
+
+function getTierColor(tier: string): string {
+  if (!tier) return 'grey';
+  const key = tier.toLowerCase();
+  if (key.includes('iron')) return '#615F5F';
+  if (key.includes('bronze')) return '#AD5600';
+  if (key.includes('silver')) return '#A0A0A0';
+  if (key.includes('gold')) return '#FFD700';
+  if (key.includes('platinum')) return '#00BBA3';
+  if (key.includes('emerald')) return '#00D66B';
+  if (key.includes('diamond')) return '#00BFFF';
+  if (key.includes('grandmaster')) return '#FF4D4D';
+  if (key.includes('master')) return '#C42AFF';
+  if (key.includes('challenger')) return '#007BFF';
+  return 'black';
 }
 
 async function loadItems(options: FetchParams) {
@@ -114,6 +145,7 @@ async function loadItems(options: FetchParams) {
         options.page
       }&itemsPerPage=${options.itemsPerPage}&sortBy=${sortKey}&orderBy=${sortOrder}`
     );
+    debugger;
 
     loading.value = true;
     serverItems.value = response.data.datas;
