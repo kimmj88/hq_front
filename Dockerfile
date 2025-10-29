@@ -14,8 +14,8 @@ RUN npm install --force
 
 # `.env` 파일 생성
 RUN echo "\
-VITE_AUTH_URL=http://121.124.127.102:3000\n\
-VITE_DATA_URL=http://121.124.127.102:3001\n" > /app/.env
+VITE_AUTH_URL=http://121.124.127.102:4000\n\
+VITE_DATA_URL=http://121.124.127.102:4001\n" > /app/.env
 
 # 빌드 실행
 RUN npm run build-only
