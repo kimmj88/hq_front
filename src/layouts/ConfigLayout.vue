@@ -71,6 +71,12 @@ const menuItems = computed(() => {
   });
 
   items.push({
+    title: 'Profile',
+    icon: 'mdi-account-supervisor-circle',
+    to: '/config/profile',
+  });
+
+  items.push({
     title: 'Permission',
     icon: 'mdi-shield-lock-outline',
     children: [

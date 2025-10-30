@@ -283,7 +283,6 @@ function getPositionColor(position: string) {
 }
 
 function setWinner(team: 1 | 2) {
-  debugger;
   if (!isConfirmed.value) {
     snackbar.value = { show: true, msg: '먼저 팀을 확정하세요.' };
     return;
@@ -411,7 +410,6 @@ async function saveWinner() {
   //if (!isConfirmed.value || isFinished.value) return;
   try {
     winnerSaving.value = true;
-    debugger;
     await api.post(`${getBaseUrl('DATA')}/match/update`, {
       id: +route.params.id,
       winner_team: winnerTeam.value,

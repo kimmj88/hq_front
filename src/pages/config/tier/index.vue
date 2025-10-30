@@ -19,9 +19,6 @@
         </v-btn>
       </v-col>
       <v-spacer />
-      <v-col cols="auto">
-        <PlayerMemberDialog @added="handleAdd" />
-      </v-col>
     </v-row>
   </v-container>
   <v-container>

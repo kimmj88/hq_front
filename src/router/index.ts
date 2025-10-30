@@ -4,7 +4,12 @@
  * Automatic routes for `./src/pages/*.vue`
  */
 
-import { CONFIG_ACCOUNT_PATH, CONFIG_PLAYER_PATH, CONFIG_TIER_PATH } from '@/router/config/type';
+import {
+  CONFIG_ACCOUNT_PATH,
+  CONFIG_PLAYER_PATH,
+  CONFIG_TIER_PATH,
+  CONFIG_PROFILE_PATH,
+} from '@/router/config/type';
 // Composables
 import { createRouter, createWebHistory } from 'vue-router/auto';
 import { routes } from 'vue-router/auto-routes';
@@ -16,6 +21,7 @@ import AccountView from '@/pages/config/account/view.vue';
 
 import Player from '@/pages/config/player/index.vue';
 import Tier from '@/pages/config/tier/index.vue';
+import Profile from '@/pages/config/profile/index.vue';
 
 //DefaultLayout
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
@@ -54,6 +60,7 @@ const router = createRouter({
         },
         { path: CONFIG_PLAYER_PATH.BASE, component: Player },
         { path: CONFIG_TIER_PATH.BASE, component: Tier },
+        { path: CONFIG_PROFILE_PATH.BASE, component: Profile },
       ],
     },
     {
@@ -73,7 +80,6 @@ router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore();
   const account = useAccountStore();
   const refreshToken = Cookies.get('refreshToken');
-  debugger;
   let accessToken = auth.$state.accessToken || Cookies.get('accessToken');
 
   // Cookies.remove('accessToken');

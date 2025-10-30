@@ -201,7 +201,6 @@ async function fetch() {
 }
 
 async function handleAdd() {
-  debugger;
   let findID = 0;
   for (const item of tiers.value) {
     if (item.name == `${tier.value} ${rank.value}`) {

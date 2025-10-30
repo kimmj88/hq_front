@@ -10,3 +10,7 @@ export const CONFIG_PLAYER_PATH = {
 export const CONFIG_TIER_PATH = {
   BASE: '/config/tier/',
 };
+
+export const CONFIG_PROFILE_PATH = {
+  BASE: '/config/profile/',
+};

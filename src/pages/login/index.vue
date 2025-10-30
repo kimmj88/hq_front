@@ -86,14 +86,12 @@ const rules = {
 };
 
 async function redirectToMicrosoft() {
-  debugger;
   location.href = `${getBaseUrl('AUTH')}/auth/redirect/kakao`;
   Cookies.remove('accessToken');
   Cookies.remove('idToken');
 }
 
 async function login() {
-  debugger;
   const { valid: isValid } = await formRef.value?.validate();
 
   if (!isValid) return;
