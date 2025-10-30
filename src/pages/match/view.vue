@@ -1,6 +1,6 @@
 <template>
   <v-container>
-    <h1 class="text-center mb-4">무작위 포지션</h1>
+    <h1 class="text-center mb-4">{{ match?.type }}</h1>
 
     <div class="d-flex justify-center gap-2 mb-2">
       <v-btn color="indigo" @click="onShot" :disabled="!canShot">SHOT</v-btn>
@@ -120,7 +120,7 @@
       <v-simple-table class="text-center full-width-table" style="max-width: 1000px">
         <thead>
           <tr>
-            <th>Position</th>
+            <th v-if="match?.type === 'POSITION'">Position</th>
             <th>1팀</th>
             <th>Point</th>
             <th>Tier Point</th>
@@ -129,19 +129,32 @@
             <th>Tier Point</th>
             <th>Point</th>
             <th>2팀</th>
-            <th>Position</th>
+            <th v-if="match?.type === 'POSITION'">Position</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="i in team1.length" :key="i">
-            <td>
-              <v-btn :color="getPositionColor(team1[i - 1].position)" small block class="text-wrap">
+            <td v-if="match?.type === 'POSITION'">
+              <v-chip :color="getPositionColor(team1[i - 1].position)" variant="flat">
                 {{ team1[i - 1].position }}
-              </v-btn>
+              </v-chip>
             </td>
             <td>
-              <v-btn color="indigo" small block class="text-wrap">
-                {{ `${team1[i - 1].player.nickname}#${team1[i - 1].player.tagname}` }}
+              <v-btn
+                color="indigo"
+                small
+                block
+                class="text-wrap"
+                :disabled="isConfirmed || match?.type !== 'POSITION'"
+                @click="openPlayerPicker('t1', i - 1)"
+              >
+                {{
+                  team1[i - 1]?.player?.nickname
+                    ? `${team1[i - 1].player.nickname}#${team1[i - 1].player.tagname}`
+                    : match?.type === 'POSITION'
+                    ? '유저 선택'
+                    : '—'
+                }}
               </v-btn>
             </td>
             <td>{{ team1[i - 1].player.point }}</td>
@@ -163,14 +176,27 @@
             <td>{{ team2[i - 1].player.tier.point }}</td>
             <td>{{ team2[i - 1].player.point }}</td>
             <td>
-              <v-btn color="indigo" small block class="text-wrap">
-                {{ `${team2[i - 1].player.nickname}#${team2[i - 1].player.tagname}` }}
+              <v-btn
+                color="indigo"
+                small
+                block
+                class="text-wrap"
+                :disabled="isConfirmed || match?.type !== 'POSITION'"
+                @click="openPlayerPicker('t2', i - 1)"
+              >
+                {{
+                  team2[i - 1]?.player?.nickname
+                    ? `${team2[i - 1].player.nickname}#${team2[i - 1].player.tagname}`
+                    : match?.type === 'POSITION'
+                    ? '유저 선택'
+                    : '—'
+                }}
               </v-btn>
             </td>
-            <td>
-              <v-btn :color="getPositionColor(team2[i - 1].position)" small block class="text-wrap">
+            <td v-if="match?.type === 'POSITION'">
+              <v-chip :color="getPositionColor(team2[i - 1].position)" variant="flat">
                 {{ team2[i - 1].position }}
-              </v-btn>
+              </v-chip>
             </td>
           </tr>
         </tbody>
@@ -201,6 +227,46 @@
       </v-card>
     </v-dialog>
 
+    <v-dialog v-model="picker.open" max-width="560">
+      <v-card>
+        <v-card-title class="text-h6">플레이어 선택</v-card-title>
+        <v-card-text>
+          <v-autocomplete
+            v-model="picker.selected"
+            :items="availableMembers"
+            return-object
+            clearable
+            density="comfortable"
+            variant="outlined"
+            label="닉네임 또는 태그 검색"
+            :chips="true"
+            :item-title="memberTitle"
+          >
+            <template #item="{ props, item }">
+              <v-list-item v-bind="props">
+                <template #title>
+                  {{ item.raw.player.nickname }}#{{ item.raw.player.tagname }}
+                </template>
+                <template #subtitle>
+                  Point {{ item.raw.player.point }} • {{ item.raw.player.tier.name }} ({{
+                    item.raw.player.tier.point
+                  }})
+                </template>
+              </v-list-item>
+            </template>
+          </v-autocomplete>
+
+          <div class="text-caption mt-2">이미 양 팀에 배치된 유저는 목록에서 자동 제외돼요.</div>
+        </v-card-text>
+        <v-card-actions class="justify-end">
+          <v-btn variant="text" @click="picker.open = false">취소</v-btn>
+          <v-btn color="primary" :disabled="!picker.selected" @click="applyPickedPlayer"
+            >적용</v-btn
+          >
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- ✅ 스낵바 -->
     <v-snackbar v-model="snackbar.show" :timeout="2200">
       {{ snackbar.msg }}
@@ -218,12 +284,13 @@ import { getBaseUrl } from '@/@core/composable/createUrl';
 import { computed, onMounted, ref } from 'vue';
 import api from '@/@core/composable/useAxios';
 import { useRoute } from 'vue-router';
-import type { Player } from '@/data/types/player';
 import type { Match, MatchMember } from '@/data/types/match';
 const route = useRoute();
 
 const team1 = ref<MatchMember[]>([]);
 const team2 = ref<MatchMember[]>([]);
+
+const allPositionMembers = ref<MatchMember[]>([]);
 
 const match = ref<Match | null>(null);
 const winnerTeam = ref<number | null>(null);
@@ -282,6 +349,16 @@ function getPositionColor(position: string) {
   }
 }
 
+const POSITIONS = ['Top', 'Jg', 'Mid', 'Adc', 'Sup'] as const;
+const memberTitle = (m: MatchMember) => `${m.player.nickname}#${m.player.tagname}`;
+
+function emptyMemberWithPos(pos: (typeof POSITIONS)[number]): MatchMember {
+  const m = emptyMember();
+  m.position = pos as any;
+  return m;
+}
+type Position = (typeof POSITIONS)[number] | null;
+
 function setWinner(team: 1 | 2) {
   if (!isConfirmed.value) {
     snackbar.value = { show: true, msg: '먼저 팀을 확정하세요.' };
@@ -313,13 +390,35 @@ function getTierColor(tier: string): string {
 
 // 기존 셔플
 function shuffleTeams() {
-  const combined = [...team1.value, ...team2.value];
-  for (let i = combined.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [combined[i], combined[j]] = [combined[j], combined[i]];
+  // POSITION 모드가 아닐 땐 기존 로직 그대로
+  if (match.value?.type !== 'POSITION') {
+    const combined = [...team1.value, ...team2.value];
+    for (let i = combined.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [combined[i], combined[j]] = [combined[j], combined[i]];
+    }
+    team1.value = combined.slice(0, 5);
+    team2.value = combined.slice(5, 10);
+    return;
   }
-  team1.value = combined.slice(0, 5);
-  team2.value = combined.slice(5, 10);
+
+  // POSITION 모드면 포지션별로 50% 확률로 팀만 교체
+  for (const pos of POSITIONS) {
+    const idx1 = team1.value.findIndex((m) => m.position === pos);
+    const idx2 = team2.value.findIndex((m) => m.position === pos);
+
+    // 두 팀에 해당 포지션이 존재해야만 교체 시도
+    if (idx1 !== -1 && idx2 !== -1) {
+      const swap = Math.random() < 0.5;
+      if (swap) {
+        const temp = team1.value[idx1];
+        team1.value[idx1] = team2.value[idx2];
+        team2.value[idx2] = temp;
+      }
+    }
+  }
+
+  updateTotals();
 }
 
 // SHOT 버튼 동작: 섞고 → 합계 업데이트
@@ -329,31 +428,43 @@ function onShot() {
 }
 
 async function fetch() {
-  try {
-    const response = await api.get(`${getBaseUrl('DATA')}/match/find?id=${route.params.id}`);
+  const { data } = await api.get(`${getBaseUrl('DATA')}/match/find?id=${route.params.id}`);
+  match.value = data.datas as Match;
 
-    match.value = response.data.datas as Match;
+  isConfirmed.value = truthy(match.value?.is_confirm);
+  winnerTeam.value = (match.value?.winner_team ?? null) as number | null;
 
-    // ✅ 여기서 확정 상태를 ref에 정확히 반영
-    isConfirmed.value = truthy(match.value?.is_confirm);
+  debugger;
+  if (match.value.type === 'POSITION') {
+    // 후보 풀
+    allPositionMembers.value = data.datas.match_members;
 
-    winnerTeam.value = (match.value?.winner_team ?? null) as number | null;
-
-    for (let i = 0; i < 5; i++) team1.value[i] = response.data.datas.match_members[i];
-    for (let i = 0; i < 5; i++) team2.value[i] = response.data.datas.match_members[i + 5];
-
-    updateTotals();
-  } catch (error) {
-    console.error('매치 정보 불러오기 실패:', error);
+    if (match.value.is_confirm) {
+      for (let i = 0; i < 5; i++) team1.value[i] = data.datas.match_members[i];
+      for (let i = 0; i < 5; i++) team2.value[i] = data.datas.match_members[i + 5];
+    } else {
+      // 팀 슬롯을 포지션 순서대로 비워서 생성
+      team1.value = POSITIONS.map((p) => emptyMemberWithPos(p));
+      team2.value = POSITIONS.map((p) => emptyMemberWithPos(p));
+    }
+  } else {
+    for (let i = 0; i < 5; i++) team1.value[i] = data.datas.match_members[i];
+    for (let i = 0; i < 5; i++) team2.value[i] = data.datas.match_members[i + 5];
   }
+
+  updateTotals();
 }
-const canConfirm = computed<boolean>(
-  () =>
-    !isConfirmed.value &&
-    team1.value.length === 5 &&
-    team2.value.length === 5 &&
-    (t1Total.value > 0 || t2Total.value > 0)
-);
+const canConfirm = computed(() => {
+  if (isConfirmed.value) return false;
+  const baseFilled = team1.value.length === 5 && team2.value.length === 5;
+  if (!baseFilled) return false;
+
+  // POSITION 모드면 모든 슬롯에 player 채워져 있어야 함
+  if (match.value?.type === 'POSITION') {
+    return team1.value.every((m) => m.player?.id) && team2.value.every((m) => m.player?.id);
+  }
+  return t1Total.value > 0 || t2Total.value > 0;
+});
 
 const isFinished = computed<boolean>(() => {
   const serverWinner = match.value?.winner_team;
@@ -384,6 +495,7 @@ async function handleConfirm() {
   try {
     confirm.value.loading = true;
 
+    debugger;
     const match_members: MatchMember[] = [...team1.value, ...team2.value];
 
     await api.post(`${getBaseUrl('DATA')}/match/update`, {
@@ -422,6 +534,94 @@ async function saveWinner() {
   } finally {
     winnerSaving.value = false;
   }
+}
+
+function emptyMember(): MatchMember {
+  return {
+    id: 0,
+    order: '' as any,
+    create_at: '' as any,
+    position: null as any,
+    player: {
+      id: 0,
+      nickname: '',
+      tagname: '',
+      point: 0,
+      create_at: '' as any,
+      tier: {
+        id: 0,
+        name: '',
+        point: 0,
+        code: 0 as any,
+        create_at: '' as any,
+        updated_at: '' as any,
+      },
+    } as any,
+  } as any;
+}
+
+// ▼ 추가: 플레이어 픽커(다이얼로그) 상태
+type TeamKey = 't1' | 't2';
+const picker = ref<{
+  open: boolean;
+  team: TeamKey | null;
+  id: number;
+  selected: MatchMember | null;
+}>({
+  open: false,
+  team: null,
+  id: -1,
+  selected: null,
+});
+
+// ▼ 추가: 이미 선택된 player id 집합
+const pickedIds = computed(() => {
+  debugger;
+  const s = new Set<number>();
+  team1.value.forEach((m) => m?.player?.id && s.add(m.player.id));
+  team2.value.forEach((m) => m?.player?.id && s.add(m.player.id));
+  return s;
+});
+
+// const pickedIds = computed(() => {
+//   const s = new Set<number>();
+//   [...team1.value, ...team2.value].forEach((m) => {
+//     if (m?.id && m.id !== 0) s.add(m.id);
+//   });
+//   return s;
+// });
+
+// ▼ 추가: 현재 다이얼로그에서 선택 가능한 후보(중복 방지)
+const availableMembers = computed(() =>
+  allPositionMembers.value.filter((m) => !pickedIds.value.has(m.player.id))
+);
+
+// ▼ 추가: 다이얼로그 열기
+function openPlayerPicker(team: TeamKey, id: number) {
+  if (isConfirmed.value) return;
+  picker.value = { open: true, team, id, selected: null };
+}
+
+// ▼ 추가: 선택 적용
+function applyPickedPlayer() {
+  if (!picker.value.team || picker.value.id < 0 || !picker.value.selected) return;
+
+  const slotArr = picker.value.team === 't1' ? team1.value : team2.value;
+  const oldSlot = slotArr[picker.value.id];
+  if (!oldSlot) return;
+
+  // 포지션은 슬롯에 고정해둔 값 유지
+  const keepPos = oldSlot.position ?? null;
+
+  // ✅ MatchMember 전체 교체: id/created_at 등도 같이 들어옴
+  const chosen = picker.value.selected;
+  slotArr[picker.value.id] = {
+    ...chosen,
+    position: keepPos, // 포지션만 슬롯 기준으로 유지
+  } as MatchMember;
+
+  updateTotals();
+  picker.value.open = false;
 }
 
 onMounted(fetch);

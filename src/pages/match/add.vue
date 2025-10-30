@@ -75,9 +75,9 @@ interface ProjectTypeOption {
 const projectTypeOptions: ProjectTypeOption[] = [
   { label: '무작위내전', value: 'RANDOM' },
   { label: '포지션내전', value: 'POSITION' },
-  { label: '솔랭듀오', value: 'DUORANK' },
-  { label: '자유랭크', value: 'FREERANK' },
-  { label: '칼바람', value: 'SPEEDWIND' },
+  // { label: '솔랭듀오', value: 'DUORANK' },
+  // { label: '자유랭크', value: 'FREERANK' },
+  // { label: '칼바람', value: 'SPEEDWIND' },
 ];
 
 const project_type = ref<ProjectType | ''>('');

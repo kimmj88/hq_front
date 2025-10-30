@@ -16,4 +16,5 @@ export interface MatchMember {
   order: string;
   create_at: string;
   player: Player;
+  position: string;
 }

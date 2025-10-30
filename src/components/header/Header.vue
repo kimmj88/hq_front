@@ -34,7 +34,7 @@
 import { useRouter } from 'vue-router';
 import { useAccountStore } from '@/stores/useAccountStore';
 
-import logo from '@/assets/hq_logo.jpeg';
+import logo from '@/assets/hq_logo7.png';
 
 const router = useRouter();
 const account = useAccountStore();
