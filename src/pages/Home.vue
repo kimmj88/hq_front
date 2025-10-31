@@ -129,7 +129,7 @@
           <v-col cols="12" md="6">
             <v-card class="rounded-xl">
               <v-card-title class="py-2">
-                <v-icon size="18" class="mr-2">mdi-share-variant</v-icon> 팀 공유
+                <v-icon size="18" class="mr-2">mdi-share-variant</v-icon> 내전 리스트
                 <v-spacer />
                 <v-btn size="small" variant="text" @click="goShare">더보기</v-btn>
               </v-card-title>
@@ -320,11 +320,11 @@ function goToNotice() {
 // 프로모션 캐러셀
 const promos = ref([
   {
-    title: '신규 이벤트 시작!',
-    subtitle: '참여하고 리워드 받기',
+    title: 'Healing Q',
+    subtitle: '힐링큐 유튜브 구독자 이벤트 시작!',
     image:
-      'https://images.unsplash.com/photo-1531297484001-80022131f5a1?q=80&w=1200&auto=format&fit=crop',
-    href: '#',
+      'https://past-coral-fwbnqvr8jk.edgeone.app/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA%202025-10-31%20%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE%204.55.50.png',
+    href: 'https://www.youtube.com/watch?v=mJ4cBFQQiiQ',
   },
   {
     title: '프로필 꾸미기',
@@ -347,9 +347,9 @@ const notices = ref([
   // { title: '보안 점검 결과 보고', date: '2025-10-05', badge: false },
 ]);
 const shares = ref([
-  { title: 'UI 가이드 초안 공유', snippet: '버튼/칩/카드 표준안입니다.', date: '2025-10-22' },
-  { title: '이미지 CDN 교체 테스트', snippet: '로딩속도 30% 개선.', date: '2025-10-18' },
-  { title: '게시물 API 페이징 최적화', snippet: 'limit/offset → cursor', date: '2025-10-10' },
+  { title: '내전방 1번', snippet: '3명 / 10명', date: '2025-10-22' },
+  { title: '내전방 2번', snippet: '5명 / 10명', date: '2025-10-18' },
+  { title: '내전방 2번', snippet: '10명 / 10명', date: '2025-10-10' },
 ]);
 function openNotice(n: any) {
   console.log('공지:', n);
@@ -439,7 +439,8 @@ const leftAdsRaw = ref<AdItem[]>([
   {
     title: '프리미엄 구독',
     subtitle: '더 강력한 도구 모음',
-    image: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format',
+    image:
+      'https://past-coral-fwbnqvr8jk.edgeone.app/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA%202025-10-31%20%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE%204.55.50.png',
     href: '#',
     cta: '업그레이드',
   },
@@ -448,13 +449,15 @@ const rightAds = ref<AdItem[]>([
   {
     title: '디자인 템플릿',
     subtitle: '새로운 UI 킷 공개',
-    image: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format',
+    image:
+      'https://past-coral-fwbnqvr8jk.edgeone.app/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA%202025-10-31%20%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE%204.55.50.png',
     href: '#',
   },
   {
     title: '데이터 인사이트',
     subtitle: '리포트 다운받기',
-    image: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format',
+    image:
+      'https://past-coral-fwbnqvr8jk.edgeone.app/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA%202025-10-31%20%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE%204.55.50.png',
     href: '#',
     cta: '다운받기',
   },
