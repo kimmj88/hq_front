@@ -1,6 +1,6 @@
 <template>
   <v-container>
-    <h1 class="text-center mb-4">{{ match?.type }}</h1>
+    <h1 class="text-center mb-4">{{ match?.type }}{{ `(${match?.name})` }}</h1>
 
     <div class="d-flex justify-center gap-2 mb-2">
       <v-btn color="indigo" @click="onShot" :disabled="!canShot">SHOT</v-btn>
@@ -599,6 +599,21 @@ const availableMembers = computed(() =>
 // ▼ 추가: 다이얼로그 열기
 function openPlayerPicker(team: TeamKey, id: number) {
   if (isConfirmed.value) return;
+
+  const slotArr = team === 't1' ? team1.value : team2.value;
+  const target = slotArr[id];
+
+  // 이미 유저가 선택되어 있으면 => 클릭 시 해제
+  if (target?.player?.id && target.player.id !== 0) {
+    slotArr[id] = {
+      ...emptyMemberWithPos(target.position as any), // 포지션 유지한 빈 슬롯으로 교체
+    };
+    updateTotals();
+    snackbar.value = { show: true, msg: '선택이 해제되었습니다.' };
+    return;
+  }
+
+  // 평소처럼 다이얼로그 오픈
   picker.value = { open: true, team, id, selected: null };
 }
 
