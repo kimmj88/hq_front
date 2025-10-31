@@ -31,6 +31,7 @@
 </template>
 
 <script setup lang="ts">
+import Cookies from 'js-cookie';
 import { useRouter } from 'vue-router';
 import { useAccountStore } from '@/stores/useAccountStore';
 
@@ -40,7 +41,7 @@ const router = useRouter();
 const account = useAccountStore();
 
 function logout() {
-  //auth.logout();
+  Cookies.remove('refreshToken');
   router.push('/login');
 }
 </script>

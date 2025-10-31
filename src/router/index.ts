@@ -39,10 +39,13 @@ import Login from '@/pages/login/index.vue';
 import Cookies from 'js-cookie';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useAccountStore } from '@/stores/useAccountStore';
+import { getBaseUrl } from '@/@core/composable/createUrl';
+import axios from 'axios';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    { path: '/', redirect: '/home' },
     {
       path: '/login',
       component: Login,
@@ -82,46 +85,44 @@ router.beforeEach(async (to, from, next) => {
   const refreshToken = Cookies.get('refreshToken');
   let accessToken = auth.$state.accessToken || Cookies.get('accessToken');
 
-  // Cookies.remove('accessToken');
-  // auth.setTokens(accessToken as string);
-  // if (to.path === '/login') {
-  //   if (refreshToken) {
-  //     return next('/');
-  //   }
-  //   return next();
-  // }
+  Cookies.remove('accessToken');
+  auth.setTokens(accessToken as string);
+  if (to.path === '/login') {
+    if (refreshToken) {
+      return next('/home');
+    }
+    return next();
+  }
 
-  // if (refreshToken && !accessToken) {
-  //   try {
-  //     const res = await axios.post(
-  //       `${getBaseUrl('AUTH')}/auth/refresh-token/kakao`,
-  //       { refreshToken },
-  //       { withCredentials: true }
-  //     );
+  if (refreshToken && !accessToken) {
+    try {
+      const res = await axios.post(
+        `${getBaseUrl('AUTH')}/auth/refresh-token/kakao`,
+        { refreshToken },
+        { withCredentials: true }
+      );
 
-  //     const resAccount = await axios.post(
-  //       `${getBaseUrl('DATA')}/account/me`,
-  //       { accessToken: res.data.accessToken },
-  //       { withCredentials: true }
-  //     );
+      const resAccount = await axios.post(
+        `${getBaseUrl('DATA')}/account/me`,
+        { accessToken: res.data.accessToken },
+        { withCredentials: true }
+      );
 
-  //     account.setAccount(1, resAccount.data.datas.email, resAccount.data.datas.name);
+      account.setAccount(1, resAccount.data.datas.email, resAccount.data.datas.name);
 
-  //     accessToken = res.data.accessToken;
-  //     auth.setTokens(accessToken as string);
-  //   } catch (error) {
-  //     console.error('토큰 재발급 실패:', error);
-  //     return next('/login');
-  //   }
-  // }
+      accessToken = res.data.accessToken;
+      auth.setTokens(accessToken as string);
+    } catch (error) {
+      console.error('토큰 재발급 실패:', error);
+      return next('/login');
+    }
+  }
 
-  // if (accessToken) {
-  //   return next();
-  // }
+  if (accessToken) {
+    return next();
+  }
 
-  // return next('/login');
-
-  return next();
+  return next('/login');
 });
 
 // Workaround for https://github.com/vitejs/vite/issues/11804

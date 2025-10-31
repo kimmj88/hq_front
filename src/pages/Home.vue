@@ -11,7 +11,15 @@
             class="mb-4 rounded-xl overflow-hidden elevation-2 ad-card"
             @click="openAd(ad)"
           >
-            <v-img :src="ad.image" height="160" cover />
+            <v-img
+              :src="ad.image"
+              height="160"
+              cover
+              @error="(e:any) => {
+    const id = ad.href ? extractYouTubeVideoId(ad.href) : null;
+    if (id) (e.target as HTMLImageElement).src = youtubeThumbFallback(id);
+  }"
+            />
             <v-card-text class="py-3">
               <div class="text-subtitle-2 font-weight-medium">{{ ad.title }}</div>
               <div class="text-caption text-medium-emphasis mt-1">{{ ad.subtitle }}</div>
@@ -252,7 +260,15 @@
             class="mb-4 rounded-xl overflow-hidden elevation-2 ad-card"
             @click="openAd(ad)"
           >
-            <v-img :src="ad.image" height="160" cover />
+            <v-img
+              :src="ad.image"
+              height="160"
+              cover
+              @error="(e:any) => {
+    const id = ad.href ? extractYouTubeVideoId(ad.href) : null;
+    if (id) (e.target as HTMLImageElement).src = youtubeThumbFallback(id);
+  }"
+            />
             <v-card-text class="py-3">
               <div class="text-subtitle-2 font-weight-medium">{{ ad.title }}</div>
               <div class="text-caption text-medium-emphasis mt-1">{{ ad.subtitle }}</div>
@@ -274,6 +290,8 @@ import axios from 'axios';
 import { computed, onMounted, ref } from 'vue';
 import { useAccountStore } from '@/stores/useAccountStore';
 import { usePostStore } from '@/stores/usePostSotre';
+
+import { extractYouTubeVideoId, youtubeThumbUrl, youtubeThumbFallback } from '@/utils/youtube';
 
 const accountStore = useAccountStore();
 const postStore = usePostStore();
@@ -322,9 +340,11 @@ function openPromo(p: any) {
 
 // 공지/공유 보드
 const notices = ref([
-  { title: '앱 2.1.0 릴리즈 노트', date: '2025-10-20', badge: true },
-  { title: '운영 정책 변경 안내', date: '2025-10-12', badge: false },
-  { title: '보안 점검 결과 보고', date: '2025-10-05', badge: false },
+  { title: '!!!협곡난전 큐드컵!!!', date: '2025-11-01', badge: true },
+  { title: '!!!협곡난전 큐드컵!!!', date: '2025-11-01', badge: true },
+  { title: '!!!협곡난전 큐드컵!!!', date: '2025-11-01', badge: true },
+  // { title: '운영 정책 변경 안내', date: '2025-10-12', badge: false },
+  // { title: '보안 점검 결과 보고', date: '2025-10-05', badge: false },
 ]);
 const shares = ref([
   { title: 'UI 가이드 초안 공유', snippet: '버튼/칩/카드 표준안입니다.', date: '2025-10-22' },
@@ -393,15 +413,29 @@ function addPost() {
 const { mdAndUp } = useDisplay();
 
 // 좌우 광고 데이터
-type AdItem = { title: string; subtitle?: string; image: string; href?: string; cta?: string };
-const leftAds = ref<AdItem[]>([
+// ✅ 광고 타입
+type AdItem = { title: string; subtitle?: string; image?: string; href?: string; cta?: string };
+
+const leftAds = computed<AdItem[]>(() =>
+  leftAdsRaw.value.map((ad) => {
+    if (!ad.image && ad.href) {
+      const id = extractYouTubeVideoId(ad.href);
+      if (id) return { ...ad, image: youtubeThumbUrl(id) };
+    }
+    return ad;
+  })
+);
+
+// ✅ 원본(이미지 없을 수 있음): 유튜브 영상 링크만 있어도 OK
+const leftAdsRaw = ref<AdItem[]>([
+  // 유튜브 영상 링크 → 썸네일 자동
   {
-    title: '시즌 이벤트 오픈',
-    subtitle: '참여하고 보상 받기',
-    image: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200&auto=format',
-    href: '#',
+    title: '힐링큐 Youtube',
+    subtitle: '구독과 좋아요 눌러주세요!!!!',
+    href: 'https://www.youtube.com/watch?v=mJ4cBFQQiiQ',
     cta: '참여하기',
   },
+  // 일반 이미지 광고
   {
     title: '프리미엄 구독',
     subtitle: '더 강력한 도구 모음',
