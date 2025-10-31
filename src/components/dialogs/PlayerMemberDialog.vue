@@ -112,6 +112,7 @@ import { getBaseUrl } from '@/@core/composable/createUrl';
 import { useRoute } from 'vue-router';
 import api from '@/@core/composable/useAxios';
 import type { Tier } from '@/data/types/tier';
+import axios from 'axios';
 const route = useRoute();
 
 const tiers = ref<Tier[]>([]);
@@ -162,32 +163,67 @@ watch(selectedUsers, () => {
 
 onMounted(fetch);
 
+// async function searchPlayer() {
+//   try {
+//     const res = await api.get(
+//       `https://asia.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${searchId.value}/${searchTag.value}?api_key=RGAPI-ee1558af-f139-456c-aaf5-0e7b82135e35`
+//     ); // 예: 전체 사용자 리스트
+
+//     const res2 = await api
+//       .get(
+//         `https://kr.api.riotgames.com/lol/league/v4/entries/by-puuid/${res.data.puuid}?api_key=RGAPI-ee1558af-f139-456c-aaf5-0e7b82135e35`
+//       )
+//       .then((value) => {
+//         for (const item of value.data) {
+//           if (item.queueType == 'RANKED_SOLO_5x5') {
+//             tier.value = item.tier;
+//             rank.value = item.rank;
+//             point.value = item.leaguePoints;
+//             win.value = item.wins;
+//             lose.value = item.losses;
+
+//             searched.value = true;
+//             lastKey.value = currentKey.value;
+//           }
+//         }
+//       });
+//   } catch (e) {
+//     console.error('사용자 목록 로드 실패', e);
+//   }
+// }
+
 async function searchPlayer() {
   try {
-    const res = await api.get(
-      `https://asia.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${searchId.value}/${searchTag.value}?api_key=RGAPI-ee1558af-f139-456c-aaf5-0e7b82135e35`
-    ); // 예: 전체 사용자 리스트
+    const name = encodeURIComponent(searchId.value.trim());
+    const tag = encodeURIComponent(searchTag.value.trim());
+    debugger;
+    // 외부 호출은 공용 axios/페치 쓰거나, api 인스턴스에 baseURL/interceptor가 껴있다면 제외
+    const a = await axios.get(
+      `https://asia.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${name}/${tag}`,
+      { headers: { 'X-Riot-Token': 'RGAPI-ee1558af-f139-456c-aaf5-0e7b82135e35' } } // 브라우저에 키 노출됨(권장 X)
+    );
 
-    const res2 = await api
-      .get(
-        `https://kr.api.riotgames.com/lol/league/v4/entries/by-puuid/${res.data.puuid}?api_key=RGAPI-ee1558af-f139-456c-aaf5-0e7b82135e35`
-      )
-      .then((value) => {
-        for (const item of value.data) {
-          if (item.queueType == 'RANKED_SOLO_5x5') {
-            tier.value = item.tier;
-            rank.value = item.rank;
-            point.value = item.leaguePoints;
-            win.value = item.wins;
-            lose.value = item.losses;
+    const puuid = a.data.puuid;
 
-            searched.value = true;
-            lastKey.value = currentKey.value;
-          }
-        }
-      });
+    const b = await axios.get(
+      `https://kr.api.riotgames.com/lol/league/v4/entries/by-puuid/${encodeURIComponent(puuid)}`,
+      { headers: { 'X-Riot-Token': 'RGAPI-ee1558af-f139-456c-aaf5-0e7b82135e35' } }
+    );
+
+    for (const item of b.data) {
+      if (item.queueType === 'RANKED_SOLO_5x5') {
+        tier.value = item.tier;
+        rank.value = item.rank;
+        point.value = item.leaguePoints;
+        win.value = item.wins;
+        lose.value = item.losses;
+
+        searched.value = true;
+        lastKey.value = currentKey.value;
+      }
+    }
   } catch (e) {
-    console.error('사용자 목록 로드 실패', e);
+    console.error('라이엇 조회 실패', e);
   }
 }
 
