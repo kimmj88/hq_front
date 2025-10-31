@@ -23,6 +23,9 @@ import Player from '@/pages/config/player/index.vue';
 import Tier from '@/pages/config/tier/index.vue';
 import Profile from '@/pages/config/profile/index.vue';
 
+//Config Permission System
+import SystemPermission from '@/pages/config/permission/system/index.vue';
+
 //DefaultLayout
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import ConfigLayout from '@/layouts/ConfigLayout.vue';
@@ -41,6 +44,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useAccountStore } from '@/stores/useAccountStore';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import axios from 'axios';
+import { CONFIG_PERMISSION_SYSTEM_PATH } from './permission/system/type';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -64,6 +68,7 @@ const router = createRouter({
         { path: CONFIG_PLAYER_PATH.BASE, component: Player },
         { path: CONFIG_TIER_PATH.BASE, component: Tier },
         { path: CONFIG_PROFILE_PATH.BASE, component: Profile },
+        { path: CONFIG_PERMISSION_SYSTEM_PATH.BASE, component: SystemPermission },
       ],
     },
     {

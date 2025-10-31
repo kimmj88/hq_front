@@ -13,6 +13,8 @@
     "lint": "eslint . --fix"
   },
   "dependencies": {
+    "@casl/ability": "^6.7.3",
+    "@casl/vue": "^2.2.2",
     "@mdi/font": "7.4.47",
     "@types/js-cookie": "^3.0.6",
     "axios": "^1.8.4",

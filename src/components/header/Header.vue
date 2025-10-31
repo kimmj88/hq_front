@@ -1,15 +1,19 @@
 <template>
   <v-container style="background-color: #1e1e2f; min-height: 60px" fluid>
-    <v-row align="center" justify="space-between">
-      <!-- 좌측: 로고 -->
+    <v-row align="center" justify="center" style="position: relative">
+      <!-- 로고 -->
       <v-col cols="auto">
         <router-link to="/home" style="display: inline-block">
-          <img :src="logo" alt="로고" style="height: 100px; cursor: pointer" />
+          <img
+            :src="logo"
+            alt="로고"
+            style="height: 120px; width: 1400px; display: block; cursor: pointer"
+          />
         </router-link>
       </v-col>
 
-      <!-- 우측: 사용자 메뉴 -->
-      <v-col cols="auto">
+      <!-- 사용자 메뉴: 오른쪽 상단 고정 -->
+      <v-col cols="auto" style="position: absolute; right: 16px">
         <v-menu>
           <template #activator="{ props }">
             <v-btn v-bind="props" color="primary" variant="text">
@@ -35,7 +39,7 @@ import Cookies from 'js-cookie';
 import { useRouter } from 'vue-router';
 import { useAccountStore } from '@/stores/useAccountStore';
 
-import logo from '@/assets/hq_logo7.png';
+import logo from '@/assets/hq_logo10.png';
 
 const router = useRouter();
 const account = useAccountStore();

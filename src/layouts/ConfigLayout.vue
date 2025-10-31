@@ -79,10 +79,7 @@ const menuItems = computed(() => {
   items.push({
     title: 'Permission',
     icon: 'mdi-shield-lock-outline',
-    children: [
-      { title: 'System', to: '/config/permission/system' },
-      { title: 'Project', to: '/config/permission/project' },
-    ],
+    children: [{ title: 'System', to: '/config/permission/system' }],
   });
 
   return items;
