@@ -283,7 +283,7 @@ async function handleEditSave() {
   try {
     edit.value.loading = true;
 
-    await api.post(`${getBaseUrl('DATA')}/player/update`, {
+    await api.post(`${getBaseUrl('DATA')}/player/update2`, {
       id: edit.value.form.id,
       point: edit.value.form.point,
       custom_tier: selectedCustomTier.value,
