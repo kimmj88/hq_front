@@ -94,11 +94,11 @@
             </v-list-item>
 
             <!-- 삭제 -->
-            <v-list-item @click="openDelete(item)">
+            <!-- <v-list-item @click="openDelete(item)">
               <v-list-item-title class="text-error">
                 <v-icon size="16" class="mr-2">mdi-trash-can-outline</v-icon> 삭제
               </v-list-item-title>
-            </v-list-item>
+            </v-list-item> -->
           </v-list>
         </v-menu>
       </template>
@@ -107,8 +107,12 @@
 
   <v-dialog v-model="edit.open" max-width="420">
     <v-card>
-      <v-card-title class="text-h6">티어 수정</v-card-title>
+      <!-- 제목 + 버튼 -->
+      <v-card-title>
+        <span class="text-h6">티어 수정</span>
+      </v-card-title>
 
+      <!-- 본문 -->
       <v-card-text>
         <v-text-field
           label="Name"
@@ -117,6 +121,40 @@
           density="compact"
           class="mb-3"
         />
+        <v-row align="center" no-gutters>
+          <v-col>
+            <v-autocomplete
+              label="Tier"
+              v-model="selectedTier"
+              :items="tierList"
+              item-title="name"
+              item-value="id"
+              variant="outlined"
+              density="compact"
+              return-object="{false}"
+              clearable
+              :menu-props="{ maxHeight: 300 }"
+            >
+              <template #selection="{ item }">
+                <v-chip color="primary" small>{{ selectedTier?.name }}</v-chip>
+              </template>
+            </v-autocomplete>
+          </v-col>
+
+          <v-col cols="auto" class="ml-2">
+            <!-- <v-btn
+              height="50"
+              variant="tonal"
+              color="primary"
+              prepend-icon="mdi-refresh"
+              @click="onAddTier"
+            >
+              새로고침
+            </v-btn> -->
+          </v-col>
+        </v-row>
+
+        <v-divider class="mb-8"></v-divider>
         <v-text-field
           label="Point"
           v-model="edit.form.point"
@@ -124,6 +162,7 @@
           variant="outlined"
           density="compact"
         />
+
         <v-autocomplete
           label="Custom Tier"
           v-model="selectedCustomTier"
@@ -142,9 +181,10 @@
         </v-autocomplete>
       </v-card-text>
 
+      <!-- 하단 버튼 -->
       <v-card-actions class="justify-end">
         <v-btn variant="text" @click="edit.open = false">취소</v-btn>
-        <v-btn color="primary" :loading="edit.loading" @click="handleEditSave"> 저장 </v-btn>
+        <v-btn color="primary" :loading="edit.loading" @click="handleEditSave">저장</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -202,6 +242,8 @@ const edit = ref<{
 
 // ✨ 수정 버튼 열기
 function openEdit(item: any) {
+  debugger;
+  selectedTier.value = item.tier;
   selectedCustomTier.value = item.custom_tier;
   edit.value.open = true;
   edit.value.loading = false;
@@ -266,6 +308,7 @@ function handleAdd(param: any) {
 }
 
 const tierList = ref<Tier[]>([]);
+const selectedTier = ref<Tier>();
 const selectedCustomTier = ref<Tier>();
 
 async function fetch() {
@@ -283,10 +326,15 @@ async function handleEditSave() {
   try {
     edit.value.loading = true;
 
+    const [nick, tag] = edit.value.form.name.split('#');
+
     await api.post(`${getBaseUrl('DATA')}/player/update2`, {
       id: edit.value.form.id,
+      nickname: nick,
+      tagname: tag,
       point: edit.value.form.point,
       custom_tier: selectedCustomTier.value,
+      tier: selectedTier.value,
     });
 
     edit.value.open = false;

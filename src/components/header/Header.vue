@@ -7,7 +7,7 @@
           <img
             :src="logo"
             alt="로고"
-            style="height: 120px; width: 1400px; display: block; cursor: pointer"
+            style="height: 130px; width: 2000px; display: block; cursor: pointer"
           />
         </router-link>
       </v-col>
@@ -20,7 +20,7 @@
               <v-avatar size="28" class="mr-2">
                 <v-icon>mdi-account</v-icon>
               </v-avatar>
-              <span class="text-body-2 font-weight-medium">{{ account.name }}</span>
+              <span class="text-body-2 font-weight-medium">{{ account.email }}</span>
               <v-icon right size="18">mdi-chevron-down</v-icon>
             </v-btn>
           </template>
@@ -39,7 +39,7 @@ import Cookies from 'js-cookie';
 import { useRouter } from 'vue-router';
 import { useAccountStore } from '@/stores/useAccountStore';
 
-import logo from '@/assets/hq_logo10.png';
+import logo from '@/assets/hq_logo11.jpeg';
 
 const router = useRouter();
 const account = useAccountStore();
