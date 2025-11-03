@@ -21,35 +21,27 @@ const messages = {
       },
     },
     system_permission: {
-      'SYS-SET-R': '설정 조회',
+      'SET-R': '설정 조회',
       'SYS-SET-ACC-R': '계정 조회',
       'SYS-SET-ACC-U': '계정 수정',
-      'SYS-SET-PMS-R': '권한 조회',
+
+      'SYS-SET-MATCH-C': '매치 생성',
+      'SYS-SET-MATCH-D': '매치 삭제',
+
       'SYS-SET-PMS-C': '권한 생성',
+      'SYS-SET-PMS-R': '권한 조회',
       'SYS-SET-PMS-U': '권한 수정',
       'SYS-SET-PMS-D': '권한 삭제',
-      'SYS-PRJ-R': '프로젝트 조회',
-      'SYS-PRJ-C': '프로젝트 생성',
-      'SYS-PRJ-U': '프로젝트 수정',
-      'SYS-PRJ-D': '프로젝트 삭제',
-      'SYS-SLT-R': '솔루션 조회',
-      'SYS-SLT-C': '솔루션 생성',
-      'SYS-SLT-U': '솔루션 수정',
-      'SYS-SLT-D': '솔루션 삭제',
-      'SYS-PDT-R': '제품 조회',
-      'SYS-PDT-C': '제품 생성',
-      'SYS-PDT-U': '제품 수정',
-      'SYS-PDT-D': '제품 삭제',
-    },
-    project_permission: {
-      'PRJ-PMB-R': '맴버 조회',
-      'PRJ-PMB-C': '맴버 생성',
-      'PRJ-PMB-D': '맴버 삭제',
-      'PRJ-DFT-R': '기안 조회',
-      'PRJ-DFT-C': '기안 생성',
-      'PRJ-DFT-D': '기안 삭제',
-      'PRJ-LOG-R': '로그 조회',
-      'PRJ-LOG-D': '로그 삭제',
+
+      'SYS-SET-PLAYER-C': '플레이어 생성',
+      'SYS-SET-PLAYER-R': '플레이어 조회',
+      'SYS-SET-PLAYER-U': '플레이어 수정',
+
+      'SYS-SET-TIER-R': '티어 조회',
+      'SYS-SET-TIER-U': '티어 수정',
+
+      'SYS-SET-PROFILE-R': '프로파일 조회',
+      'SYS-SET-PROFILE-U': '프로파일 수정',
     },
   },
   en: {
@@ -92,23 +84,12 @@ const messages = {
       'SYS-PDT-U': 'Proudct Update',
       'SYS-PDT-D': 'Proudct Delete',
     },
-
-    project_permission: {
-      'PRJ-PMB-R': 'Member Read',
-      'PRJ-PMB-C': 'Member Create',
-      'PRJ-PMB-D': 'Member Delete',
-      'PRJ-DFT-R': 'Draft Read',
-      'PRJ-DFT-C': 'Draft Create',
-      'PRJ-DFT-D': 'Draft Delete',
-      'PRJ-LOG-R': 'Log Read',
-      'PRJ-LOG-D': 'Log Delete',
-    },
   },
 };
 
 const i18n = createI18n({
   legacy: false, // Composition API 사용
-  locale: 'en', // 기본 언어
+  locale: 'ko', // 기본 언어
   messages,
 });
 

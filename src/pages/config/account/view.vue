@@ -16,6 +16,12 @@
       <div class="text-h6 font-weight-medium">{{ account.datas.name }}</div>
     </v-row>
 
+    <v-row justify="center">
+      <v-chip color="cyan-darken-2" text-color="white" size="large" class="mt-1">
+        {{ selectedSystemRole?.name }}
+      </v-chip>
+    </v-row>
+
     <v-divider class="my-4" />
 
     <v-row justify="space-around" class="mb-4 text-center">
@@ -49,7 +55,13 @@
     </v-list>
 
     <v-row justify="end" class="mt-4">
-      <v-btn color="primary" class="mr-2" @click="dialog = true">Edit</v-btn>
+      <v-btn
+        v-if="can('ACCOUNT', 'SYS-SET-ACC-U')"
+        color="primary"
+        class="mr-2"
+        @click="dialog = true"
+        >Edit</v-btn
+      >
       <v-btn color="error" variant="tonal" @click="router.push('/config/account')">{{
         $t('form_control.button.cancel')
       }}</v-btn>
@@ -62,6 +74,14 @@
         <v-text-field v-model="account.datas.name" label="Name" readonly />
         <v-text-field v-model="account.datas.email" label="Email" readonly />
         <v-text-field v-model="account.datas.department" label="Department" readonly />
+        <v-autocomplete
+          v-model="selectedSystemRole"
+          :items="systemRoleList"
+          item-title="name"
+          item-value="id"
+          label="Select Role"
+          return-object
+        />
       </v-card-text>
       <v-card-actions class="justify-end">
         <v-btn text @click="dialog = false">{{ $t('form_control.button.cancel') }}</v-btn>
@@ -74,11 +94,16 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { getBaseUrl } from '@/@core/composable/createUrl';
-//import api from '@/@core/composable/useAxios';
+import api from '@/@core/composable/useAxios';
 import { useRouter } from 'vue-router';
+import type { SystemRole } from '@/data/types/systemrole';
+import { can } from '@/stores/usePermissionStore';
 
 const router = useRouter();
 const props = defineProps<{ id: string }>();
+
+const selectedSystemRole = ref<SystemRole | null>(null);
+const systemRoleList = ref<SystemRole[]>([]);
 
 function getInitials(name: string) {
   return name
@@ -103,19 +128,25 @@ const account = ref<{
     name: string;
     email: string;
     department: string;
+    systemrole: SystemRole;
   };
 }>({
   datas: {
     name: '',
     email: '',
     department: '',
+    systemrole: {},
   },
 });
 
 async function fetchAccount() {
   try {
-    //const response = await api.get(`${getBaseUrl('DATA')}/account/find?id=${props.id}`);
-    //account.value = response.data;
+    const response = await api.get(`${getBaseUrl('DATA')}/account/find?id=${props.id}`);
+    account.value = response.data;
+    selectedSystemRole.value = account.value.datas.systemrole;
+
+    const res = await api.get(`${getBaseUrl('DATA')}/systemrole/all`);
+    systemRoleList.value = res.data.datas;
   } catch (error) {
     console.error('회사 정보 불러오기 실패:', error);
   }
@@ -125,9 +156,10 @@ onMounted(fetchAccount);
 
 async function submitEdit() {
   try {
-    const payload = { id: props.id };
-    //const res = await api.post(`${getBaseUrl('DATA')}/account/update`, payload);
+    const payload = { id: props.id, systemrole_id: selectedSystemRole.value?.id };
+    const res = await api.post(`${getBaseUrl('DATA')}/account/update`, payload);
 
+    selectedSystemRole.value = res.data.rows.systemrole;
     dialog.value = false;
   } catch (err) {
     console.error('수정 실패:', err);

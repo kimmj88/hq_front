@@ -48,18 +48,18 @@
 
           <v-list density="compact">
             <!-- 수정: 기존 라우팅 유지 -->
-            <v-list-item @click="openEdit(item)">
+            <v-list-item v-if="can('PROFILE', 'SYS-SET-PROFILE-U')" @click="openEdit(item)">
               <v-list-item-title>
                 <v-icon size="16" class="mr-2">mdi-pencil</v-icon> 수정
               </v-list-item-title>
             </v-list-item>
 
             <!-- 삭제 -->
-            <v-list-item @click="openDelete(item)">
+            <!-- <v-list-item @click="openDelete(item)">
               <v-list-item-title class="text-error">
                 <v-icon size="16" class="mr-2">mdi-trash-can-outline</v-icon> 삭제
               </v-list-item-title>
-            </v-list-item>
+            </v-list-item> -->
           </v-list>
         </v-menu>
       </template>
@@ -95,9 +95,8 @@ import api from '@/@core/composable/useAxios';
 import type { Account } from '@/data/types/account';
 import type { VDataTableServer } from 'vuetify/components';
 import ServerDataTable from '@/components/common/ServerDataTable.vue';
-import PlayerMemberDialog from '@/components/dialogs/PlayerMemberDialog.vue';
-import type { Tier } from '@/data/types/tier';
 import type { Profile } from '@/data/types/profile';
+import { can } from '@/stores/usePermissionStore';
 
 const itemsPerPage = ref<number>(10);
 

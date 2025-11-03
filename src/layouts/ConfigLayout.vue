@@ -48,39 +48,50 @@
 <script lang="ts" setup>
 import { ref, computed } from 'vue';
 import HeaderBar from '@/components/header/Header.vue';
+import { can } from '@/stores/usePermissionStore';
 
 const menuItems = computed(() => {
   const items = [];
 
-  items.push({
-    title: 'Account',
-    icon: 'mdi-account-supervisor-circle',
-    to: '/config/account',
-  });
+  if (can('ACCOUNT', 'SYS-SET-ACC-R')) {
+    items.push({
+      title: 'Account',
+      icon: 'mdi-account-supervisor-circle',
+      to: '/config/account',
+    });
+  }
 
-  items.push({
-    title: 'Player',
-    icon: 'mdi-account-supervisor-circle',
-    to: '/config/player',
-  });
+  if (can('PLAYER', 'SYS-SET-PLAYER-R')) {
+    items.push({
+      title: 'Player',
+      icon: 'mdi-account-supervisor-circle',
+      to: '/config/player',
+    });
+  }
 
-  items.push({
-    title: 'Tier',
-    icon: 'mdi-account-supervisor-circle',
-    to: '/config/tier',
-  });
+  if (can('TIER', 'SYS-SET-TIER-R')) {
+    items.push({
+      title: 'Tier',
+      icon: 'mdi-account-supervisor-circle',
+      to: '/config/tier',
+    });
+  }
 
-  items.push({
-    title: 'Profile',
-    icon: 'mdi-account-supervisor-circle',
-    to: '/config/profile',
-  });
+  if (can('PROFILE', 'SYS-SET-PROFILE-R')) {
+    items.push({
+      title: 'Profile',
+      icon: 'mdi-account-supervisor-circle',
+      to: '/config/profile',
+    });
+  }
 
-  items.push({
-    title: 'Permission',
-    icon: 'mdi-shield-lock-outline',
-    children: [{ title: 'System', to: '/config/permission/system' }],
-  });
+  if (can('PERMISSION', 'SYS-SET-PMS-R')) {
+    items.push({
+      title: 'Permission',
+      icon: 'mdi-shield-lock-outline',
+      children: [{ title: 'System', to: '/config/permission/system' }],
+    });
+  }
 
   return items;
 });

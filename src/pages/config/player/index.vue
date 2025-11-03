@@ -20,7 +20,7 @@
       </v-col>
       <v-spacer />
       <v-col cols="auto">
-        <PlayerMemberDialog @added="handleAdd" />
+        <PlayerMemberDialog v-if="can('PLAYER', 'SYS-SET-PLAYER-C')" @added="handleAdd" />
       </v-col>
     </v-row>
   </v-container>
@@ -87,7 +87,7 @@
 
           <v-list density="compact">
             <!-- 수정: 기존 라우팅 유지 -->
-            <v-list-item @click="openEdit(item)">
+            <v-list-item v-if="can('PLAYER', 'SYS-SET-PLAYER-U')" @click="openEdit(item)">
               <v-list-item-title>
                 <v-icon size="16" class="mr-2">mdi-pencil</v-icon> 수정
               </v-list-item-title>
@@ -200,6 +200,7 @@ import ServerDataTable from '@/components/common/ServerDataTable.vue';
 import PlayerMemberDialog from '@/components/dialogs/PlayerMemberDialog.vue';
 import type { Player } from '@/data/types/player';
 import type { Tier } from '@/data/types/tier';
+import { can } from '@/stores/usePermissionStore';
 
 const itemsPerPage = ref<number>(10);
 
@@ -242,7 +243,6 @@ const edit = ref<{
 
 // ✨ 수정 버튼 열기
 function openEdit(item: any) {
-  debugger;
   selectedTier.value = item.tier;
   selectedCustomTier.value = item.custom_tier;
   edit.value.open = true;

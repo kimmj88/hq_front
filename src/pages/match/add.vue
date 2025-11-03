@@ -50,6 +50,7 @@
 </template>
 
 <script setup lang="ts">
+import { can } from '@/stores/usePermissionStore';
 import { onMounted, ref } from 'vue';
 import ProjectMemberDialog from '@/components/dialogs/ProjectMemberDialog.vue';
 import api from '@/@core/composable/useAxios';

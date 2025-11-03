@@ -20,7 +20,13 @@
       <v-spacer />
 
       <v-col cols="auto">
-        <v-btn color="secondary" @click="$router.push(MATCH_PATH.ADD)"> "ADD" </v-btn>
+        <v-btn
+          v-if="can('SETTING', 'SET-MATCH-C')"
+          color="secondary"
+          @click="$router.push(MATCH_PATH.ADD)"
+        >
+          "ADD"
+        </v-btn>
       </v-col>
     </v-row>
 
@@ -40,7 +46,7 @@
       </template>
 
       <template #item.actions="{ item }">
-        <v-tooltip text="수정">
+        <!-- <v-tooltip text="수정">
           <template #activator="{ props }">
             <v-btn
               v-bind="props"
@@ -53,9 +59,9 @@
               <v-icon size="18"> mdi-pencil </v-icon>
             </v-btn>
           </template>
-        </v-tooltip>
+        </v-tooltip> -->
 
-        <v-tooltip text="삭제">
+        <v-tooltip v-if="can('SETTING', 'SET-MATCH-D')" text="삭제">
           <template #activator="{ props }">
             <v-btn
               v-bind="props"
@@ -104,12 +110,11 @@
 <script lang="ts" setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-//import { MERCHANDISE_PATH } from '@/router/merchandise/type';
+import { can } from '@/stores/usePermissionStore';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import api from '@/@core/composable/useAxios';
 import type { VDataTableServer } from 'vuetify/components';
 import { MATCH_PATH } from '@/router/match/type';
-//import ServerDataTable from '@/components/common/ServerDataTable.vue';
 
 const search = ref<string>('');
 const serverItems = ref<Match[]>([]);
@@ -148,6 +153,14 @@ const headers = ref<VDataTableServer['headers']>([
     title: 'type',
     sortable: true,
     key: 'type',
+  },
+  {
+    title: 'confirm',
+    key: 'is_confirm',
+  },
+  {
+    title: 'winner',
+    key: 'winner_team',
   },
   { title: 'Created', key: 'created_at', sortable: true },
   { title: 'Updated', key: 'updated_at', sortable: true },

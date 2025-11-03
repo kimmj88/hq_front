@@ -3,8 +3,20 @@
     <h1 class="text-center mb-4">{{ match?.type }}{{ `(${match?.name})` }}</h1>
 
     <div class="d-flex justify-center gap-2 mb-2">
-      <v-btn color="indigo" @click="onShot" :disabled="!canShot">SHOT</v-btn>
-      <v-btn color="success" :disabled="!canConfirm" @click="openConfirm" prepend-icon="mdi-check">
+      <v-btn
+        v-if="can('SETTING', 'SET-MATCH-C')"
+        color="indigo"
+        @click="onShot"
+        :disabled="!canShot"
+        >SHOT</v-btn
+      >
+      <v-btn
+        v-if="can('SETTING', 'SET-MATCH-C')"
+        color="success"
+        :disabled="!canConfirm"
+        @click="openConfirm"
+        prepend-icon="mdi-check"
+      >
         확정
       </v-btn>
     </div>
@@ -280,6 +292,7 @@
 </template>
 
 <script lang="ts" setup>
+import { can } from '@/stores/usePermissionStore';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import { computed, onMounted, ref } from 'vue';
 import api from '@/@core/composable/useAxios';
@@ -434,7 +447,6 @@ async function fetch() {
   isConfirmed.value = truthy(match.value?.is_confirm);
   winnerTeam.value = (match.value?.winner_team ?? null) as number | null;
 
-  debugger;
   if (match.value.type === 'POSITION') {
     // 후보 풀
     allPositionMembers.value = data.datas.match_members;
@@ -495,7 +507,6 @@ async function handleConfirm() {
   try {
     confirm.value.loading = true;
 
-    debugger;
     const match_members: MatchMember[] = [...team1.value, ...team2.value];
 
     await api.post(`${getBaseUrl('DATA')}/match/update`, {
@@ -576,7 +587,6 @@ const picker = ref<{
 
 // ▼ 추가: 이미 선택된 player id 집합
 const pickedIds = computed(() => {
-  debugger;
   const s = new Set<number>();
   team1.value.forEach((m) => m?.player?.id && s.add(m.player.id));
   team2.value.forEach((m) => m?.player?.id && s.add(m.player.id));

@@ -148,8 +148,6 @@ const inputRoleName = ref<string>('');
 const editedPermissions = ref<PermissionGroup[]>([]);
 const expandedPanels = ref<number[]>([]);
 
-debugger;
-
 const headers: VDataTableServer['headers'] = [
   { title: 'NAME', key: 'name' },
   { title: 'CREATED', key: 'created_at' },
@@ -235,7 +233,6 @@ async function deleteItem(item: SystemRole) {
 }
 
 async function loadItems(options: any) {
-  debugger;
   try {
     const sortKey = options.sortBy?.[0]?.key || 'created_at';
     const sortOrder = options.sortBy?.[0]?.order || 'desc';

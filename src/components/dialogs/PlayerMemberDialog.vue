@@ -196,7 +196,6 @@ async function searchPlayer() {
   try {
     const name = encodeURIComponent(searchId.value.trim());
     const tag = encodeURIComponent(searchTag.value.trim());
-    debugger;
     // 외부 호출은 공용 axios/페치 쓰거나, api 인스턴스에 baseURL/interceptor가 껴있다면 제외
     const a = await axios.get(
       `https://asia.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${name}/${tag}`,

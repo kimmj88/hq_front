@@ -4,6 +4,8 @@
  * Automatic routes for `./src/pages/*.vue`
  */
 
+import api from '@/@core/composable/useAxios';
+
 import {
   CONFIG_ACCOUNT_PATH,
   CONFIG_PLAYER_PATH,
@@ -45,6 +47,8 @@ import { useAccountStore } from '@/stores/useAccountStore';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import axios from 'axios';
 import { CONFIG_PERMISSION_SYSTEM_PATH } from './permission/system/type';
+import { usePermissionStore } from '@/stores/usePermissionStore';
+import type { SystemRole } from '@/data/types/systemrole';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -86,11 +90,13 @@ const router = createRouter({
 
 router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore();
+  const permission = usePermissionStore();
   const account = useAccountStore();
   const refreshToken = Cookies.get('refreshToken');
-  let accessToken = auth.$state.accessToken || Cookies.get('accessToken');
+  //let accessToken = auth.$state.accessToken || Cookies.get('accessToken');
+  let accessToken = Cookies.get('accessToken');
 
-  Cookies.remove('accessToken');
+  //Cookies.remove('accessToken');
   auth.setTokens(accessToken as string);
   if (to.path === '/login') {
     if (refreshToken) {
@@ -107,13 +113,19 @@ router.beforeEach(async (to, from, next) => {
         { withCredentials: true }
       );
 
-      const resAccount = await axios.post(
+      const resAccount: any = await axios.post(
         `${getBaseUrl('DATA')}/account/me`,
         { accessToken: res.data.accessToken },
         { withCredentials: true }
       );
 
-      account.setAccount(1, resAccount.data.datas.email, resAccount.data.datas.name);
+      const systemPermissions = await setSystemRole(
+        accessToken!,
+        resAccount.data.datas.systemrole.id
+      );
+
+      account.setAccount(resAccount);
+      permission.setPermissions(systemPermissions);
 
       accessToken = res.data.accessToken;
       auth.setTokens(accessToken as string);
@@ -124,6 +136,17 @@ router.beforeEach(async (to, from, next) => {
   }
 
   if (accessToken) {
+    const resAccount: any = await axios.post(
+      `${getBaseUrl('DATA')}/account/me`,
+      { accessToken },
+      { withCredentials: true }
+    );
+
+    const systemPermissions = await setSystemRole(accessToken, resAccount.data.datas.systemrole.id);
+
+    account.setAccount(resAccount.data.datas);
+    permission.setPermissions(systemPermissions);
+    auth.setTokens(accessToken as string);
     return next();
   }
 
@@ -144,6 +167,33 @@ router.onError((err, to) => {
     console.error(err);
   }
 });
+
+async function setSystemRole(accessToken: string, systemrole_id: number): Promise<any> {
+  const resAccount = await api.post(
+    `${getBaseUrl('DATA')}/account/me`,
+    { accessToken },
+    { withCredentials: true }
+  );
+
+  const resSystemPermission = await api.get(
+    `${getBaseUrl('DATA')}/systemrole/find?id=${systemrole_id}`
+  );
+
+  const systemRole: SystemRole = resSystemPermission.data.datas;
+  const systemPermissions = [];
+
+  if (systemRole.permissionGroups) {
+    for (const item of systemRole.permissionGroups) {
+      for (const subItem of item.children) {
+        if (subItem.access === true) {
+          systemPermissions.push({ action: item.code, subject: subItem.code });
+        }
+      }
+    }
+  }
+
+  return systemPermissions;
+}
 
 router.isReady().then(() => {
   localStorage.removeItem('vuetify:dynamic-reload');

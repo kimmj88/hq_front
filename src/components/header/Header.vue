@@ -25,7 +25,11 @@
             </v-btn>
           </template>
           <v-list>
-            <v-list-item title="Config" @click="router.push('/config')" />
+            <v-list-item
+              v-if="can('SETTING', 'SET-R')"
+              title="Config"
+              @click="router.push('/config')"
+            />
             <v-list-item title="Logout" @click="logout" />
           </v-list>
         </v-menu>
@@ -35,6 +39,7 @@
 </template>
 
 <script setup lang="ts">
+import { can } from '@/stores/usePermissionStore';
 import Cookies from 'js-cookie';
 import { useRouter } from 'vue-router';
 import { useAccountStore } from '@/stores/useAccountStore';

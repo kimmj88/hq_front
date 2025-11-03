@@ -1,3 +1,4 @@
+import type { Account } from '@/data/types/account';
 import { defineStore } from 'pinia';
 
 export const useAccountStore = defineStore('account', {
@@ -7,10 +8,10 @@ export const useAccountStore = defineStore('account', {
     name: '' as string,
   }),
   actions: {
-    setAccount(id: number, email: string, name: string) {
-      this.id = id;
-      this.email = email;
-      this.name = name;
+    setAccount(account: Account) {
+      this.id = account.id;
+      this.name = account.name;
+      this.email = account.email;
     },
     clearAccount() {
       this.id = 0;

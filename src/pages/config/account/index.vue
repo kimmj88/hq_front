@@ -79,7 +79,10 @@
             </v-btn>
           </template>
           <v-list>
-            <v-list-item :to="CONFIG_ACCOUNT_PATH.VIEW(item.id)">
+            <v-list-item
+              v-if="can('ACCOUNT', 'SYS-SET-ACC-U')"
+              :to="CONFIG_ACCOUNT_PATH.VIEW(item.id)"
+            >
               <v-list-item-title>{{ $t('form_control.button.edit') }}</v-list-item-title>
             </v-list-item>
           </v-list>
@@ -97,6 +100,7 @@ import api from '@/@core/composable/useAxios';
 import type { Account } from '@/data/types/account';
 import type { VDataTableServer } from 'vuetify/components';
 import ServerDataTable from '@/components/common/ServerDataTable.vue';
+import { can } from '@/stores/usePermissionStore';
 
 const itemsPerPage = ref<number>(10);
 
