@@ -58,12 +58,12 @@
       </template>
 
       <!-- ROLE -->
-      <!-- <template #item.systemrole="{ item }">
+      <template #item.systemrole="{ item }">
         <v-icon start size="large">
           {{ item.systemrole.name === 'admin' ? 'mdi-crown' : 'mdi-account' }}
         </v-icon>
         {{ item.systemrole.name }}
-      </template> -->
+      </template>
 
       <template #item.status="{ item }">
         <v-chip :color="getStatusColor('active')" size="large" label>

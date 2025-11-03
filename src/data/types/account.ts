@@ -1,3 +1,5 @@
+import type { SystemRole } from './systemrole';
+
 export interface Account {
   id: number;
   email: string;
@@ -6,4 +8,5 @@ export interface Account {
   created_at: string;
   updated_at: string;
   avatar: string;
+  systemrole: SystemRole;
 }

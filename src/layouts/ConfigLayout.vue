@@ -64,7 +64,7 @@ const menuItems = computed(() => {
   if (can('PLAYER', 'SYS-SET-PLAYER-R')) {
     items.push({
       title: 'Player',
-      icon: 'mdi-account-supervisor-circle',
+      icon: 'mdi-gamepad-variant',
       to: '/config/player',
     });
   }
@@ -72,7 +72,7 @@ const menuItems = computed(() => {
   if (can('TIER', 'SYS-SET-TIER-R')) {
     items.push({
       title: 'Tier',
-      icon: 'mdi-account-supervisor-circle',
+      icon: 'mdi-trophy-outline',
       to: '/config/tier',
     });
   }
@@ -80,7 +80,7 @@ const menuItems = computed(() => {
   if (can('PROFILE', 'SYS-SET-PROFILE-R')) {
     items.push({
       title: 'Profile',
-      icon: 'mdi-account-supervisor-circle',
+      icon: 'mdi-id-card',
       to: '/config/profile',
     });
   }
@@ -89,7 +89,7 @@ const menuItems = computed(() => {
     items.push({
       title: 'Permission',
       icon: 'mdi-shield-lock-outline',
-      children: [{ title: 'System', to: '/config/permission/system' }],
+      children: [{ title: 'System', icon: 'mdi-server-cog', to: '/config/permission/system' }],
     });
   }
 
