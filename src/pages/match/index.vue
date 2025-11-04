@@ -21,7 +21,7 @@
 
       <v-col cols="auto">
         <v-btn
-          v-if="can('SETTING', 'SET-MATCH-C')"
+          v-if="can('MATCH', 'SYS-SET-MATCH-C')"
           color="secondary"
           @click="$router.push(MATCH_PATH.ADD)"
         >
