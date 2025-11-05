@@ -14,7 +14,9 @@
         />
       </v-col>
       <v-col cols="auto">
-        <v-btn color="primary" @click="handleSearch"> "SEARCH" </v-btn>
+        <v-btn color="primary" @click="handleSearch">
+          {{ $t('form_control.button.search') }}
+        </v-btn>
       </v-col>
 
       <v-spacer />
@@ -25,7 +27,7 @@
           color="secondary"
           @click="$router.push(MATCH_PATH.ADD)"
         >
-          "ADD"
+          {{ $t('form_control.button.add') }}
         </v-btn>
       </v-col>
     </v-row>
@@ -61,7 +63,7 @@
           </template>
         </v-tooltip> -->
 
-        <v-tooltip v-if="can('SETTING', 'SET-MATCH-D')" text="삭제">
+        <v-tooltip v-if="can('MATCH', 'SYS-SET-MATCH-D')" text="삭제">
           <template #activator="{ props }">
             <v-btn
               v-bind="props"

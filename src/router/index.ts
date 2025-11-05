@@ -114,21 +114,19 @@ router.beforeEach(async (to, from, next) => {
       );
 
       const resAccount: any = await axios.post(
-        `${getBaseUrl('DATA')}/account/me`,
+        `${getBaseUrl('AUTH')}/auth/me`,
         { accessToken: res.data.accessToken },
         { withCredentials: true }
       );
 
-      const systemPermissions = await setSystemRole(
-        accessToken!,
-        resAccount.data.datas.systemrole.id
-      );
+      const systemPermissions = await setSystemRole(resAccount.data.datas.systemrole.id);
 
       account.setAccount(resAccount);
       permission.setPermissions(systemPermissions);
 
       accessToken = res.data.accessToken;
       auth.setTokens(accessToken as string);
+      Cookies.set('accessToken', accessToken as string);
     } catch (error) {
       console.error('토큰 재발급 실패:', error);
       return next('/login');
@@ -136,18 +134,22 @@ router.beforeEach(async (to, from, next) => {
   }
 
   if (accessToken) {
-    const resAccount: any = await axios.post(
-      `${getBaseUrl('DATA')}/account/me`,
-      { accessToken },
-      { withCredentials: true }
-    );
+    try {
+      const value = await axios.post(
+        `${getBaseUrl('AUTH')}/auth/me`,
+        { accessToken },
+        { withCredentials: true }
+      );
+      const systemPermissions = await setSystemRole(value.data.datas.systemrole.id);
 
-    const systemPermissions = await setSystemRole(accessToken, resAccount.data.datas.systemrole.id);
-
-    account.setAccount(resAccount.data.datas);
-    permission.setPermissions(systemPermissions);
-    auth.setTokens(accessToken as string);
-    return next();
+      account.setAccount(value.data.datas);
+      permission.setPermissions(systemPermissions);
+      auth.setTokens(accessToken as string);
+      return next();
+    } catch (error) {
+      Cookies.remove('accessToken');
+      return next('/login');
+    }
   }
 
   return next('/login');
@@ -168,13 +170,7 @@ router.onError((err, to) => {
   }
 });
 
-async function setSystemRole(accessToken: string, systemrole_id: number): Promise<any> {
-  const resAccount = await api.post(
-    `${getBaseUrl('DATA')}/account/me`,
-    { accessToken },
-    { withCredentials: true }
-  );
-
+async function setSystemRole(systemrole_id: number): Promise<any> {
   const resSystemPermission = await api.get(
     `${getBaseUrl('DATA')}/systemrole/find?id=${systemrole_id}`
   );
