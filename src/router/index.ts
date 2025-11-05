@@ -147,7 +147,7 @@ router.beforeEach(async (to, from, next) => {
       auth.setTokens(accessToken as string);
       return next();
     } catch (error) {
-      Cookies.remove('accessToken');
+      //Cookies.remove('accessToken');
       return next('/login');
     }
   }
