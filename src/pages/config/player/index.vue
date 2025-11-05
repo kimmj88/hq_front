@@ -73,6 +73,15 @@
         </div>
       </template>
 
+      <template #item.clan_tier="{ item }">
+        <div class="d-flex align-center">
+          <span :style="{ color: getTierColor(item.clan_tier?.name), fontWeight: 'bold' }">
+            {{ item.clan_tier?.name }}
+          </span>
+          <div></div>
+        </div>
+      </template>
+
       <template #item.created_at="{ item }">
         {{ item.created_at.slice(0, 10) }}
       </template>
@@ -213,6 +222,7 @@ const headers: VDataTableServer['headers'] = [
   { title: 'NAME', key: 'name' },
   { title: 'TIER', key: 'tier' },
   { title: 'CUSTOM_TIER', key: 'custom_tier' },
+  { title: 'CLAN_TIER', key: 'clan_tier' },
   { title: 'POINT', key: 'point' },
   { title: 'Created', key: 'created_at', sortable: true },
   { title: 'ACTIONS', key: 'actions', sortable: false, align: 'center', width: '1px' },

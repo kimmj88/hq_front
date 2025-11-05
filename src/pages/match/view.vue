@@ -347,30 +347,31 @@ function truthy(v: any): boolean {
 
 function getPositionColor(position: string) {
   switch (position) {
-    case 'Top':
+    case 'TOP':
       return 'deep-purple';
-    case 'Jg':
+    case 'JUG':
       return 'green';
-    case 'Mid':
+    case 'MID':
       return 'blue';
-    case 'Adc':
+    case 'ADC':
       return 'red';
-    case 'Sup':
+    case 'SUP':
       return 'pink';
     default:
       return 'grey';
   }
 }
 
-const POSITIONS = ['Top', 'Jg', 'Mid', 'Adc', 'Sup'] as const;
+let POSITIONS: any[] = [];
+
 const memberTitle = (m: MatchMember) => `${m.player.nickname}#${m.player.tagname}`;
 
 function emptyMemberWithPos(pos: (typeof POSITIONS)[number]): MatchMember {
+  debugger;
   const m = emptyMember();
   m.position = pos as any;
   return m;
 }
-type Position = (typeof POSITIONS)[number] | null;
 
 function setWinner(team: 1 | 2) {
   if (!isConfirmed.value) {
@@ -441,6 +442,14 @@ function onShot() {
 }
 
 async function fetch() {
+  const positionData = await api.post(`${getBaseUrl('DATA')}/codedict/list`, {
+    group: 'LOL_POSITION',
+  });
+
+  for (const item of positionData.data.datas) {
+    POSITIONS.push(item.value);
+  }
+
   const { data } = await api.get(`${getBaseUrl('DATA')}/match/find?id=${route.params.id}`);
   match.value = data.datas as Match;
 
