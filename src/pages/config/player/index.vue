@@ -86,6 +86,21 @@
         {{ item.created_at.slice(0, 10) }}
       </template>
 
+      <template #item.positions="{ item }">
+        <div class="d-flex flex-wrap" style="gap: 6px">
+          <v-chip
+            v-for="(pos, i) in normalizePositions(item.positions)"
+            :key="i"
+            size="x-small"
+            color="primary"
+            label
+            variant="tonal"
+          >
+            {{ pos.label }}
+          </v-chip>
+        </div>
+      </template>
+
       <template #item.actions="{ item }">
         <v-menu location="bottom">
           <template #activator="{ props }">
@@ -188,11 +203,37 @@
             <v-chip color="primary" small>{{ selectedCustomTier?.name }}</v-chip>
           </template>
         </v-autocomplete>
+
+        <v-autocomplete
+          label="Position"
+          v-model="selectedPositions"
+          :items="positions"
+          item-title="name"
+          item-value="name"
+          variant="outlined"
+          density="compact"
+          clearable
+          multiple
+          return-object
+          :menu-props="{ maxHeight: 300 }"
+        >
+          <template #selection="{ item, index }">
+            <v-chip
+              color="primary"
+              class="mr-1"
+              closable
+              size="large"
+              @click:close="selectedPositions.splice(index, 1)"
+            >
+              {{ item.raw.name }}
+            </v-chip>
+          </template>
+        </v-autocomplete>
       </v-card-text>
 
       <!-- 하단 버튼 -->
       <v-card-actions class="justify-end">
-        <v-btn variant="text" @click="edit.open = false">취소</v-btn>
+        <v-btn variant="text" @click="handleCancel">취소</v-btn>
         <v-btn color="primary" :loading="edit.loading" @click="handleEditSave">저장</v-btn>
       </v-card-actions>
     </v-card>
@@ -210,6 +251,8 @@ import PlayerMemberDialog from '@/components/dialogs/PlayerMemberDialog.vue';
 import type { Player } from '@/data/types/player';
 import type { Tier } from '@/data/types/tier';
 import { can } from '@/stores/usePermissionStore';
+import type { Codedict } from '@/data/types/codedict';
+import type { Position } from '@/data/types/position';
 
 const itemsPerPage = ref<number>(10);
 
@@ -219,11 +262,12 @@ const loading = ref<boolean>(true);
 const totalItems = ref<number>(0);
 
 const headers: VDataTableServer['headers'] = [
-  { title: 'NAME', key: 'name' },
-  { title: 'TIER', key: 'tier' },
-  { title: 'CUSTOM_TIER', key: 'custom_tier' },
-  { title: 'CLAN_TIER', key: 'clan_tier' },
-  { title: 'POINT', key: 'point' },
+  { title: 'NAME', key: 'name', sortable: false },
+  { title: 'TIER', key: 'tier', sortable: false },
+  { title: 'CUSTOM_TIER', key: 'custom_tier', sortable: false },
+  { title: 'CLAN_TIER', key: 'clan_tier', sortable: false },
+  { title: 'POINT', key: 'point', sortable: true },
+  { title: 'Position', key: 'positions', sortable: false, width: 240 }, // ⬅️ 추가
   { title: 'Created', key: 'created_at', sortable: true },
   { title: 'ACTIONS', key: 'actions', sortable: false, align: 'center', width: '1px' },
 ] as const;
@@ -251,16 +295,43 @@ const edit = ref<{
   form: { id: 0, name: '', point: null },
 });
 
-// ✨ 수정 버튼 열기
 function openEdit(item: any) {
-  selectedTier.value = item.tier;
-  selectedCustomTier.value = item.custom_tier;
+  // 참조 끊기: 깊은 복사
+  const clone = (v: any) => JSON.parse(JSON.stringify(v));
+
   edit.value.open = true;
   edit.value.loading = false;
   edit.value.target = item;
+
+  debugger;
+  selectedPositions.value = clone(item.positions ?? []);
+  selectedTier.value = clone(item.tier ?? null);
+  selectedCustomTier.value = clone(item.custom_tier ?? null);
+
   edit.value.form.id = item.id;
   edit.value.form.name = `${item.nickname}#${item.tagname}`;
   edit.value.form.point = item.point;
+}
+
+function normalizePositions(positions: any[] | undefined | null) {
+  if (!positions || !Array.isArray(positions)) return [];
+  return positions
+    .map((p) => {
+      if (typeof p === 'string') return { label: p };
+
+      // common shapes
+      if (p.value) return { label: p.value };
+      if (p.title) return { label: p.title };
+      if (p.name) return { label: p.name };
+
+      // codedict relation
+      if (p.codedict?.title) return { label: p.codedict.title };
+      if (p.codedict?.code_value) return { label: p.codedict.code_value };
+
+      // last resort
+      return { label: String(p.id ?? '') };
+    })
+    .filter((x) => x.label);
 }
 
 function getTierColor(tier: string): string {
@@ -281,7 +352,7 @@ function getTierColor(tier: string): string {
 
 async function loadItems(options: FetchParams) {
   try {
-    const sortKey = options.sortBy[0]?.key || 'created_at';
+    const sortKey = options.sortBy[0]?.key || 'point';
     const sortOrder = options.sortBy[0]?.order || 'desc';
 
     const response = await api.get(
@@ -289,8 +360,8 @@ async function loadItems(options: FetchParams) {
         options.page
       }&itemsPerPage=${options.itemsPerPage}&sortBy=${sortKey}&orderBy=${sortOrder}`
     );
-
     loading.value = true;
+    debugger;
     serverItems.value = response.data.datas;
     totalItems.value = response.data.totalCount;
     loading.value = false;
@@ -321,14 +392,33 @@ const tierList = ref<Tier[]>([]);
 const selectedTier = ref<Tier>();
 const selectedCustomTier = ref<Tier>();
 
+const positions = ref<Position[]>([]);
+const selectedPositions = ref<Position[] | null>([]);
+
 async function fetch() {
   try {
     const response = await api.get(`${getBaseUrl('DATA')}/tier/all`);
 
     tierList.value = response.data.datas;
+    const position_codedict = await api.get(`${getBaseUrl('DATA')}/position/all`);
+
+    positions.value = position_codedict.data.datas;
   } catch (error) {
     console.error('매치 정보 불러오기 실패:', error);
   }
+}
+
+async function handleCancel() {
+  edit.value.open = false;
+
+  edit.value.target = null;
+  edit.value.form.id = 0;
+  edit.value.form.name = '';
+  edit.value.form.point = 0;
+
+  selectedTier.value = undefined;
+  selectedCustomTier.value = undefined;
+  selectedPositions.value = [];
 }
 
 async function handleEditSave() {
@@ -337,7 +427,7 @@ async function handleEditSave() {
     edit.value.loading = true;
 
     const [nick, tag] = edit.value.form.name.split('#');
-
+    debugger;
     await api.post(`${getBaseUrl('DATA')}/player/update2`, {
       id: edit.value.form.id,
       nickname: nick,
@@ -345,6 +435,7 @@ async function handleEditSave() {
       point: edit.value.form.point,
       custom_tier: selectedCustomTier.value,
       tier: selectedTier.value,
+      positions: selectedPositions.value,
     });
 
     edit.value.open = false;

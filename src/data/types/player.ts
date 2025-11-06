@@ -1,3 +1,4 @@
+import type { Position } from './position';
 import type { Tier } from './tier';
 
 export interface Player {
@@ -7,4 +8,5 @@ export interface Player {
   point: number;
   create_at: string;
   tier: Tier;
+  positions: Position;
 }
