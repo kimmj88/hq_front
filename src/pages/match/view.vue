@@ -367,7 +367,6 @@ let POSITIONS: any[] = [];
 const memberTitle = (m: MatchMember) => `${m.player.nickname}#${m.player.tagname}`;
 
 function emptyMemberWithPos(pos: (typeof POSITIONS)[number]): MatchMember {
-  debugger;
   const m = emptyMember();
   m.position = pos as any;
   return m;

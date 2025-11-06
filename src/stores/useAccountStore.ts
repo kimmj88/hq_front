@@ -13,7 +13,7 @@ export const useAccountStore = defineStore('account', {
       this.name = account.name;
       this.email = account.email;
     },
-    clearAccount() {
+    clear() {
       this.id = 0;
       this.email = '';
       this.name = '';

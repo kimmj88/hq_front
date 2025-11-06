@@ -1,15 +1,18 @@
-import { defineStore } from "pinia";
+import { defineStore } from 'pinia';
 
-export const useAuthStore = defineStore("auth", {
+export const useAuthStore = defineStore('auth', {
   state: () => ({
-    accessToken: "" as string,
+    accessToken: '' as string,
   }),
   actions: {
     setTokens(access: string) {
       this.accessToken = access;
     },
     logout() {
-      this.accessToken = "";
+      this.accessToken = '';
+    },
+    clear() {
+      this.accessToken = '';
     },
   },
 });

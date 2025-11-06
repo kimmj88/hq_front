@@ -88,71 +88,98 @@ const router = createRouter({
   ],
 });
 
-router.beforeEach(async (to, from, next) => {
-  const auth = useAuthStore();
-  const permission = usePermissionStore();
-  const account = useAccountStore();
-  const refreshToken = Cookies.get('refreshToken');
-  //let accessToken = auth.$state.accessToken || Cookies.get('accessToken');
-  let accessToken = Cookies.get('accessToken');
+let isRefreshing = false;
+let refreshPromise: Promise<string> | null = null;
 
-  //Cookies.remove('accessToken');
-  auth.setTokens(accessToken as string);
-  if (to.path === '/login') {
-    if (refreshToken) {
-      return next('/home');
-    }
-    return next();
-  }
-
-  if (refreshToken && !accessToken) {
-    try {
-      const res = await axios.post(
+async function refreshAccessToken(refreshToken: string): Promise<string> {
+  if (!isRefreshing) {
+    isRefreshing = true;
+    refreshPromise = axios
+      .post(
         `${getBaseUrl('AUTH')}/auth/refresh-token/kakao`,
         { refreshToken },
         { withCredentials: true }
-      );
-
-      const resAccount: any = await axios.post(
-        `${getBaseUrl('AUTH')}/auth/me`,
-        { accessToken: res.data.accessToken },
-        { withCredentials: true }
-      );
-
-      const systemPermissions = await setSystemRole(resAccount.data.datas.systemrole.id);
-
-      account.setAccount(resAccount);
-      permission.setPermissions(systemPermissions);
-
-      accessToken = res.data.accessToken;
-      auth.setTokens(accessToken as string);
-      Cookies.set('accessToken', accessToken as string);
-    } catch (error) {
-      console.error('토큰 재발급 실패:', error);
-      return next('/login');
-    }
+      )
+      .then((res) => res.data.accessToken)
+      .finally(() => {
+        isRefreshing = false;
+      });
   }
+  // 이미 진행 중이면 같은 프라미스 대기
+  const newAccess = await refreshPromise!;
+  return newAccess;
+}
 
+async function hydrateUser(accessToken: string) {
+  // /auth/me 한 번만 호출해서 계정/권한 세팅
+  const { data } = await axios.post(
+    `${getBaseUrl('AUTH')}/auth/me`,
+    { accessToken },
+    { withCredentials: true }
+  );
+  const auth = useAuthStore();
+  const account = useAccountStore();
+  const permission = usePermissionStore();
+
+  const me = data.datas;
+  const systemPermissions = await setSystemRole(me.systemrole.id);
+
+  auth.setTokens(accessToken);
+  account.setAccount(me);
+  permission.setPermissions(systemPermissions);
+}
+
+async function ensureSession(): Promise<boolean> {
+  const auth = useAuthStore();
+  const refreshToken = Cookies.get('refreshToken') ?? '';
+  let accessToken = Cookies.get('accessToken') ?? '';
+
+  // accessToken이 있으면 검증(401 나오면 갱신 시도)
   if (accessToken) {
     try {
-      const value = await axios.post(
-        `${getBaseUrl('AUTH')}/auth/me`,
-        { accessToken },
-        { withCredentials: true }
-      );
-      const systemPermissions = await setSystemRole(value.data.datas.systemrole.id);
-
-      account.setAccount(value.data.datas);
-      permission.setPermissions(systemPermissions);
-      auth.setTokens(accessToken as string);
-      return next();
-    } catch (error) {
-      //Cookies.remove('accessToken');
-      return next('/login');
+      await hydrateUser(accessToken);
+      return true;
+    } catch (err: any) {
+      // 401 등 실패 시 리프레시 시도
     }
   }
 
-  return next('/login');
+  // 여기로 왔다는 건 accessToken이 없거나, me 실패한 경우
+  if (!refreshToken) return false;
+
+  try {
+    const newAccess = await refreshAccessToken(refreshToken);
+    Cookies.set('accessToken', newAccess, { sameSite: 'Lax' }); // 필요 시 secure: true(HTTPS)
+    await hydrateUser(newAccess);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+router.beforeEach(async (to, from, next) => {
+  // 로그인 페이지 접근 허용(이미 로그인 상태면 홈으로)
+  if (to.path === '/login') {
+    const hasRefresh = !!Cookies.get('refreshToken');
+    if (hasRefresh) return next('/home');
+    return next();
+  }
+
+  const ok = await ensureSession();
+  if (!ok) {
+    // 정리 후 로그인으로
+    const auth = useAuthStore();
+    const account = useAccountStore();
+    const permission = usePermissionStore();
+    auth.clear(); // 토큰/상태 초기화 메서드가 있다면 사용
+    account.clear?.();
+    permission.clear?.();
+    Cookies.remove('accessToken');
+    Cookies.remove('refreshToken');
+    return next('/login');
+  }
+
+  return next();
 });
 
 // Workaround for https://github.com/vitejs/vite/issues/11804

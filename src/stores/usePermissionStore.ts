@@ -24,7 +24,7 @@ export const usePermissionStore = defineStore('permission', {
       ability.update(rules);
     },
 
-    clearPermissions() {
+    clear() {
       this.rules = [];
       ability.update([]);
     },
