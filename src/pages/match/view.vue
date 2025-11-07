@@ -4,14 +4,14 @@
 
     <div class="d-flex justify-center gap-2 mb-2">
       <v-btn
-        v-if="can('SETTING', 'SET-MATCH-C')"
+        v-if="can('MATCH', 'SYS-SET-MATCH-C')"
         color="indigo"
         @click="onShot"
         :disabled="!canShot"
         >SHOT</v-btn
       >
       <v-btn
-        v-if="can('SETTING', 'SET-MATCH-C')"
+        v-if="can('MATCH', 'SYS-SET-MATCH-C')"
         color="success"
         :disabled="!canConfirm"
         @click="openConfirm"
@@ -415,6 +415,7 @@ function shuffleTeams() {
     return;
   }
 
+  debugger;
   // POSITION 모드면 포지션별로 50% 확률로 팀만 교체
   for (const pos of POSITIONS) {
     const idx1 = team1.value.findIndex((m) => m.position === pos);
