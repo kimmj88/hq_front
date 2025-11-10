@@ -299,7 +299,7 @@ async function handleDelete() {
 
 async function loadItems(options: FetchParams) {
   try {
-    const sortKey = options.sortBy[0]?.key || 'created_at';
+    const sortKey = options.sortBy[0]?.key || 'point';
     const sortOrder = options.sortBy[0]?.order || 'asc';
 
     const response = await api.get(
