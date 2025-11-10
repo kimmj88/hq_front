@@ -82,6 +82,10 @@
         </div>
       </template>
 
+      <template #item.is_active="{ item }">
+        <v-switch v-model="item.is_active" readonly inset hide-details color="success" />
+      </template>
+
       <template #item.created_at="{ item }">
         {{ item.created_at.slice(0, 10) }}
       </template>
@@ -138,13 +142,24 @@
 
       <!-- 본문 -->
       <v-card-text>
-        <v-text-field
-          label="Name"
-          v-model="edit.form.name"
-          variant="outlined"
-          density="compact"
-          class="mb-3"
-        />
+        <v-row align="center" no-gutters>
+          <v-col cols="9" class="pr-2">
+            <!-- 약 70% 정도 -->
+            <v-text-field
+              label="Name"
+              v-model="edit.form.name"
+              variant="outlined"
+              density="compact"
+              disabled="true"
+            />
+          </v-col>
+
+          <v-col cols="3" class="text-right">
+            <!-- 약 30% 정도 -->
+            <v-btn variant="text" @click="refreshTier" style="min-width: 80px"> 갱신 </v-btn>
+          </v-col>
+        </v-row>
+
         <v-row align="center" no-gutters>
           <v-col>
             <v-autocomplete
@@ -157,24 +172,13 @@
               density="compact"
               return-object="{false}"
               clearable
+              disabled="true"
               :menu-props="{ maxHeight: 300 }"
             >
               <template #selection="{ item }">
                 <v-chip color="primary" small>{{ selectedTier?.name }}</v-chip>
               </template>
             </v-autocomplete>
-          </v-col>
-
-          <v-col cols="auto" class="ml-2">
-            <!-- <v-btn
-              height="50"
-              variant="tonal"
-              color="primary"
-              prepend-icon="mdi-refresh"
-              @click="onAddTier"
-            >
-              새로고침
-            </v-btn> -->
           </v-col>
         </v-row>
 
@@ -229,6 +233,16 @@
             </v-chip>
           </template>
         </v-autocomplete>
+
+        <v-divider class="my-1"></v-divider>
+
+        <v-switch
+          v-model="edit.form.is_active"
+          label="플레이어 활성화"
+          color="success"
+          inset
+          hide-details
+        />
       </v-card-text>
 
       <!-- 하단 버튼 -->
@@ -268,6 +282,7 @@ const headers: VDataTableServer['headers'] = [
   { title: 'CLAN_TIER', key: 'clan_tier', sortable: false },
   { title: 'POINT', key: 'point', sortable: true },
   { title: 'Position', key: 'positions', sortable: false, width: 240 }, // ⬅️ 추가
+  { title: 'ACTIVE', key: 'is_active', sortable: false },
   { title: 'Created', key: 'created_at', sortable: true },
   { title: 'ACTIONS', key: 'actions', sortable: false, align: 'center', width: '1px' },
 ] as const;
@@ -287,12 +302,13 @@ const edit = ref<{
     id: number;
     name: string;
     point: number | null;
+    is_active: boolean;
   };
 }>({
   open: false,
   loading: false,
   target: null,
-  form: { id: 0, name: '', point: null },
+  form: { id: 0, name: '', point: null, is_active: false },
 });
 
 function openEdit(item: any) {
@@ -303,7 +319,6 @@ function openEdit(item: any) {
   edit.value.loading = false;
   edit.value.target = item;
 
-  debugger;
   selectedPositions.value = clone(item.positions ?? []);
   selectedTier.value = clone(item.tier ?? null);
   selectedCustomTier.value = clone(item.custom_tier ?? null);
@@ -311,6 +326,7 @@ function openEdit(item: any) {
   edit.value.form.id = item.id;
   edit.value.form.name = `${item.nickname}#${item.tagname}`;
   edit.value.form.point = item.point;
+  edit.value.form.is_active = item.is_active;
 }
 
 function normalizePositions(positions: any[] | undefined | null) {
@@ -436,12 +452,32 @@ async function handleEditSave() {
       custom_tier: selectedCustomTier.value,
       tier: selectedTier.value,
       positions: selectedPositions.value,
+      is_active: edit.value.form.is_active,
     });
 
     edit.value.open = false;
 
     // 목록 리로드
     handleSearch();
+  } catch (e) {
+    console.error(e);
+  } finally {
+    edit.value.loading = false;
+  }
+}
+
+async function refreshTier() {
+  try {
+    const [nick, tag] = edit.value.form.name.split('#');
+
+    const res = await api.post(`${getBaseUrl('DATA')}/player/refresh`, {
+      id: edit.value.form.id,
+      nickname: nick,
+      tagname: tag,
+    });
+    const clone = (v: any) => JSON.parse(JSON.stringify(v));
+    selectedTier.value = clone(res.data.datas.tier ?? null);
+    debugger;
   } catch (e) {
     console.error(e);
   } finally {

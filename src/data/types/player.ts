@@ -9,4 +9,5 @@ export interface Player {
   create_at: string;
   tier: Tier;
   positions: Position;
+  is_active: boolean;
 }
