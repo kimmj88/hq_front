@@ -415,7 +415,6 @@ function shuffleTeams() {
     return;
   }
 
-  debugger;
   // POSITION 모드면 포지션별로 50% 확률로 팀만 교체
   for (const pos of POSITIONS) {
     const idx1 = team1.value.findIndex((m) => m.position === pos);

@@ -377,7 +377,7 @@ async function loadItems(options: FetchParams) {
       }&itemsPerPage=${options.itemsPerPage}&sortBy=${sortKey}&orderBy=${sortOrder}`
     );
     loading.value = true;
-    debugger;
+
     serverItems.value = response.data.datas;
     totalItems.value = response.data.totalCount;
     loading.value = false;
@@ -443,7 +443,7 @@ async function handleEditSave() {
     edit.value.loading = true;
 
     const [nick, tag] = edit.value.form.name.split('#');
-    debugger;
+
     await api.post(`${getBaseUrl('DATA')}/player/update2`, {
       id: edit.value.form.id,
       nickname: nick,
@@ -477,7 +477,6 @@ async function refreshTier() {
     });
     const clone = (v: any) => JSON.parse(JSON.stringify(v));
     selectedTier.value = clone(res.data.datas.tier ?? null);
-    debugger;
   } catch (e) {
     console.error(e);
   } finally {

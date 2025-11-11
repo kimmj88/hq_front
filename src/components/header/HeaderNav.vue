@@ -76,8 +76,15 @@ const menuItems = computed(() => {
   items.push({
     key: 'match',
     title: 'Match',
-    icon: 'mdi-briefcase',
+    icon: 'mdi-sword-cross',
     to: '/match',
+  });
+
+  items.push({
+    key: 'cup',
+    title: 'CUP',
+    icon: 'mdi-trophy-outline',
+    to: '/cup',
   });
 
   // const solutionChildren = [];

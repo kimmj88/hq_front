@@ -38,6 +38,12 @@ import Match from '@/pages/match/index.vue';
 import MatchAdd from '@/pages/match/add.vue';
 import MatchView from '@/pages/match/view.vue';
 
+//cup
+import { CUP_PATH } from '@/router/cup/type';
+import Cup from '@/pages/cup/index.vue';
+import CupAdd from '@/pages/cup/add.vue';
+import CupView from '@/pages/cup/view.vue';
+
 //Login
 import Login from '@/pages/login/index.vue';
 
@@ -80,9 +86,21 @@ const router = createRouter({
       component: DefaultLayout,
       children: [
         { path: '/home', component: Home },
-        { path: '', component: Match }, // ✅ 이게 "/project/"를 의미함
+        { path: '', component: Match },
         { path: 'add', component: MatchAdd },
         { path: MATCH_PATH.VIEW(':id'), component: MatchView, props: true },
+      ],
+    },
+
+    {
+      path: '/cup',
+      component: DefaultLayout,
+      children: [
+        { path: '/home', component: Home },
+        { path: '', component: Cup },
+        //{ path: '', component: Tourna },
+        { path: 'add', component: CupAdd },
+        { path: CUP_PATH.VIEW(':id'), component: CupView, props: true },
       ],
     },
   ],
