@@ -23,7 +23,7 @@
 
       <v-col cols="auto">
         <v-btn
-          v-if="can('MATCH', 'SYS-SET-MATCH-C')"
+          v-if="can('CUP', 'SYS-SET-CUP-C')"
           color="secondary"
           @click="$router.push(CUP_PATH.ADD)"
         >
@@ -63,7 +63,7 @@
           </template>
         </v-tooltip> -->
 
-        <v-tooltip v-if="can('MATCH', 'SYS-SET-MATCH-D')" text="삭제">
+        <v-tooltip v-if="can('CUP', 'SYS-SET-CUP-D')" text="삭제">
           <template #activator="{ props }">
             <v-btn
               v-bind="props"

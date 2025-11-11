@@ -2,8 +2,20 @@
   <v-container class="pa-6">
     <!-- 상단 컨트롤 -->
     <div class="d-flex justify-center mb-6" style="gap: 16px">
-      <v-btn color="primary" @click="shot" :disabled="isConfirmed">SHOT</v-btn>
-      <v-btn color="success" @click="confirm" :disabled="isConfirmed">CONFIRM</v-btn>
+      <v-btn
+        v-if="can('CUP', 'SYS-SET-CUP-C')"
+        color="primary"
+        @click="shot"
+        :disabled="isConfirmed"
+        >SHOT</v-btn
+      >
+      <!-- <v-btn
+        v-if="can('CUP', 'SYS-SET-CUP-C')"
+        color="success"
+        @click="confirm"
+        :disabled="isConfirmed"
+        >CONFIRM</v-btn
+      > -->
     </div>
 
     <!-- 4팀 컬럼 -->

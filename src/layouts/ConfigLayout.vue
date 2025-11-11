@@ -3,7 +3,7 @@
     <HeaderBar />
     <v-layout>
       <v-navigation-drawer :width="251" permanent>
-        <v-list-item title="Autocrypt" subtitle="CORE" />
+        <v-list-item title="Beta" subtitle="v1.0.0" />
         <v-divider />
 
         <v-list density="comfortable" nav>

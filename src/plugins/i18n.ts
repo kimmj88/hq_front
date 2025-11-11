@@ -42,6 +42,9 @@ const messages = {
 
       'SYS-SET-PROFILE-R': '프로파일 조회',
       'SYS-SET-PROFILE-U': '프로파일 수정',
+
+      'SYS-SET-CUP-C': '컵 생성',
+      'SYS-SET-CUP-D': '컵 삭제',
     },
   },
   en: {
