@@ -40,6 +40,7 @@
       <div class="mt-6 text-right">
         <v-btn color="secondary" class="mr-2" @click="createMatch">Add</v-btn>
         <v-btn color="secondary" @click="$router.push(CUP_PATH.BASE)">CANCEL</v-btn>
+        <h1>{{ selectedUsers.length }}</h1>
       </div>
     </v-form>
 
