@@ -111,10 +111,10 @@ async function createMatch() {
     return;
   }
 
-  // if (selectedUsers.value.length != 10) {
-  //   alert('Plyaer를 10명 선택해주세요!');
-  //   return;
-  // }
+  if (selectedUsers.value.length < 5 || selectedUsers.value.length % 5 != 0) {
+    alert('Plyaer를 5명 이상 및 5의 배수로 추가하세요');
+    return;
+  }
 
   try {
     const response = await api.post(`${getBaseUrl('DATA')}/cup/create`, {

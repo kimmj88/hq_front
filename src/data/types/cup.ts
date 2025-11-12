@@ -4,10 +4,17 @@ export interface Cup {
   id: number;
   name: string;
   type: string;
+  cup_teams: CupTeam[];
   cup_members: CupMember[];
   is_confirm: boolean;
   create_at: string;
   updated_at: string;
+}
+
+export interface CupTeam {
+  key: string;
+  name: string;
+  cup_members: CupMember[];
 }
 
 export interface CupMember {
