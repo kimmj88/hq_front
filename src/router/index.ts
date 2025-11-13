@@ -47,6 +47,9 @@ import CupView from '@/pages/cup/view.vue';
 //Login
 import Login from '@/pages/login/index.vue';
 
+//Undermaintenance
+import Undermaintenance from '@/pages/undermaintenance/undermaintenance.vue';
+
 import Cookies from 'js-cookie';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useAccountStore } from '@/stores/useAccountStore';
@@ -60,6 +63,7 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/', redirect: '/home' },
+    { path: '/undermaintenance', component: Undermaintenance },
     {
       path: '/login',
       component: Login,
@@ -158,6 +162,7 @@ async function ensureSession(): Promise<boolean> {
       await hydrateUser(accessToken);
       return true;
     } catch (err: any) {
+      console.log(401);
       // 401 등 실패 시 리프레시 시도
     }
   }
@@ -176,6 +181,10 @@ async function ensureSession(): Promise<boolean> {
 }
 
 router.beforeEach(async (to, from, next) => {
+  if (to.path === '/UnderMaintenance') {
+    return next();
+  }
+
   // 로그인 페이지 접근 허용(이미 로그인 상태면 홈으로)
   if (to.path === '/login') {
     const hasRefresh = !!Cookies.get('refreshToken');
