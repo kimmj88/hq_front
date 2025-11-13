@@ -48,7 +48,7 @@ import CupView from '@/pages/cup/view.vue';
 import Login from '@/pages/login/index.vue';
 
 //Undermaintenance
-import Undermaintenance from '@/pages/undermaintenance/UnderMaintenance.vue';
+import Undermaintenance from '@/pages/undermaintenance/undermaintenance.vue';
 
 //pending
 import PendingApproval from '@/pages/login/PendingApproval.vue';

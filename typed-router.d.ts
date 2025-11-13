@@ -35,6 +35,6 @@ declare module 'vue-router/auto-routes' {
     '/match/': RouteRecordInfo<'/match/', '/match', Record<never, never>, Record<never, never>>,
     '/match/add': RouteRecordInfo<'/match/add', '/match/add', Record<never, never>, Record<never, never>>,
     '/match/view': RouteRecordInfo<'/match/view', '/match/view', Record<never, never>, Record<never, never>>,
-    '/undermaintenance/UnderMaintenance': RouteRecordInfo<'/undermaintenance/UnderMaintenance', '/undermaintenance/UnderMaintenance', Record<never, never>, Record<never, never>>,
+    '/undermaintenance/undermaintenance': RouteRecordInfo<'/undermaintenance/undermaintenance', '/undermaintenance/undermaintenance', Record<never, never>, Record<never, never>>,
   }
 }
