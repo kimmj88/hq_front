@@ -1,3 +1,4 @@
+import type { Player } from './player';
 import type { SystemRole } from './systemrole';
 
 export interface Account {
@@ -9,4 +10,6 @@ export interface Account {
   updated_at: string;
   avatar: string;
   systemrole: SystemRole;
+  is_confirm: boolean;
+  player: Player;
 }

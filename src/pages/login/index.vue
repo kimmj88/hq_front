@@ -107,9 +107,12 @@ async function login() {
     );
 
     if (response.data.result) {
-      Cookies.remove('accessToken');
-      Cookies.remove('idToken');
-      router.push(response.data.redirectUrl);
+      if (response.data.result.is_confirm) {
+        location.href = response.data.redirectUrl;
+        //router.push(response.data.redirectUrl);
+      } else {
+        router.push('/pendingapproval');
+      }
     } else {
       snackbar.value.message = 'Invalid username or password.';
       snackbar.value.visible = true;

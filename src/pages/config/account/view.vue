@@ -82,6 +82,13 @@
           label="Select Role"
           return-object
         />
+        <v-switch
+          v-model="accountIsConfirm"
+          label="플레이어 승인"
+          color="success"
+          inset
+          hide-details
+        />
       </v-card-text>
       <v-card-actions class="justify-end">
         <v-btn text @click="dialog = false">{{ $t('form_control.button.cancel') }}</v-btn>
@@ -104,6 +111,7 @@ const props = defineProps<{ id: string }>();
 
 const selectedSystemRole = ref<SystemRole | null>(null);
 const systemRoleList = ref<SystemRole[]>([]);
+const accountIsConfirm = ref<boolean>(false);
 
 function getInitials(name: string) {
   return name
@@ -129,6 +137,7 @@ const account = ref<{
     email: string;
     department: string;
     systemrole: SystemRole;
+    is_confirm: boolean;
   };
 }>({
   datas: {
@@ -136,6 +145,7 @@ const account = ref<{
     email: '',
     department: '',
     systemrole: {},
+    is_confirm: false,
   },
 });
 
@@ -144,6 +154,7 @@ async function fetchAccount() {
     const response = await api.get(`${getBaseUrl('DATA')}/account/find?id=${props.id}`);
     account.value = response.data;
     selectedSystemRole.value = account.value.datas.systemrole;
+    accountIsConfirm.value = account.value.datas.is_confirm;
 
     const res = await api.get(`${getBaseUrl('DATA')}/systemrole/all`);
     systemRoleList.value = res.data.datas;

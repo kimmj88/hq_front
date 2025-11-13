@@ -48,7 +48,10 @@ import CupView from '@/pages/cup/view.vue';
 import Login from '@/pages/login/index.vue';
 
 //Undermaintenance
-import Undermaintenance from '@/pages/undermaintenance/undermaintenance.vue';
+import Undermaintenance from '@/pages/undermaintenance/UnderMaintenance.vue';
+
+//pending
+import PendingApproval from '@/pages/login/PendingApproval.vue';
 
 import Cookies from 'js-cookie';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -64,6 +67,7 @@ const router = createRouter({
   routes: [
     { path: '/', redirect: '/home' },
     { path: '/undermaintenance', component: Undermaintenance },
+    { path: '/pendingapproval', component: PendingApproval },
     {
       path: '/login',
       component: Login,
@@ -185,6 +189,12 @@ router.beforeEach(async (to, from, next) => {
     return next();
   }
 
+  if (to.path === '/pendingapproval') {
+    let accessToken = Cookies.get('accessToken') ?? '';
+    await hydrateUser(accessToken);
+    return next();
+  }
+
   // 로그인 페이지 접근 허용(이미 로그인 상태면 홈으로)
   if (to.path === '/login') {
     const hasRefresh = !!Cookies.get('refreshToken');
@@ -192,12 +202,12 @@ router.beforeEach(async (to, from, next) => {
     return next();
   }
 
+  const auth = useAuthStore();
+  const account = useAccountStore();
+  const permission = usePermissionStore();
   const ok = await ensureSession();
+
   if (!ok) {
-    // 정리 후 로그인으로
-    const auth = useAuthStore();
-    const account = useAccountStore();
-    const permission = usePermissionStore();
     auth.clear(); // 토큰/상태 초기화 메서드가 있다면 사용
     account.clear?.();
     permission.clear?.();
@@ -206,7 +216,10 @@ router.beforeEach(async (to, from, next) => {
     return next('/login');
   }
 
-  return next();
+  if (account.is_confirm) return next();
+  else {
+    next('/pendingapproval');
+  }
 });
 
 // Workaround for https://github.com/vitejs/vite/issues/11804
