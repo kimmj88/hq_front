@@ -29,6 +29,7 @@ declare module 'vue-router/auto-routes' {
     '/cup/': RouteRecordInfo<'/cup/', '/cup', Record<never, never>, Record<never, never>>,
     '/cup/add': RouteRecordInfo<'/cup/add', '/cup/add', Record<never, never>, Record<never, never>>,
     '/cup/view': RouteRecordInfo<'/cup/view', '/cup/view', Record<never, never>, Record<never, never>>,
+    '/exception/Exception': RouteRecordInfo<'/exception/Exception', '/exception/Exception', Record<never, never>, Record<never, never>>,
     '/Home': RouteRecordInfo<'/Home', '/Home', Record<never, never>, Record<never, never>>,
     '/login/': RouteRecordInfo<'/login/', '/login', Record<never, never>, Record<never, never>>,
     '/login/KakaoLolRegister': RouteRecordInfo<'/login/KakaoLolRegister', '/login/KakaoLolRegister', Record<never, never>, Record<never, never>>,
@@ -36,6 +37,5 @@ declare module 'vue-router/auto-routes' {
     '/match/': RouteRecordInfo<'/match/', '/match', Record<never, never>, Record<never, never>>,
     '/match/add': RouteRecordInfo<'/match/add', '/match/add', Record<never, never>, Record<never, never>>,
     '/match/view': RouteRecordInfo<'/match/view', '/match/view', Record<never, never>, Record<never, never>>,
-    '/undermaintenance/UnderMaintenance': RouteRecordInfo<'/undermaintenance/UnderMaintenance', '/undermaintenance/UnderMaintenance', Record<never, never>, Record<never, never>>,
   }
 }

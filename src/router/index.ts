@@ -47,8 +47,8 @@ import CupView from '@/pages/cup/view.vue';
 //Login
 import Login from '@/pages/login/index.vue';
 
-//Undermaintenance
-import Undermaintenance from '@/pages/undermaintenance/UnderMaintenance.vue';
+//Exception
+import Exception from '@/pages/exception/Exception.vue';
 
 //pending
 import PendingApproval from '@/pages/login/PendingApproval.vue';
@@ -69,7 +69,7 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/', redirect: '/home' },
-    { path: '/undermaintenance', component: Undermaintenance },
+    { path: '/exception', component: Exception },
     { path: '/pendingapproval', component: PendingApproval },
     { path: '/register', component: KakaoLolRegister },
     {
@@ -189,7 +189,7 @@ async function ensureSession(): Promise<boolean> {
 }
 
 router.beforeEach(async (to, from, next) => {
-  if (to.path === '/UnderMaintenance') {
+  if (to.path === '/exception') {
     return next();
   }
 

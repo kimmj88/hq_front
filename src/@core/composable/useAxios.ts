@@ -27,7 +27,7 @@ instance.interceptors.response.use(
     const status = error.response?.status;
 
     if (!error.response) {
-      location.href = `${location.origin}/UnderMaintenance`;
+      location.href = `${location.origin}/exception`;
     } else if (status === 401) {
       location.href = `${location.origin}/Unauthorized`;
     } else if (status === 409) {
