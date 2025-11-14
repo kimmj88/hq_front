@@ -31,10 +31,11 @@ declare module 'vue-router/auto-routes' {
     '/cup/view': RouteRecordInfo<'/cup/view', '/cup/view', Record<never, never>, Record<never, never>>,
     '/Home': RouteRecordInfo<'/Home', '/Home', Record<never, never>, Record<never, never>>,
     '/login/': RouteRecordInfo<'/login/', '/login', Record<never, never>, Record<never, never>>,
+    '/login/KakaoLolRegister': RouteRecordInfo<'/login/KakaoLolRegister', '/login/KakaoLolRegister', Record<never, never>, Record<never, never>>,
     '/login/PendingApproval': RouteRecordInfo<'/login/PendingApproval', '/login/PendingApproval', Record<never, never>, Record<never, never>>,
     '/match/': RouteRecordInfo<'/match/', '/match', Record<never, never>, Record<never, never>>,
     '/match/add': RouteRecordInfo<'/match/add', '/match/add', Record<never, never>, Record<never, never>>,
     '/match/view': RouteRecordInfo<'/match/view', '/match/view', Record<never, never>, Record<never, never>>,
-    '/undermaintenance/undermaintenance': RouteRecordInfo<'/undermaintenance/undermaintenance', '/undermaintenance/undermaintenance', Record<never, never>, Record<never, never>>,
+    '/undermaintenance/UnderMaintenance': RouteRecordInfo<'/undermaintenance/UnderMaintenance', '/undermaintenance/UnderMaintenance', Record<never, never>, Record<never, never>>,
   }
 }

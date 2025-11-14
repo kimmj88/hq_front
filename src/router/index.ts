@@ -48,10 +48,13 @@ import CupView from '@/pages/cup/view.vue';
 import Login from '@/pages/login/index.vue';
 
 //Undermaintenance
-import Undermaintenance from '@/pages/undermaintenance/undermaintenance.vue';
+import Undermaintenance from '@/pages/undermaintenance/UnderMaintenance.vue';
 
 //pending
 import PendingApproval from '@/pages/login/PendingApproval.vue';
+
+//register
+import KakaoLolRegister from '@/pages/login/KakaoLolRegister.vue';
 
 import Cookies from 'js-cookie';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -68,6 +71,7 @@ const router = createRouter({
     { path: '/', redirect: '/home' },
     { path: '/undermaintenance', component: Undermaintenance },
     { path: '/pendingapproval', component: PendingApproval },
+    { path: '/register', component: KakaoLolRegister },
     {
       path: '/login',
       component: Login,
@@ -186,6 +190,12 @@ async function ensureSession(): Promise<boolean> {
 
 router.beforeEach(async (to, from, next) => {
   if (to.path === '/UnderMaintenance') {
+    return next();
+  }
+
+  if (to.path === '/register') {
+    let accessToken = Cookies.get('accessToken') ?? '';
+    await hydrateUser(accessToken);
     return next();
   }
 

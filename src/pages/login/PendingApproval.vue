@@ -149,7 +149,6 @@ import { useRouter } from 'vue-router';
 
 const router = useRouter();
 import { useAccountStore } from '@/stores/useAccountStore';
-debugger;
 const account = useAccountStore();
 
 const props = withDefaults(
