@@ -169,24 +169,30 @@
                 }}
               </v-btn>
             </td>
-            <td>{{ team1[i - 1].player.point }}</td>
-            <td>{{ team1[i - 1].player.tier.point }}</td>
+            <td>{{ team1[i - 1]?.player.point }}</td>
+            <td>{{ team1[i - 1]?.player.tier.point }}</td>
             <td>
               <span
-                :style="{ color: getTierColor(team1[i - 1].player.tier.name), fontWeight: 'bold' }"
+                :style="{
+                  color: getTierColor(team1[i - 1]?.player?.tier.name),
+                  fontWeight: 'bold',
+                }"
               >
                 {{ team1[i - 1].player.tier.name }}
               </span>
             </td>
             <td>
               <span
-                :style="{ color: getTierColor(team2[i - 1].player.tier.name), fontWeight: 'bold' }"
+                :style="{
+                  color: getTierColor(team2[i - 1]?.player?.tier.name),
+                  fontWeight: 'bold',
+                }"
               >
-                {{ team2[i - 1].player.tier.name }}
+                {{ team2[i - 1]?.player.tier.name }}
               </span>
             </td>
-            <td>{{ team2[i - 1].player.tier.point }}</td>
-            <td>{{ team2[i - 1].player.point }}</td>
+            <td>{{ team2[i - 1]?.player?.tier.point }}</td>
+            <td>{{ team2[i - 1]?.player?.point }}</td>
             <td>
               <v-btn
                 color="indigo"
@@ -198,7 +204,7 @@
               >
                 {{
                   team2[i - 1]?.player?.nickname
-                    ? `${team2[i - 1].player.nickname}#${team2[i - 1].player.tagname}`
+                    ? `${team2[i - 1].player?.nickname}#${team2[i - 1].player.tagname}`
                     : match?.type === 'POSITION'
                     ? '유저 선택'
                     : '—'
@@ -460,16 +466,16 @@ async function fetch() {
     allPositionMembers.value = data.datas.match_members;
 
     if (match.value.is_confirm) {
-      for (let i = 0; i < 5; i++) team1.value[i] = data.datas.match_members[i];
-      for (let i = 0; i < 5; i++) team2.value[i] = data.datas.match_members[i + 5];
+      for (let i = 0; i < 5; i++) team1.value[i] = data.datas.match_members[i] ?? null;
+      for (let i = 0; i < 5; i++) team2.value[i] = data.datas.match_members[i + 5] ?? null;
     } else {
       // 팀 슬롯을 포지션 순서대로 비워서 생성
       team1.value = POSITIONS.map((p) => emptyMemberWithPos(p));
       team2.value = POSITIONS.map((p) => emptyMemberWithPos(p));
     }
   } else {
-    for (let i = 0; i < 5; i++) team1.value[i] = data.datas.match_members[i];
-    for (let i = 0; i < 5; i++) team2.value[i] = data.datas.match_members[i + 5];
+    for (let i = 0; i < 5; i++) team1.value[i] = data.datas.match_members[i] ?? null;
+    for (let i = 0; i < 5; i++) team2.value[i] = data.datas.match_members[i + 5] ?? null;
   }
 
   updateTotals();

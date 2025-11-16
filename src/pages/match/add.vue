@@ -111,11 +111,6 @@ async function createMatch() {
     return;
   }
 
-  if (selectedUsers.value.length != 10) {
-    alert('Plyaer를 10명 선택해주세요!');
-    return;
-  }
-
   try {
     const response = await api.post(`${getBaseUrl('DATA')}/match/create`, {
       name: match_name.value,
