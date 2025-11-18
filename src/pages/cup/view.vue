@@ -1,703 +1,477 @@
 <template>
-  <!-- ✅ 페이지 전역 팬/줌 래퍼 -->
-  <div
-    class="page-wrap"
-    ref="pageWrap"
-    @mousedown="onPanStart"
-    @mousemove="onPanMove"
-    @mouseup="onPanEnd"
-    @mouseleave="onPanEnd"
-    @wheel.passive="onWheelZoom"
-    @dblclick="resetZoom"
-  >
-    <!-- ✅ 실제 콘텐츠: 여기에 scale(zoom) 적용 -->
-    <div
-      class="page-inner"
-      ref="pageInner"
-      :style="{ transform: `scale(${zoom})`, transformOrigin: 'top left' }"
-    >
-      <v-container class="pa-6">
-        <!-- 상단 컨트롤 -->
-        <div class="d-flex justify-center mb-6" style="gap: 16px">
+  <v-container class="py-8">
+    <!-- 🔹 포지션 버튼들 -->
+    <v-row class="mb-6 justify-center flex-wrap position-btn-row">
+      <v-col v-for="pos in positions" :key="pos" cols="auto" class="d-flex justify-center">
+        <CupMemberDialog :activator-label="pos" activator-color="primary" @added="onAdded" />
+      </v-col>
+    </v-row>
+
+    <!-- 🔹 정보 + 컨트롤 바 -->
+    <v-row class="mb-4">
+      <v-col cols="12">
+        <v-alert type="info" variant="tonal" density="comfortable" class="mb-4">
+          전체 플레이어: {{ cup?.team_count * 5 }}명 / 포지션당 최대: {{ cup?.team_count }}명
+          <br />
+          현재 선택:
+          <span v-for="pos in positions" :key="pos" class="mr-3">
+            <strong>{{ pos }}</strong> : {{ selectedByPosition[pos]?.length || 0 }}명
+          </span>
+        </v-alert>
+
+        <!-- 컨트롤 버튼 -->
+        <div class="d-flex justify-center" style="gap: 12px">
           <v-btn
-            v-if="can('CUP', 'SYS-SET-CUP-C')"
-            color="primary"
-            @click="shot"
-            :disabled="isConfirmed"
-            >SHOT</v-btn
+            color="deep-purple-accent-4"
+            variant="flat"
+            rounded="pill"
+            :disabled="cup?.is_confirm"
+            @click="onShot"
           >
+            SHOT
+          </v-btn>
+
           <v-btn
-            v-if="can('CUP', 'SYS-SET-CUP-C')"
+            color="secondary"
+            variant="tonal"
+            rounded="pill"
+            @click="onTempSave"
+            :disabled="cup?.is_confirm"
+          >
+            중간 저장
+          </v-btn>
+
+          <v-btn
             color="success"
-            @click="confirm"
-            :disabled="isConfirmed"
-            >CONFIRM</v-btn
+            variant="flat"
+            rounded="pill"
+            :disabled="cup?.is_confirm"
+            @click="onConfirm"
           >
+            확정
+          </v-btn>
         </div>
+      </v-col>
+    </v-row>
 
-        <!-- 4팀 컬럼 -->
-        <v-row dense>
-          <v-col
-            v-for="team in teams"
-            :key="team.key"
-            cols="12"
-            sm="6"
-            md="3"
-            class="d-flex flex-column"
-          >
-            <!-- 팀 헤더 -->
-            <v-card class="mb-3 team-header" rounded="xl">
-              <v-card-text class="py-3">
-                <div class="text-subtitle-1 font-weight-medium mb-1">팀명 : {{ team.name }}</div>
-                <div class="text-body-2">
-                  총점 : <strong>{{ teamTotal(team).toLocaleString() }}</strong>
-                </div>
-              </v-card-text>
-            </v-card>
+    <!-- 🔹 포지션별 선택 리스트 -->
+    <v-row class="mb-8">
+      <v-col v-for="pos in positions" :key="pos" cols="12" md="2">
+        <div class="d-flex align-center justify-space-between mb-1">
+          <span class="text-subtitle-2">{{ pos }}</span>
 
-            <!-- 팀 멤버 슬롯 -->
-            <v-card class="team-body" rounded="xl">
-              <v-card-text class="py-3">
-                <div v-for="(member, idx) in team.cup_members" :key="idx" class="mb-2">
-                  <v-card
-                    rounded="xl"
-                    class="px-3 py-2 d-flex align-center justify-space-between member-card"
-                  >
-                    <div class="d-flex flex-column">
-                      <span class="text-body-2 font-weight-medium">
-                        {{ member.player.nickname }}#{{ member.player.tagname }}
-                      </span>
-                      <span class="text-caption text-medium-emphasis">
-                        Tier: {{ member.player.tier.name }}
-                      </span>
-                      <span class="text-caption text-medium-emphasis">
-                        Point: {{ member.player.tier.point }}
-                      </span>
-                    </div>
-                  </v-card>
-                </div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
+          <div class="d-flex align-center" style="gap: 6px">
+            <span class="text-caption text-medium-emphasis">
+              {{ selectedByPosition[pos]?.length || 0 }}명
+            </span>
 
-        <!-- 스낵바 -->
-        <v-snackbar v-model="snackbar.show" :timeout="2000">
-          {{ snackbar.msg }}
-        </v-snackbar>
-      </v-container>
-
-      <section class="bracket-section">
-        <div class="text-center mb-4">
-          <div class="text-h6">Single Elimination</div>
-        </div>
-
-        <!-- 기존 브래킷 래퍼는 스크롤만 담당 -->
-        <div class="bracket-wrap" ref="bracketWrap">
-          <div class="bracket" ref="bracketRail">
-            <div v-for="(round, rIdx) in rounds" :key="rIdx" class="round">
-              <div class="round-title sticky">
-                {{ rIdx === rounds.length - 1 ? 'FINAL' : `ROUND ${rIdx + 1}` }}
-              </div>
-
-              <div v-for="(m, mIdx) in round" :key="mIdx" class="match">
-                <!-- 부전승 칩: R1에서만, 한쪽이 null -->
-                <div v-if="isBye(m, rIdx)" class="bye-chip">부전승</div>
-
-                <!-- A 쪽 -->
-                <v-card
-                  class="seed"
-                  :class="[{ winner: m.winner === m.a }, { bye: isByeSide('a', m, rIdx) }]"
-                  variant="flat"
-                  density="compact"
-                  @click="canPick('a', m, rIdx) && pickWinner(rIdx, mIdx, 'a')"
-                >
-                  <v-card-text class="py-1 px-3">
-                    {{ displayLabel('a', m, rIdx) }}
-                  </v-card-text>
-                </v-card>
-
-                <!-- B 쪽 -->
-                <v-card
-                  class="seed"
-                  :class="[{ winner: m.winner === m.b }, { bye: isByeSide('b', m, rIdx) }]"
-                  variant="flat"
-                  density="compact"
-                  @click="canPick('b', m, rIdx) && pickWinner(rIdx, mIdx, 'b')"
-                >
-                  <v-card-text class="py-1 px-3">
-                    {{ displayLabel('b', m, rIdx) }}
-                  </v-card-text>
-                </v-card>
-
-                <div v-if="rIdx < rounds.length - 1" class="connector"></div>
-              </div>
-            </div>
+            <v-btn
+              v-if="selectedByPosition[pos]?.length"
+              variant="text"
+              size="x-small"
+              @click="clearPosition(pos)"
+            >
+              초기화
+            </v-btn>
           </div>
         </div>
-      </section>
-    </div>
-    <!-- /page-inner -->
-  </div>
-  <!-- /page-wrap -->
+
+        <v-sheet class="pa-2 rounded-lg position-slot">
+          <div v-if="!selectedByPosition[pos]?.length" class="text-caption text-disabled">
+            아직 선택된 플레이어가 없습니다.
+          </div>
+
+          <div
+            v-for="p in selectedByPosition[pos] || []"
+            :key="p.id"
+            class="player-card d-flex align-center justify-space-between mb-2"
+          >
+            <div class="d-flex flex-column">
+              <span class="text-body-2 font-weight-medium"> {{ p.nickname }}#{{ p.tagname }} </span>
+              <span class="text-caption text-medium-emphasis">
+                {{ p.tier?.name }} · {{ p.point }}pt
+              </span>
+            </div>
+
+            <div class="d-flex flex-column align-end">
+              <v-btn icon size="x-small" variant="text" @click.stop="removePlayer(pos, p.id)">
+                <v-icon size="16">mdi-close</v-icon>
+              </v-btn>
+              <v-icon size="18" class="drag-handle mt-1">mdi-drag-vertical</v-icon>
+            </div>
+          </div>
+        </v-sheet>
+      </v-col>
+    </v-row>
+
+    <!-- 🔹 팀 프레임 (SHOT 이후 표시) -->
+    <v-row v-if="teams.length" class="team-grid mb-8">
+      <v-col v-for="team in teams" :key="team.id" cols="12" md="3" sm="6">
+        <v-card class="team-card" rounded="xl">
+          <v-card-title class="d-flex justify-space-between align-center py-3">
+            <div class="d-flex flex-column">
+              <span class="text-subtitle-1 font-weight-medium">
+                {{ team.label }}
+              </span>
+              <span class="text-caption text-medium-emphasis">
+                {{ team.slots.filter((s) => s.player).length }} / {{ positions.length }}명 배정
+              </span>
+            </div>
+            <v-chip size="small" color="amber-accent-3" text-color="black" variant="flat">
+              {{ team.totalPoint }} pt
+            </v-chip>
+          </v-card-title>
+
+          <v-divider />
+
+          <v-card-text class="py-3">
+            <div
+              v-for="slot in team.slots"
+              :key="slot.position"
+              class="team-slot-row d-flex align-center justify-space-between mb-2"
+            >
+              <v-chip
+                size="x-small"
+                color="indigo-darken-3"
+                text-color="white"
+                variant="flat"
+                label
+                class="mr-2"
+                style="width: 52px; justify-content: center"
+              >
+                {{ slot.position }}
+              </v-chip>
+
+              <div v-if="slot.player" class="flex-grow-1 ml-2">
+                <div class="d-flex justify-space-between align-center">
+                  <span class="text-body-2 font-weight-medium">
+                    {{ slot.player.nickname }}#{{ slot.player.tagname }}
+                  </span>
+                </div>
+                <div class="text-caption text-medium-emphasis">
+                  {{ slot.player.tier?.name }} · {{ slot.player.point }}pt
+                </div>
+              </div>
+
+              <span v-else class="text-caption text-disabled flex-grow-1 ml-2"> 미배정 </span>
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+  </v-container>
+
+  <!-- 스낵바 -->
+  <v-snackbar v-model="snackbar.show" :timeout="2000">
+    {{ snackbar.msg }}
+  </v-snackbar>
 </template>
 
-<script lang="ts" setup>
-import { can } from '@/stores/usePermissionStore';
+<script setup lang="ts">
+import { ref, reactive, computed, onMounted } from 'vue';
+import CupMemberDialog from '@/components/dialogs/CupMemberDialog.vue';
+import type { Player } from '@/data/types/player';
 import { getBaseUrl } from '@/@core/composable/createUrl';
-import { nextTick, onMounted, ref, watch } from 'vue';
 import api from '@/@core/composable/useAxios';
 import { useRoute } from 'vue-router';
-import type { Cup, CupMember, CupTeam } from '@/data/types/cup';
+import type { Cup, PositionPlayerList } from '@/data/types/cup';
+
 const route = useRoute();
 
-const TEAM_SIZE = ref<number>(0);
-const TEAM_LABELS = ref<string[]>([]);
+const positions: string[] = ['TOP', 'JUG', 'MID', 'ADC', 'SUP'];
 const cup = ref<Cup | null>(null);
-const teams = ref<CupTeam[]>([]);
-const isConfirmed = ref(false);
-const snackbar = ref({ show: false, msg: '' });
+const allPlayers = ref<Player[]>();
 
-const teamTotal = (team: CupTeam) =>
-  team.cup_members.reduce((sum, m) => sum + (m.player?.tier.point ?? 0), 0);
+// 포지션별 선택된 플레이어
+const selectedByPosition = reactive<Record<string, Player[]>>({});
 
-watch(
-  teams,
-  (val) => {
-    if (val.length) buildBracketFromTeams(val.map((t) => t.name));
-  },
-  { deep: true }
-);
-
-/* ---------- 전역 팬/줌 래퍼 ---------- */
-const pageWrap = ref<HTMLDivElement | null>(null); // 스크롤 주체
-const pageInner = ref<HTMLDivElement | null>(null); // transform(scale) 적용
-
-/* 기존 브래킷 레퍼런스는 레이아웃 계산용 */
-const bracketWrap = ref<HTMLDivElement | null>(null);
-const bracketRail = ref<HTMLDivElement | null>(null);
-
-/* 브래킷 높이/가운데 정렬 */
-async function fitBracketHeight() {
-  await nextTick();
-  const rail = bracketRail.value;
-  if (!rail) return;
-  const cols = Array.from(rail.querySelectorAll<HTMLElement>('.round'));
-  const tallest = cols.reduce((m, el) => Math.max(m, el.offsetHeight), 0);
-  rail.style.minHeight = `${tallest}px`;
+// 팀 프레임 타입 & 상태
+interface TeamSlot {
+  position: string;
+  player: Player | null;
 }
 
-async function centerBracket() {
-  await nextTick();
-  const wrap = pageWrap.value;
-  const inner = pageInner.value;
-  const rail = bracketRail.value;
-  if (!wrap || !inner || !rail) return;
-
-  // 현재 줌 반영하여 브래킷 중앙이 화면 중앙에 오도록 가로 스크롤 조정
-  const zoomedWidth = inner.scrollWidth * zoom.value;
-  const target = Math.max(0, (zoomedWidth - wrap.clientWidth) / 2 / Math.max(zoom.value, 0.01));
-  wrap.scrollLeft = target;
+interface TeamFrame {
+  id: number;
+  label: string;
+  slots: TeamSlot[];
+  totalPoint: number;
 }
 
-/* ---------- Pan(중클릭) ---------- */
-const isPanning = ref(false);
-const panState = { x: 0, y: 0, sl: 0, st: 0 };
+const teams = ref<TeamFrame[]>([]);
 
-function onPanStart(e: MouseEvent) {
-  if (e.button !== 1) return; // 가운데 버튼만
-  const wrap = pageWrap.value;
-  if (!wrap) return;
-  isPanning.value = true;
-  panState.x = e.clientX;
-  panState.y = e.clientY;
-  panState.sl = wrap.scrollLeft;
-  panState.st = wrap.scrollTop;
-  wrap.classList.add('is-panning');
-  e.preventDefault();
-}
-function onPanMove(e: MouseEvent) {
-  if (!isPanning.value) return;
-  const wrap = pageWrap.value;
-  if (!wrap) return;
-  wrap.scrollLeft = panState.sl - (e.clientX - panState.x);
-  wrap.scrollTop = panState.st - (e.clientY - panState.y);
-}
-function onPanEnd() {
-  if (!isPanning.value) return;
-  const wrap = pageWrap.value;
-  if (wrap) wrap.classList.remove('is-panning');
-  isPanning.value = false;
+const snackbar = reactive({ show: false, msg: '' });
+
+/* 유틸: 점수 계산 */
+function getPlayerPoint(p: Player): number {
+  // tier.point가 있으면 그걸 우선 사용하고, 없으면 player.point 사용
+  return (p.tier?.point ?? p.point) || 0;
 }
 
-/* ---------- Zoom(Ctrl/⌘+휠) ---------- */
-const zoom = ref(1);
-const Z_MIN = 0.6,
-  Z_MAX = 2.0,
-  Z_STEP = 0.1;
+/* 선택 콜백 */
+async function onAdded(payload: { users: Player[]; label: string }) {
+  const pos = payload.label;
+  const prev = selectedByPosition[pos] ?? [];
 
-function onWheelZoom(e: WheelEvent) {
-  if (!(e.ctrlKey || e.metaKey)) return; // 일반 휠 스크롤은 그대로
-  e.preventDefault();
+  const teamCount = cup.value?.team_count ?? 0;
+  const newList = [...prev, ...payload.users];
 
-  const wrap = pageWrap.value;
-  const inner = pageInner.value;
-  if (!wrap || !inner) return;
+  const merged = newList.filter(
+    (item, index, self) => index === self.findIndex((x) => x.id === item.id)
+  );
 
-  const oldZ = zoom.value;
-  const dir = e.deltaY > 0 ? -1 : 1;
-  const nextZ = Math.min(Z_MAX, Math.max(Z_MIN, +(oldZ + dir * Z_STEP).toFixed(2)));
-  if (nextZ === oldZ) return;
+  // 전체 포지션 기준 플레이어 중복 검사 (닉네임 기준)
+  const existingNames = new Set(
+    Object.values(selectedByPosition)
+      .flat()
+      .map((u) => u.nickname)
+  );
+  const exists = payload.users.some((u) => existingNames.has(u.nickname));
 
-  // 포인터 기준 줌 고정
-  const r1 = inner.getBoundingClientRect();
-  const ox = (e.clientX - r1.left) / oldZ;
-  const oy = (e.clientY - r1.top) / oldZ;
+  if (exists) {
+    snackbar.msg = 'Player가 중복되었습니다.';
+    snackbar.show = true;
+    return;
+  }
 
-  zoom.value = nextZ;
+  // 포지션 인원 제한 검사
+  if (merged.length > teamCount) {
+    snackbar.msg = `${pos} 포지션은 최대 ${teamCount}명만 선택할 수 있습니다.`;
+    snackbar.show = true;
+    return;
+  }
 
-  nextTick().then(() => {
-    const r2 = inner.getBoundingClientRect();
-    const nx = ox * nextZ - (e.clientX - r2.left);
-    const ny = oy * nextZ - (e.clientY - r2.top);
-    wrap.scrollLeft += nx;
-    wrap.scrollTop += ny;
-  });
+  selectedByPosition[pos] = merged;
 }
 
-function resetZoom() {
-  zoom.value = 1;
-  centerBracket();
+/* 삭제 관련 */
+function removePlayer(position: string, userId: number) {
+  const list = selectedByPosition[position] ?? [];
+  selectedByPosition[position] = list.filter((u) => u.id !== userId);
+}
+function clearPosition(position: string) {
+  selectedByPosition[position] = [];
 }
 
-/* ---------- 데이터 로드 ---------- */
+/* 버튼 활성 조건 */
+const totalNeedPerPosition = computed(() => cup.value?.team_count ?? 0);
+
+const canShot = computed(() => {
+  const need = totalNeedPerPosition.value;
+  if (!need) return false;
+  return positions.every((pos) => (selectedByPosition[pos]?.length || 0) === need);
+});
+
+/* 🔥 SHOT: 포지션별로만 섞으면서 전체 팀 점수 밸런싱 */
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function onShot() {
+  const teamCount = cup.value?.team_count ?? 0;
+  if (!teamCount) {
+    snackbar.msg = '팀 개수가 설정되지 않았습니다.';
+    snackbar.show = true;
+    return;
+  }
+
+  // 🔒 포지션별 인원 수가 팀 개수와 정확히 같은지 검사
+  const invalidPos = positions.find((pos) => (selectedByPosition[pos]?.length || 0) !== teamCount);
+  if (invalidPos) {
+    snackbar.msg = `${invalidPos} 포지션 인원 수가 팀 개수와 맞지 않습니다.`;
+    snackbar.show = true;
+    return;
+  }
+
+  // 1️⃣ 포지션별로 미리 섞어둔 배열 준비
+  const shuffledByPos: Record<string, Player[]> = {};
+  for (const pos of positions) {
+    shuffledByPos[pos] = shuffle(selectedByPosition[pos] ?? []);
+  }
+
+  // 2️⃣ 팀 프레임 생성 + 포지션별로 섞인 배열에서 i번째를 가져와 팀에 배정
+  const frames: TeamFrame[] = [];
+
+  for (let i = 0; i < teamCount; i++) {
+    const slots: TeamSlot[] = positions.map((pos) => ({
+      position: pos,
+      player: shuffledByPos[pos][i] ?? null,
+    }));
+
+    const totalPoint = slots.reduce((sum, slot) => {
+      return slot.player ? sum + getPlayerPoint(slot.player) : sum;
+    }, 0);
+
+    frames.push({
+      id: i + 1,
+      label: `TEAM ${String.fromCharCode(65 + i)}`, // TEAM A, B, C...
+      slots,
+      totalPoint,
+    });
+  }
+
+  teams.value = frames;
+
+  snackbar.msg = '포지션별로 플레이어를 섞어서 팀을 재배치했습니다. (SHOT)';
+  snackbar.show = true;
+}
+
+/* 임시 저장 */
+async function onTempSave() {
+  try {
+    const positionPlayers: PositionPlayerList[] = [];
+
+    debugger;
+    for (const pos of positions) {
+      positionPlayers.push({ key: pos, players: selectedByPosition[pos] ?? [] });
+    }
+
+    await api.post(`${getBaseUrl('DATA')}/cup/update`, {
+      id: +route.params.id,
+      position_players: positionPlayers,
+    });
+
+    snackbar.msg = '현재 포지션 구성을 임시 저장했습니다.';
+    snackbar.show = true;
+  } catch (e) {
+    console.error(e);
+    snackbar.msg = '임시 저장 중 오류가 발생했습니다.';
+    snackbar.show = true;
+  }
+}
+
+/* 확정: 현재 teams 상태를 바탕으로 저장 */
+async function onConfirm() {
+  try {
+    const payload = {
+      cup_id: +route.params.id,
+      teams: teams.value.map((t) => ({
+        name: t.label,
+        cup_members: t.slots
+          .filter((s) => s.player)
+          .map((s) => ({
+            position: s.position,
+            id: s.player!.id,
+          })),
+      })),
+    };
+
+    await api.post(`${getBaseUrl('DATA')}/cup/update`, { id: +route.params.id, is_confirm: true });
+    debugger;
+    await api.post(`${getBaseUrl('DATA')}/cupteam/create-many`, payload);
+
+    if (cup.value) {
+      cup.value.is_confirm = true;
+    }
+
+    snackbar.msg = '팀 구성이 확정되었습니다.';
+    snackbar.show = true;
+  } catch (e) {
+    console.error(e);
+    snackbar.msg = '확정 처리 중 오류가 발생했습니다.';
+    snackbar.show = true;
+  }
+}
+
+/* Cup 정보 로드 */
 async function fetch() {
   const { data } = await api.get(`${getBaseUrl('DATA')}/cup/find?id=${route.params.id}`);
   cup.value = data.datas;
-  isConfirmed.value = data.datas.is_confirm;
 
-  TEAM_SIZE.value = cup.value?.cup_teams.length as number;
-
-  for (let i = 0; i < TEAM_SIZE.value; i++) {
-    TEAM_LABELS.value.push(String.fromCharCode(65 + i));
-  }
-
-  let ttt: any[];
-  if (cup.value?.cup_teams && cup.value.cup_teams.length > 0) {
-    TEAM_SIZE.value = cup.value?.cup_teams.length;
-    for (let i = 0; i < TEAM_SIZE.value; i++) {
-      TEAM_LABELS.value.push(cup.value?.cup_teams[i].name);
-    }
-    ttt = cup.value.cup_teams.map((team) => ({
-      key: team.name,
-      name: team.name,
-      cup_members: team.cup_members,
-    }));
-    teams.value = ttt;
-  } else {
-    TEAM_SIZE.value = (cup.value?.cup_members.length as number) / 5;
-    for (let i = 0; i < TEAM_SIZE.value; i++) {
-      TEAM_LABELS.value.push(String.fromCharCode(65 + i));
-    }
-    const members: CupMember[] = cup.value?.cup_members ?? [];
-    teams.value = buildTeams(members);
-  }
-
-  buildBracketFromTeams(teams.value.map((t) => t.name));
-  await fitBracketHeight();
-  await centerBracket();
-}
-
-function buildTeams(members: CupMember[]): CupTeam[] {
-  return TEAM_LABELS.value.map((label, idx) => ({
-    key: label,
-    name: label,
-    cup_members: members.slice(idx * 5, (idx + 1) * 5),
-  }));
-}
-
-/* ---------- 샷/컨펌 로직은 기존 그대로 ---------- */
-// ... (네가 쓰던 shot(), confirm() 그대로 유지 — 아래에 그대로 둠)
-async function shot() {
-  if (isConfirmed.value) {
-    snackbar.value = { show: true, msg: '이미 확정된 매치입니다.' };
-    return;
-  }
-  if (!cup.value) return;
-
-  const base = [...(cup.value.cup_members ?? [])];
-  const teamCount = teams.value.length || Math.ceil(base.length / 5);
-  const teamSize = teams.value[0]?.cup_members.length || 5;
-  const labels = Array.from({ length: teamCount }, (_, i) => String.fromCharCode(65 + i));
-  const score = (m: CupMember) => (m.player?.tier?.point ?? 0) + (m.player?.point ?? 0);
-
-  for (let i = base.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [base[i], base[j]] = [base[j], base[i]];
-  }
-  base.sort((a, b) => {
-    const diff = score(b) - score(a);
-    return diff !== 0 ? diff : Math.random() - 0.5;
-  });
-
-  const acc = labels.map((l) => ({ key: l, name: l, cup_members: [] as CupMember[], sum: 0 }));
-  for (const m of base) {
-    const candidates = acc.filter((t) => t.cup_members.length < teamSize);
-    const minSum = Math.min(...candidates.map((t) => t.sum));
-    const ties = candidates
-      .map((t) => ({ t, idx: acc.indexOf(t) }))
-      .filter((x) => x.t.sum === minSum);
-    const pick = ties[Math.floor(Math.random() * ties.length)].idx;
-    acc[pick].cup_members.push(m);
-    acc[pick].sum += score(m);
-  }
-
-  const maxDiff = 200,
-    maxPasses = 300;
-  const curDiff = () => {
-    const sums = acc.map((t) => t.sum);
-    return Math.max(...sums) - Math.min(...sums);
-  };
-
-  let passes = 0,
-    improved = true;
-  while (passes < maxPasses && curDiff() > maxDiff && improved) {
-    passes++;
-    improved = false;
-    let maxIdx = 0,
-      minIdx = 0;
-    for (let i = 1; i < acc.length; i++) {
-      if (acc[i].sum > acc[maxIdx].sum) maxIdx = i;
-      if (acc[i].sum < acc[minIdx].sum) minIdx = i;
-    }
-    const strong = acc[maxIdx],
-      weak = acc[minIdx];
-
-    let bestGain = 0,
-      ai = -1,
-      bi = -1;
-    for (let i = 0; i < strong.cup_members.length; i++) {
-      const a = strong.cup_members[i],
-        as = score(a);
-      for (let j = 0; j < weak.cup_members.length; j++) {
-        const b = weak.cup_members[j],
-          bs = score(b);
-        const before = Math.abs(strong.sum - weak.sum);
-        const after = Math.abs(strong.sum - as + bs - (weak.sum - bs + as));
-        const gain = before - after;
-        if (gain > bestGain) {
-          bestGain = gain;
-          ai = i;
-          bi = j;
-        }
-      }
-    }
-    if (bestGain > 0 && ai >= 0 && bi >= 0) {
-      const a = strong.cup_members[ai],
-        as = score(a);
-      const b = weak.cup_members[bi],
-        bs = score(b);
-      strong.cup_members.splice(ai, 1, b);
-      weak.cup_members.splice(bi, 1, a);
-      strong.sum = strong.sum - as + bs;
-      weak.sum = weak.sum - bs + as;
-      improved = true;
+  // 기존 저장된 포지션 복원
+  if (data.datas.position_players?.length) {
+    for (const item of data.datas.position_players) {
+      selectedByPosition[item.key] = item.players;
     }
   }
 
-  teams.value = acc.map((t) => ({ key: t.key, name: t.name, cup_members: t.cup_members }));
-  buildBracketFromTeams(teams.value.map((t) => t.name));
-  await fitBracketHeight();
-  await centerBracket();
-  snackbar.value = { show: true, msg: '밸런스를 고려해 팀을 재배치했습니다.' };
-}
+  const teamCount = cup.value?.team_count ?? 0;
+  let frames: TeamFrame[] = [];
 
-async function confirm() {
-  if (isConfirmed.value) return;
-  isConfirmed.value = true;
-  snackbar.value = { show: true, msg: '팀 구성이 확정되었습니다.' };
-
-  try {
-    await api.post(`${getBaseUrl('DATA')}/cup/update`, {
-      id: route.params.id,
-      is_confirm: isConfirmed.value,
+  // ⭐️ 1단계: teamCount만큼 기본 구조 먼저 생성
+  for (let i = 0; i < teamCount; i++) {
+    frames.push({
+      id: i + 1,
+      label: '',
+      slots: [], // 일단 빈 배열
+      totalPoint: 0,
     });
-  } catch (error: any) {
-    console.error('Cup 업데이트 실패:', error);
   }
 
-  for (const team of teams.value) {
-    try {
-      await api.post(`${getBaseUrl('DATA')}/cupteam/create`, {
-        cup_id: route.params.id,
-        name: team.name,
-        cup_members: team.cup_members,
+  // ⭐️ 2단계: cup_teams 데이터를 채워넣기
+  for (let i = 0; i < teamCount; i++) {
+    const teamData = data.datas.cup_teams[i];
+    frames[i].label = teamData.name;
+
+    for (const item of teamData.cup_members) {
+      frames[i].slots.push({
+        position: item.position,
+        player: item.player,
       });
-    } catch (error: any) {
-      console.error('Match 생성 실패:', error);
     }
-  }
-}
 
-function isBye(m: BracketMatch, rIdx: number) {
-  // 부전승은 R1에서만 표기: 한쪽만 있고 다른쪽이 null
-  return rIdx === 0 && !!((m.a && !m.b) || (!m.a && m.b));
-}
-
-function isByeSide(side: 'a' | 'b', m: BracketMatch, rIdx: number) {
-  if (!isBye(m, rIdx)) return false;
-  return side === 'a' ? !m.a && !!m.b : !m.b && !!m.a;
-}
-
-function displayLabel(side: 'a' | 'b', m: BracketMatch, rIdx: number) {
-  const name = side === 'a' ? m.a : m.b;
-  if (name) return name;
-
-  // R1에서 진짜 부전승인 빈 슬롯은 '부전승' 표기
-  if (isByeSide(side, m, rIdx)) return '부전승';
-
-  // 그 외에는 미정 슬롯
-  return '？';
-}
-
-function canPick(side: 'a' | 'b', m: BracketMatch, rIdx: number) {
-  const name = side === 'a' ? m.a : m.b;
-  // 빈 슬롯은 클릭 불가
-  if (!name) return false;
-  // 부전승으로 이미 결정된 매치는 클릭 불필요
-  if (isBye(m, rIdx)) return false;
-  return true;
-}
-
-/* ---------- 브래킷 데이터 ---------- */
-type BracketMatch = { a: string | null; b: string | null; winner?: string | null };
-const rounds = ref<BracketMatch[][]>([]);
-
-function propagateWinners() {
-  for (let rIdx = 0; rIdx < rounds.value.length - 1; rIdx++) {
-    const cur = rounds.value[rIdx];
-    const nxt = rounds.value[rIdx + 1];
-
-    for (let mIdx = 0; mIdx < cur.length; mIdx++) {
-      const m = cur[mIdx];
-      if (!m.winner) continue;
-
-      const nextIdx = Math.floor(mIdx / 2);
-      const isLeft = mIdx % 2 === 0;
-      const nm = nxt[nextIdx];
-
-      if (isLeft) nm.a = m.winner;
-      else nm.b = m.winner;
-
-      // 다음 매치에 이미 다른 승자가 들어와 있었고 충돌하면 초기화
-      if (nm.winner && nm.winner !== m.winner) nm.winner = null;
-    }
-  }
-}
-
-function seedOrder(size: number): number[] {
-  if (size === 1) return [1];
-  const prev = seedOrder(size / 2);
-  const mirror = prev.map((x) => size + 1 - x);
-  return prev.concat(mirror);
-}
-
-// 🔽 다음 2의 거듭제곱
-function nextPow2(n: number) {
-  return 1 << Math.ceil(Math.log2(Math.max(1, n)));
-}
-
-function buildBracketFromTeams(teamNames: string[]) {
-  const n = teamNames.length;
-  const size = nextPow2(n); // 예: 12 -> 16
-  const order = seedOrder(size); // 길이 size, 1-based 시드 순서
-  const slots: (string | null)[] = Array(size).fill(null);
-
-  // 시드 순서에 맞춰 팀을 앞에서부터 채우기
-  // 남는 시드는 null로 남아 자동 부전승이 됨
-  for (let i = 0; i < n; i++) {
-    const pos = order[i] - 1; // 0-based 인덱스
-    slots[pos] = teamNames[i];
+    // 팀 점수 합산
+    frames[i].totalPoint = frames[i].slots.reduce((sum, slot) => {
+      return sum + (slot.player?.tier?.point ?? slot.player?.point ?? 0);
+    }, 0);
   }
 
-  // Round 1: 슬롯을 2개씩 페어링 (null-null 매치는 생성되지 않음)
-  const r1: BracketMatch[] = [];
-  for (let i = 0; i < size; i += 2) {
-    const a = slots[i] ?? null;
-    const b = slots[i + 1] ?? null;
+  teams.value = frames;
 
-    // 둘 다 null이면 스킵 (이론상 seedOrder 배치면 발생하지 않지만 안전망)
-    if (!a && !b) continue;
-
-    const m: BracketMatch = { a, b, winner: null };
-    // 한쪽만 있으면 R1 부전승
-    if (a && !b) m.winner = a;
-    if (!a && b) m.winner = b;
-
-    r1.push(m);
-  }
-
-  // 이후 라운드 골격: R1 길이의 절반씩
-  const rAll: BracketMatch[][] = [r1];
-  let sizeR = r1.length;
-  while (sizeR > 1) {
-    sizeR = Math.floor(sizeR / 2);
-    rAll.push(Array.from({ length: sizeR }, () => ({ a: null, b: null, winner: null })));
-  }
-
-  rounds.value = rAll;
-
-  // 부전승 등 이미 결정된 승자 전파
-  propagateWinners();
+  debugger;
 }
-function pickWinner(rIdx: number, mIdx: number, side: 'a' | 'b') {
-  const m = rounds.value[rIdx][mIdx];
-  const name = side === 'a' ? m.a : m.b;
-  if (!name) return;
-  m.winner = name;
-
-  if (rIdx >= rounds.value.length - 1) return;
-  const nextIdx = Math.floor(mIdx / 2);
-  const isLeft = mIdx % 2 === 0;
-  const nextMatch = rounds.value[rIdx + 1][nextIdx];
-  if (isLeft) nextMatch.a = name;
-  else nextMatch.b = name;
-  if (nextMatch.winner && nextMatch.winner !== name) nextMatch.winner = null;
-}
-
-onMounted(() => {
-  setTimeout(() => {
-    if (teams.value.length) buildBracketFromTeams(teams.value.map((t) => t.name));
-  }, 0);
-});
 onMounted(fetch);
 </script>
 
 <style scoped>
-/* ✅ 전역 팬/줌 컨테이너 */
-.page-wrap {
-  position: relative;
-  height: 100vh; /* 화면 가득 */
-  overflow: auto; /* 가로/세로 스크롤 모두 */
-  cursor: grab;
-}
-.page-wrap.is-panning {
-  cursor: grabbing;
-  user-select: none;
+.position-btn-row {
+  row-gap: 12px;
 }
 
-/* scale 대상 */
-.page-inner {
-  min-width: 100%; /* 축소 시 좌여백 방지 */
-}
-
-/* 기존 스타일 그대로 */
-.team-header {
-  text-align: center;
-}
-.team-body {
-  background-color: #1f2933;
-}
-.member-card {
-  background-color: #243447;
-  color: #fff;
-}
-
-.bracket-section {
-  margin-top: 48px;
-  padding-bottom: 120px;
-}
-
-.bracket-wrap {
-  overflow-x: auto;
+.position-slot {
+  min-height: 220px;
+  max-height: 350px;
   overflow-y: auto;
-  max-height: none; /* 전역 스크롤이 있으니 제한 해제 */
-  padding: 16px 0 24px;
-  display: flex;
-  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  padding-right: 6px;
 }
 
-.bracket {
-  display: flex;
-  gap: 32px;
-  width: max-content;
-  min-height: 100%;
-  padding: 0 8px;
-  align-items: stretch;
-}
-
-.round {
-  min-width: 260px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  justify-content: center;
-}
-.round-title {
-  text-align: center;
-  font-weight: 600;
-  opacity: 0.9;
-  margin-bottom: 4px;
-}
-.round-title.sticky {
-  position: sticky;
-  top: 0;
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(2px);
-  z-index: 1;
-  padding: 6px 0;
-  border-radius: 8px;
-}
-.match {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.seed {
-  background: #243447;
-  color: #fff;
-  cursor: pointer;
+.player-card {
+  padding: 6px 8px;
   border-radius: 10px;
-  font-size: 14px;
-  line-height: 1.2;
-}
-.seed.winner {
-  outline: 2px solid #ffd54f;
-  box-shadow: 0 0 0 2px #ffd54f inset;
-}
-.connector {
-  position: absolute;
-  right: -16px;
-  top: 50%;
-  width: 16px;
-  height: 2px;
-  background: rgba(255, 255, 255, 0.25);
-  transform: translateY(-50%);
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.3);
 }
 
-@media (max-width: 768px) {
-  .round {
-    min-width: 220px;
-  }
+.player-card .drag-handle {
+  opacity: 0.5;
+}
+.player-card:hover .drag-handle {
+  opacity: 1;
 }
 
-.bye-chip {
-  position: absolute;
-  top: -10px;
-  right: -8px;
-  font-size: 11px;
-  padding: 2px 6px;
+/* 팀 카드 그리드 */
+.team-grid {
+  row-gap: 16px;
+}
+
+.team-card {
+  background: radial-gradient(circle at top left, #1e293b, #020617);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.7);
+}
+
+.team-slot-row {
+  padding: 6px 4px;
   border-radius: 10px;
-  background: #ffd54f;
-  color: #222;
-  font-weight: 700;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
-.seed.bye {
-  opacity: 0.7;
-  pointer-events: none; /* 빈 슬롯 클릭 방지 */
-  border-style: dashed;
+.team-slot-row:hover {
+  background: rgba(15, 23, 42, 0.8);
 }
 </style>
