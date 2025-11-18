@@ -66,7 +66,7 @@
             </span>
 
             <v-btn
-              v-if="selectedByPosition[pos]?.length"
+              v-if="selectedByPosition[pos]?.length && !cup?.is_confirm"
               variant="text"
               size="x-small"
               @click="clearPosition(pos)"
@@ -89,12 +89,18 @@
             <div class="d-flex flex-column">
               <span class="text-body-2 font-weight-medium"> {{ p.nickname }}#{{ p.tagname }} </span>
               <span class="text-caption text-medium-emphasis">
-                {{ p.tier?.name }} · {{ p.point }}pt
+                {{ p.tier?.name }} · {{ p.tier.point }}pt
               </span>
             </div>
 
             <div class="d-flex flex-column align-end">
-              <v-btn icon size="x-small" variant="text" @click.stop="removePlayer(pos, p.id)">
+              <v-btn
+                v-if="!cup?.is_confirm"
+                icon
+                size="x-small"
+                variant="text"
+                @click.stop="removePlayer(pos, p.id)"
+              >
                 <v-icon size="16">mdi-close</v-icon>
               </v-btn>
               <v-icon size="18" class="drag-handle mt-1">mdi-drag-vertical</v-icon>
@@ -149,7 +155,7 @@
                   </span>
                 </div>
                 <div class="text-caption text-medium-emphasis">
-                  {{ slot.player.tier?.name }} · {{ slot.player.point }}pt
+                  {{ slot.player.tier?.name }} · {{ slot.player.tier.point }}pt
                 </div>
               </div>
 
