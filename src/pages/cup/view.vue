@@ -1,9 +1,14 @@
 <template>
   <v-container class="py-8">
     <!-- 🔹 포지션 버튼들 -->
-    <v-row class="mb-6 justify-center flex-wrap position-btn-row">
+    <v-row v-if="!cup?.is_confirm" class="mb-6 justify-center flex-wrap position-btn-row">
       <v-col v-for="pos in positions" :key="pos" cols="auto" class="d-flex justify-center">
-        <CupMemberDialog :activator-label="pos" activator-color="primary" @added="onAdded" />
+        <CupMemberDialog
+          mode="add"
+          :activator-label="pos"
+          activator-color="primary"
+          @added="onAdded"
+        />
       </v-col>
     </v-row>
 
@@ -45,7 +50,7 @@
             color="success"
             variant="flat"
             rounded="pill"
-            :disabled="cup?.is_confirm"
+            :disabled="isConfirmDisabled"
             @click="onConfirm"
           >
             확정
@@ -89,14 +94,39 @@
             <div class="d-flex flex-column">
               <span class="text-body-2 font-weight-medium"> {{ p.nickname }}#{{ p.tagname }} </span>
               <span class="text-caption text-medium-emphasis">
-                {{ p.tier?.name }} · {{ p.tier?.point }}pt
+                {{ p.tier?.name }} · {{ p.tier?.point + p.point }}pt
               </span>
             </div>
 
             <div class="d-flex flex-column align-end">
-              <v-btn icon size="x-small" variant="text" @click.stop="removePlayer(pos, p.id)">
-                <v-icon v-if="!cup?.is_confirm" size="16">mdi-close</v-icon>
+              <!-- 확정 전: 삭제 버튼 -->
+              <v-btn
+                v-if="!cup?.is_confirm"
+                icon
+                size="x-small"
+                variant="text"
+                @click.stop="removePlayer(pos, p.id)"
+              >
+                <v-icon size="16">mdi-close</v-icon>
               </v-btn>
+
+              <!-- 확정 후: 수정 다이얼로그 -->
+              <CupMemberDialog
+                v-else
+                mode="edit"
+                activator-color="orange"
+                activator-label=""
+                :initial-user-ids="[p.id]"
+                :exclude-ids="getExcludeIdsForEdit(pos, p.id)"
+                @added="(payload) => onEdited(pos, p, payload.users[0])"
+              >
+                <template #activator="{ activatorProps }">
+                  <v-btn v-bind="activatorProps" icon size="x-small" variant="text">
+                    <v-icon size="16">mdi-pencil</v-icon>
+                  </v-btn>
+                </template>
+              </CupMemberDialog>
+
               <v-icon size="18" class="drag-handle mt-1">mdi-drag-vertical</v-icon>
             </div>
           </div>
@@ -149,7 +179,7 @@
                   </span>
                 </div>
                 <div class="text-caption text-medium-emphasis">
-                  {{ slot.player.tier?.name }} · {{ slot.player.tier.point }}pt
+                  {{ slot.player.tier?.name }} · {{ slot.player.tier.point + slot.player.point }}pt
                 </div>
               </div>
 
@@ -180,10 +210,52 @@ const route = useRoute();
 
 const positions: string[] = ['TOP', 'JUG', 'MID', 'ADC', 'SUP'];
 const cup = ref<Cup | null>(null);
-const allPlayers = ref<Player[]>();
+
+const is_btnActive = ref<boolean>(false);
 
 // 포지션별 선택된 플레이어
 const selectedByPosition = reactive<Record<string, Player[]>>({});
+
+const teams = ref<TeamFrame[]>([]);
+
+const snackbar = reactive({ show: false, msg: '' });
+
+const isConfirmDisabled = computed(() => {
+  const c = cup.value;
+  if (!c) return true;
+
+  // 1) 이미 확정된 컵이면 비활성화
+  if (c.is_confirm) return true;
+
+  // 2) 현재 화면에서 선택된 전체 플레이어 수 (포지션별 합)
+  const totalSelected = positions.reduce((sum, pos) => {
+    return sum + (selectedByPosition[pos]?.length || 0);
+  }, 0);
+
+  // 아무도 선택 안 되어 있으면 당연히 비활성화
+  if (totalSelected === 0) return true;
+
+  // 3) 한 팀이 5명이니 전체 / 5가 team_count와 일치해야 함
+  const teamCountFromMembers = totalSelected / 5;
+
+  const teamCountMatched =
+    Number.isInteger(teamCountFromMembers) && teamCountFromMembers === c.team_count;
+
+  // 4) SHOT을 눌러서 팀 프레임이 실제로 만들어졌는지 + 각 팀에 5명씩 들어가 있는지
+  const hasTeams = teams.value.length === c.team_count;
+
+  const eachTeamFilled =
+    hasTeams &&
+    teams.value.every(
+      (team) => team.slots.filter((slot) => !!slot.player).length === positions.length // 5포지션
+    );
+
+  // 🔥 최종 활성 조건
+  const canConfirmNow = is_btnActive.value && teamCountMatched && eachTeamFilled;
+
+  // 버튼에는 disabled를 넘기니까 반대로
+  return !canConfirmNow;
+});
 
 // 팀 프레임 타입 & 상태
 interface TeamSlot {
@@ -198,14 +270,39 @@ interface TeamFrame {
   totalPoint: number;
 }
 
-const teams = ref<TeamFrame[]>([]);
-
-const snackbar = reactive({ show: false, msg: '' });
-
 /* 유틸: 점수 계산 */
 function getPlayerPoint(p: Player): number {
   // tier.point가 있으면 그걸 우선 사용하고, 없으면 player.point 사용
   return (p.tier?.point ?? p.point) || 0;
+}
+
+function getExcludeIdsForEdit(position: string, playerId: number) {
+  return Object.entries(selectedByPosition)
+    .flatMap(([pos, list]) => (pos === position ? list.filter((p) => p.id !== playerId) : list))
+    .map((p) => p.id);
+}
+
+async function onEdited(position: string, oldPlayer: any, newPlayer: Player) {
+  debugger;
+  if (!newPlayer) return;
+
+  const list = selectedByPosition[position] ?? [];
+  const idx = list.findIndex((u) => u.id === oldPlayer.id);
+  if (idx === -1) return;
+
+  // 교체
+  list[idx] = newPlayer;
+  selectedByPosition[position] = [...list];
+
+  await api.post(`${getBaseUrl('DATA')}/cupmember/update`, {
+    id: oldPlayer.cupmember_id,
+    cup_id: +route.params.id,
+    player_id: newPlayer.id,
+  });
+
+  snackbar.msg = '플레이어를 수정했습니다.';
+  snackbar.show = true;
+  fetch();
 }
 
 /* 선택 콜백 */
@@ -253,15 +350,6 @@ function clearPosition(position: string) {
   selectedByPosition[position] = [];
 }
 
-/* 버튼 활성 조건 */
-const totalNeedPerPosition = computed(() => cup.value?.team_count ?? 0);
-
-const canShot = computed(() => {
-  const need = totalNeedPerPosition.value;
-  if (!need) return false;
-  return positions.every((pos) => (selectedByPosition[pos]?.length || 0) === need);
-});
-
 /* 🔥 SHOT: 포지션별로만 섞으면서 전체 팀 점수 밸런싱 */
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -273,6 +361,7 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 function onShot() {
+  is_btnActive.value = true;
   const teamCount = cup.value?.team_count ?? 0;
   if (!teamCount) {
     snackbar.msg = '팀 개수가 설정되지 않았습니다.';
@@ -326,7 +415,6 @@ async function onTempSave() {
   try {
     const positionPlayers: PositionPlayerList[] = [];
 
-    debugger;
     for (const pos of positions) {
       positionPlayers.push({ key: pos, players: selectedByPosition[pos] ?? [] });
     }
@@ -362,7 +450,6 @@ async function onConfirm() {
     };
 
     await api.post(`${getBaseUrl('DATA')}/cup/update`, { id: +route.params.id, is_confirm: true });
-    debugger;
     await api.post(`${getBaseUrl('DATA')}/cupteam/create-many`, payload);
 
     if (cup.value) {
@@ -378,12 +465,10 @@ async function onConfirm() {
   }
 }
 
-/* Cup 정보 로드 */
 async function fetch() {
   const { data } = await api.get(`${getBaseUrl('DATA')}/cup/find?id=${route.params.id}`);
   cup.value = data.datas;
 
-  // 기존 저장된 포지션 복원
   if (data.datas.position_players?.length) {
     for (const item of data.datas.position_players) {
       selectedByPosition[item.key] = item.players;
@@ -404,6 +489,7 @@ async function fetch() {
   }
 
   // ⭐️ 2단계: cup_teams 데이터를 채워넣기
+  debugger;
   for (let i = 0; i < teamCount; i++) {
     const teamData = data.datas.cup_teams[i];
     frames[i].label = teamData.name;
@@ -422,8 +508,6 @@ async function fetch() {
   }
 
   teams.value = frames;
-
-  debugger;
 }
 onMounted(fetch);
 </script>
