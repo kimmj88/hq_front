@@ -458,6 +458,7 @@ async function onConfirm() {
 
     snackbar.msg = '팀 구성이 확정되었습니다.';
     snackbar.show = true;
+    fetch();
   } catch (e) {
     console.error(e);
     snackbar.msg = '확정 처리 중 오류가 발생했습니다.';
