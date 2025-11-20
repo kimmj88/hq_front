@@ -55,6 +55,16 @@
           >
             확정
           </v-btn>
+          <!-- 🔹 팀 확정 후에만 활성화되는 버튼 -->
+          <v-btn
+            color="indigo"
+            variant="outlined"
+            rounded="pill"
+            :disabled="!cup?.is_confirm"
+            @click="goBracketPage"
+          >
+            대진표 편집
+          </v-btn>
         </div>
       </v-col>
     </v-row>
@@ -118,7 +128,7 @@
                 activator-label=""
                 :initial-user-ids="[p.id]"
                 :exclude-ids="getExcludeIdsForEdit(pos, p.id)"
-                @added="(payload) => onEdited(pos, p, payload.users[0])"
+                @added="(payload : any) => onEdited(pos, p, payload.users[0])"
               >
                 <template #activator="{ activatorProps }">
                   <v-btn v-bind="activatorProps" icon size="x-small" variant="text">
@@ -144,7 +154,7 @@
                 {{ team.label }}
               </span>
               <span class="text-caption text-medium-emphasis">
-                {{ team.slots.filter((s) => s.player).length }} / {{ positions.length }}명 배정
+                {{ team.slots.filter((s: any) => s.player).length }} / {{ positions.length }}명 배정
               </span>
             </div>
             <v-chip size="small" color="amber-accent-3" text-color="black" variant="flat">
@@ -205,8 +215,10 @@ import { getBaseUrl } from '@/@core/composable/createUrl';
 import api from '@/@core/composable/useAxios';
 import { useRoute } from 'vue-router';
 import type { Cup, PositionPlayerList } from '@/data/types/cup';
+import { useRouter } from 'vue-router';
 
 const route = useRoute();
+const router = useRouter();
 
 const positions: string[] = ['TOP', 'JUG', 'MID', 'ADC', 'SUP'];
 const cup = ref<Cup | null>(null);
@@ -268,6 +280,10 @@ interface TeamFrame {
   label: string;
   slots: TeamSlot[];
   totalPoint: number;
+}
+
+function goBracketPage() {
+  router.push(`/cup/bracket/${route.params.id}`);
 }
 
 /* 유틸: 점수 계산 */

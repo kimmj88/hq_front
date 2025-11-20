@@ -28,6 +28,7 @@ declare module 'vue-router/auto-routes' {
     '/config/tier/': RouteRecordInfo<'/config/tier/', '/config/tier', Record<never, never>, Record<never, never>>,
     '/cup/': RouteRecordInfo<'/cup/', '/cup', Record<never, never>, Record<never, never>>,
     '/cup/add': RouteRecordInfo<'/cup/add', '/cup/add', Record<never, never>, Record<never, never>>,
+    '/cup/bracket': RouteRecordInfo<'/cup/bracket', '/cup/bracket', Record<never, never>, Record<never, never>>,
     '/cup/view': RouteRecordInfo<'/cup/view', '/cup/view', Record<never, never>, Record<never, never>>,
     '/exception/Exception': RouteRecordInfo<'/exception/Exception', '/exception/Exception', Record<never, never>, Record<never, never>>,
     '/Home': RouteRecordInfo<'/Home', '/Home', Record<never, never>, Record<never, never>>,

@@ -43,6 +43,7 @@ import { CUP_PATH } from '@/router/cup/type';
 import Cup from '@/pages/cup/index.vue';
 import CupAdd from '@/pages/cup/add.vue';
 import CupView from '@/pages/cup/view.vue';
+import Bracket from '@/pages/cup/bracket.vue';
 
 //Login
 import Login from '@/pages/login/index.vue';
@@ -113,6 +114,7 @@ const router = createRouter({
         //{ path: '', component: Tourna },
         { path: 'add', component: CupAdd },
         { path: CUP_PATH.VIEW(':id'), component: CupView, props: true },
+        { path: CUP_PATH.BRACKET(':id'), component: Bracket, props: true },
       ],
     },
   ],
