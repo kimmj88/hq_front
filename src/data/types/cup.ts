@@ -13,9 +13,12 @@ export interface Cup {
   updated_at: string;
 
   position_players?: PositionPlayerList[];
+
+  cup_matches: CupMatch[];
 }
 
 export interface CupTeam {
+  id: number;
   key: string;
   name: string;
   cup_members: CupMember[];
@@ -26,6 +29,15 @@ export interface CupMember {
   order: string;
   create_at: string;
   player: Player;
+}
+
+export interface CupMatch {
+  id?: number;
+  round: string;
+  match_no: number;
+  home_team: CupTeam;
+  away_team: CupTeam;
+  winner_team?: CupTeam;
 }
 
 export interface PositionPlayerList {

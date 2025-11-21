@@ -213,9 +213,8 @@ import CupMemberDialog from '@/components/dialogs/CupMemberDialog.vue';
 import type { Player } from '@/data/types/player';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import api from '@/@core/composable/useAxios';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import type { Cup, PositionPlayerList } from '@/data/types/cup';
-import { useRouter } from 'vue-router';
 
 const route = useRoute();
 const router = useRouter();

@@ -153,7 +153,7 @@
 
           <!-- 나머지 라운드들 (클릭만) -->
           <template v-for="(round, rIndex) in rounds.slice(1)" :key="round.key">
-            <v-row class="mt-6" v-if="round.matches.some((m) => m.teams.length)">
+            <v-row class="mt-6" v-if="round.matches.some((m:any) => m.teams.length)">
               <v-col cols="12">
                 <h3 class="text-subtitle-2 mb-3">{{ round.label }}</h3>
               </v-col>
@@ -194,7 +194,7 @@
 
             <!-- 마지막 라운드가 아니면: 다음 라운드 생성 버튼 -->
             <div
-              v-if="!isLastRound(rIndex + 1) && round.matches.some((m) => m.teams.length)"
+              v-if="!isLastRound(rIndex + 1) && round.matches.some((m:any) => m.teams.length)"
               class="mt-2"
             >
               <v-alert class="mt-2" type="info" density="comfortable" variant="tonal">
@@ -216,7 +216,7 @@
 
             <!-- 마지막 라운드(결승)이라면: 우승팀 표시 -->
             <div
-              v-else-if="isLastRound(rIndex + 1) && round.matches.some((m) => m.teams.length)"
+              v-else-if="isLastRound(rIndex + 1) && round.matches.some((m :any) => m.teams.length)"
               class="mt-4"
             >
               <div v-if="finalChampion" class="text-center mt-2">
@@ -237,18 +237,22 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { getBaseUrl } from '@/@core/composable/createUrl';
+import { computed, onMounted, ref } from 'vue';
 import draggable from 'vuedraggable';
+import api from '@/@core/composable/useAxios';
+import { useRoute, useRouter } from 'vue-router';
+import type { Cup, CupMatch, CupTeam } from '@/data/types/cup';
 
-interface Team {
-  id: number;
-  name: string;
-}
+const route = useRoute();
+const router = useRouter();
+
+const cup = ref<Cup | null>(null);
 
 type RoundKey = 'R16' | 'QF' | 'SF' | 'F';
 
 interface Match {
-  teams: Team[];
+  teams: CupTeam[];
 }
 
 interface Round {
@@ -257,35 +261,13 @@ interface Round {
   matches: Match[];
 }
 
-/**
- * 🔹 실제에선 여기를 DB에서 받아온 팀 리스트로 채우면 됨.
- * ex) const initialTeams = await api.get('/cup_teams?cup_id=...') ...
- */
-const initialTeams: Team[] = [
-  { id: 1, name: 'TEAM A' },
-  { id: 2, name: 'TEAM B' },
-  { id: 3, name: 'TEAM C' },
-  { id: 4, name: 'TEAM D' },
-  { id: 5, name: 'TEAM E' },
-  { id: 6, name: 'TEAM F' },
-  { id: 7, name: 'TEAM G' },
-  { id: 8, name: 'TEAM H' },
-  // { id: 9, name: 'TEAM A' },
-  // { id: 10, name: 'TEAM ㄱ' },
-  // { id: 11, name: 'TEAM ㄴ' },
-  // { id: 12, name: 'TEAM ㄷ' },
-  // { id: 13, name: 'TEAM ㄹ' },
-  // { id: 14, name: 'TEAM ㅁ' },
-  // { id: 15, name: 'TEAM ㅂ' },
-  // { id: 16, name: 'TEAM ㅅ' },
-  // 16팀 테스트 시 여기 9~16까지 추가하면 됨.
-];
-
 // 팀 총 개수 (DB 값으로 치환 가능)
-const totalTeamCount = ref(initialTeams.length);
+const teams = ref<CupTeam[]>();
+
+const totalTeamCount = ref<number>(0);
 
 // 왼쪽 풀
-const poolTeams = ref<Team[]>([...initialTeams]);
+const poolTeams = ref<CupTeam[]>();
 
 // 라운드들: 8팀이면 [8강, 4강, 결승], 16팀이면 [16강, 8강, 4강, 결승]
 const rounds = ref<Round[]>([]);
@@ -343,6 +325,7 @@ function initBracket() {
   }
 
   // 3) rounds / winnerIndexes 초기화
+
   rounds.value = defs.map((d) => ({
     key: d.key,
     label: d.label,
@@ -350,15 +333,54 @@ function initBracket() {
   }));
 
   winnerIndexes.value = rounds.value.map((r) => Array(r.matches.length).fill(null));
+
+  for (const round of rounds.value) {
+    if (round.key === 'SF') {
+      let index = 0;
+      for (const match of round.matches) {
+        if (cup.value?.cup_matches?.[index]?.round === 'SF') {
+          const home = cup.value?.cup_matches?.[index]?.home_team;
+          const away = cup.value?.cup_matches?.[index]?.away_team;
+          const winner = cup.value?.cup_matches?.[index]?.winner_team?.id == home.id ? 0 : 1;
+
+          if (home) match.teams.push(home);
+          if (away) match.teams.push(away);
+
+          winnerIndexes.value[0][cup.value?.cup_matches?.[index]?.match_no - 1] = winner;
+          index++;
+        }
+      }
+    } else if (round.key === 'F') {
+      let index = 0;
+
+      const hasFinal = cup.value?.cup_matches?.map((v) => v.round).includes('F') ?? false;
+      const finalEntry =
+        cup.value?.cup_matches
+          ?.map((match, index) => ({ match, index }))
+          .find((v) => v.match.round === 'F') ?? null;
+
+      for (const match of round.matches) {
+        if (hasFinal) {
+          const home = finalEntry?.match.home_team;
+          const away = finalEntry?.match.away_team;
+          const winner = finalEntry?.match.winner_team?.id == home?.id ? 0 : 1;
+
+          if (home) match.teams.push(home);
+          if (away) match.teams.push(away);
+
+          winnerIndexes.value[1][0] = winner;
+        }
+      }
+    }
+  }
 }
 
 // 첫 초기화
-initBracket();
 
 /* 🔹 DnD move 제약: 슬롯은 2명까지, pool은 무제한 */
 function onMove(e: any) {
-  const toList: Team[] | undefined = e.relatedContext?.list;
-  const fromList: Team[] | undefined = e.draggedContext?.list;
+  const toList: CupTeam[] | undefined = e.relatedContext?.list;
+  const fromList: CupTeam[] | undefined = e.draggedContext?.list;
   if (!toList || !fromList) return true;
 
   // 왼쪽 풀인지 여부
@@ -383,23 +405,26 @@ function onMove(e: any) {
 
 /* 🔹 풀에서 팀 삭제 */
 function removeFromPool(teamId: number) {
-  poolTeams.value = poolTeams.value.filter((t) => t.id !== teamId);
+  if (poolTeams.value != undefined)
+    poolTeams.value = poolTeams.value.filter((t) => t.id !== teamId);
 }
 
 /* 🔹 전체 리셋 */
 function resetAll() {
-  poolTeams.value = [...initialTeams];
-  initBracket();
+  // poolTeams.value = [...initialTeams];
+  // initBracket();
 }
 
 /* 🔹 풀 섞기 */
 function shufflePool() {
-  const arr = [...poolTeams.value];
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
+  if (poolTeams.value != undefined) {
+    const arr = [...poolTeams.value];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    poolTeams.value = arr;
   }
-  poolTeams.value = arr;
 }
 
 /* 🔹 승자 선택 */
@@ -407,6 +432,7 @@ function selectWinner(roundIndex: number, matchIndex: number, teamIndex: number)
   const round = rounds.value[roundIndex];
   const match = round?.matches[matchIndex];
   if (!match || !match.teams[teamIndex]) return;
+  debugger;
   winnerIndexes.value[roundIndex][matchIndex] = teamIndex;
 }
 
@@ -431,9 +457,10 @@ function canBuildNext(roundIndex: number): boolean {
   const neededTeams = next.matches.length * 2;
 
   if (roundIndex === 0) {
-    // 첫 라운드 → 다음 라운드 : 부전승(풀에 남은 팀) 포함
-    const byeCount = poolTeams.value.length;
-    return winnersCount + byeCount === neededTeams && winnersCount > 0;
+    if (poolTeams.value != undefined) {
+      const byeCount = poolTeams.value.length;
+      return winnersCount + byeCount === neededTeams && winnersCount > 0;
+    }
   }
 
   // 나머지 라운드: 승자만으로 정확히 맞아야
@@ -441,12 +468,12 @@ function canBuildNext(roundIndex: number): boolean {
 }
 
 /* 🔹 다음 라운드 생성 */
-function buildNextRound(roundIndex: number) {
+async function buildNextRound(roundIndex: number) {
   const current = rounds.value[roundIndex];
   const next = rounds.value[roundIndex + 1];
   if (!current || !next) return;
 
-  const winners: Team[] = [];
+  const winners: CupTeam[] = [];
 
   // 1) 현재 라운드 승자들
   current.matches.forEach((match, mIdx) => {
@@ -456,9 +483,30 @@ function buildNextRound(roundIndex: number) {
     }
   });
 
-  // 2) 첫 라운드 → 두 번째 라운드일 때, 풀에 남은 팀(부전승)도 포함
-  if (roundIndex === 0 && poolTeams.value.length) {
-    winners.push(...poolTeams.value);
+  if (poolTeams.value != undefined) {
+    if (roundIndex === 0 && poolTeams.value.length) {
+      winners.push(...poolTeams.value);
+    }
+  }
+
+  let cupmatch: CupMatch[] = [];
+
+  debugger;
+  if (current.key == 'SF') {
+    const finalMatch: CupMatch = {
+      match_no: 1,
+      home_team: winners[0],
+      away_team: winners[1],
+      round: 'F',
+    };
+    const { data } = await api.post(`${getBaseUrl('DATA')}/cupmatch/create`, {
+      cup_id: route.params.id,
+      round: finalMatch.round,
+      match_no: 1,
+      home_team_id: finalMatch.home_team.id,
+      away_team_id: finalMatch.away_team.id,
+    });
+    debugger;
   }
 
   const neededTeams = next.matches.length * 2;
@@ -484,7 +532,7 @@ function buildNextRound(roundIndex: number) {
 }
 
 /* 🔹 최종 우승팀 (마지막 라운드 기준) */
-const finalChampion = computed<Team | null>(() => {
+const finalChampion = computed<CupTeam | null>(() => {
   if (!rounds.value.length) return null;
   const lastIndex = rounds.value.length - 1;
   const lastRound = rounds.value[lastIndex];
@@ -496,6 +544,20 @@ const finalChampion = computed<Team | null>(() => {
 
   return finalMatch.teams[wIdx] ?? null;
 });
+
+async function fetch() {
+  const { data } = await api.get(`${getBaseUrl('DATA')}/cup/find?id=${route.params.id}`);
+  cup.value = data.datas;
+  teams.value = cup.value?.cup_teams;
+  totalTeamCount.value = cup.value?.cup_teams.length as number;
+
+  if (cup.value?.cup_matches != undefined && cup.value?.cup_matches.length == 0) {
+    poolTeams.value = cup.value?.cup_teams;
+  }
+
+  initBracket();
+}
+onMounted(fetch);
 </script>
 
 <style scoped>
