@@ -337,17 +337,17 @@ function initBracket() {
   for (const round of rounds.value) {
     if (round.key === 'SF') {
       let index = 0;
-      for (const match of round.matches) {
-        if (cup.value?.cup_matches?.[index]?.round === 'SF') {
-          const home = cup.value?.cup_matches?.[index]?.home_team;
-          const away = cup.value?.cup_matches?.[index]?.away_team;
-          const winner = cup.value?.cup_matches?.[index]?.winner_team?.id == home.id ? 0 : 1;
 
-          if (home) match.teams.push(home);
-          if (away) match.teams.push(away);
+      for (const match of cup.value?.cup_matches) {
+        if (match.round == 'SF') {
+          const home = match.home_team;
+          const away = match.away_team;
+          const winner = match.winner_team?.id == home.id ? 0 : 1;
 
-          winnerIndexes.value[0][cup.value?.cup_matches?.[index]?.match_no - 1] = winner;
-          index++;
+          if (home) round.matches[match.match_no - 1].teams.push(home);
+          if (away) round.matches[match.match_no - 1].teams.push(away);
+
+          winnerIndexes.value[0][match.match_no - 1] = winner;
         }
       }
     } else if (round.key === 'F') {
@@ -363,7 +363,12 @@ function initBracket() {
         if (hasFinal) {
           const home = finalEntry?.match.home_team;
           const away = finalEntry?.match.away_team;
-          const winner = finalEntry?.match.winner_team?.id == home?.id ? 0 : 1;
+          let winner = null;
+          if (finalEntry?.match.winner_team != undefined) {
+            winner = finalEntry?.match.winner_team?.id == home?.id ? 0 : 1;
+          }
+
+          debugger;
 
           if (home) match.teams.push(home);
           if (away) match.teams.push(away);
@@ -432,7 +437,7 @@ function selectWinner(roundIndex: number, matchIndex: number, teamIndex: number)
   const round = rounds.value[roundIndex];
   const match = round?.matches[matchIndex];
   if (!match || !match.teams[teamIndex]) return;
-  debugger;
+
   winnerIndexes.value[roundIndex][matchIndex] = teamIndex;
 }
 
@@ -489,24 +494,30 @@ async function buildNextRound(roundIndex: number) {
     }
   }
 
-  let cupmatch: CupMatch[] = [];
-
-  debugger;
   if (current.key == 'SF') {
-    const finalMatch: CupMatch = {
+    const createCupMatches: CupMatch[] = [];
+    let matchIndex = 1;
+
+    for (const match of current.matches) {
+      createCupMatches.push({
+        cup_id: +route.params.id,
+        match_no: matchIndex,
+        home_team: match.teams[0],
+        away_team: match.teams[1],
+        round: 'SF',
+        winner_team: winners[matchIndex - 1],
+      });
+      matchIndex++;
+    }
+    createCupMatches.push({
+      cup_id: +route.params.id,
       match_no: 1,
       home_team: winners[0],
       away_team: winners[1],
       round: 'F',
-    };
-    const { data } = await api.post(`${getBaseUrl('DATA')}/cupmatch/create`, {
-      cup_id: route.params.id,
-      round: finalMatch.round,
-      match_no: 1,
-      home_team_id: finalMatch.home_team.id,
-      away_team_id: finalMatch.away_team.id,
     });
-    debugger;
+
+    const { data } = await api.post(`${getBaseUrl('DATA')}/cupmatch/create-many`, createCupMatches);
   }
 
   const neededTeams = next.matches.length * 2;

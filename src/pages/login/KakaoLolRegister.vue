@@ -320,7 +320,7 @@ async function reqConfirm() {
     tier: riotResult.value?.tier,
     positions: [a, b],
   });
-  debugger;
+
   router.push('/pendingapproval');
 }
 

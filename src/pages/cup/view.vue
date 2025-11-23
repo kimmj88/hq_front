@@ -298,7 +298,6 @@ function getExcludeIdsForEdit(position: string, playerId: number) {
 }
 
 async function onEdited(position: string, oldPlayer: any, newPlayer: Player) {
-  debugger;
   if (!newPlayer) return;
 
   const list = selectedByPosition[position] ?? [];
@@ -505,7 +504,6 @@ async function fetch() {
   }
 
   // ⭐️ 2단계: cup_teams 데이터를 채워넣기
-  debugger;
   for (let i = 0; i < teamCount; i++) {
     const teamData = data.datas.cup_teams[i];
     frames[i].label = teamData.name;

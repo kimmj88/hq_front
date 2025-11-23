@@ -33,10 +33,11 @@ export interface CupMember {
 
 export interface CupMatch {
   id?: number;
-  round: string;
-  match_no: number;
-  home_team: CupTeam;
-  away_team: CupTeam;
+  cup_id?: number;
+  round?: string;
+  match_no?: number;
+  home_team?: CupTeam;
+  away_team?: CupTeam;
   winner_team?: CupTeam;
 }
 
