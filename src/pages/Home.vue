@@ -95,6 +95,27 @@
             <v-chip size="small" variant="flat" color="indigo"> #프로모션 #업데이트 </v-chip>
           </div>
         </v-card>
+        <!-- 스폰서/광고 카드 (메인 안쪽 배너) -->
+        <v-card class="mb-6 rounded-xl overflow-hidden elevation-2" @click="openSponsor">
+          <v-row no-gutters>
+            <v-col cols="8" class="pa-4">
+              <div class="text-subtitle-1 font-weight-medium mb-1">
+                후원계좌 : 429502-01-206598 (국민) 김민재
+              </div>
+              <div class="text-body-2 text-medium-emphasis mb-3">
+                여러분의 소중한 후원금으로 빠른시일내로 기능을 추가하도록 하겠습니다.!
+              </div>
+              <!-- <v-btn size="small" color="primary" prepend-icon="mdi-rocket-launch">지금 확인</v-btn> -->
+            </v-col>
+            <v-col cols="4">
+              <!-- <v-img
+                src="https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200&auto=format&fit=crop"
+                height="140"
+                cover
+              /> -->
+            </v-col>
+          </v-row>
+        </v-card>
 
         <!-- 공지/공유 보드 -->
         <v-row class="mb-4" dense>
@@ -152,28 +173,8 @@
           </v-col>
         </v-row>
 
-        <!-- 스폰서/광고 카드 (메인 안쪽 배너) -->
-        <v-card class="mb-6 rounded-xl overflow-hidden elevation-2" @click="openSponsor">
-          <v-row no-gutters>
-            <v-col cols="8" class="pa-4">
-              <div class="text-subtitle-1 font-weight-medium mb-1">오늘의 스폰서</div>
-              <div class="text-body-2 text-medium-emphasis mb-3">
-                프로 모드로 업그레이드하고 추가 기능을 경험해보세요.
-              </div>
-              <v-btn size="small" color="primary" prepend-icon="mdi-rocket-launch">지금 확인</v-btn>
-            </v-col>
-            <v-col cols="4">
-              <v-img
-                src="https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200&auto=format&fit=crop"
-                height="140"
-                cover
-              />
-            </v-col>
-          </v-row>
-        </v-card>
-
         <!-- 기존 피드 -->
-        <v-btn color="primary" class="mb-4" @click="addPost">Add</v-btn>
+        <!-- <v-btn color="primary" class="mb-4" @click="addPost">Add</v-btn> -->
 
         <template v-if="isLoading">
           <v-skeleton-loader type="image, article, actions" class="mb-4 rounded-xl" />
