@@ -97,7 +97,8 @@
                     <v-checkbox
                       v-model="editedPermissions[gIdx].children[pIdx].access"
                       :disabled="
-                        ['admin', 'general'].includes(selectedRole?.name as string) && !isCreating
+                        //['admin', 'general'].includes(selectedRole?.name as string) && !isCreating
+                        ['admin',].includes(selectedRole?.name as string) && !isCreating
                       "
                       :label="$t('system_permission.' + perm.code)"
                       hide-details
