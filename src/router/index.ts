@@ -195,17 +195,17 @@ router.beforeEach(async (to, from, next) => {
     return next();
   }
 
-  if (to.path === '/register') {
-    let accessToken = Cookies.get('accessToken') ?? '';
-    await hydrateUser(accessToken);
-    return next();
-  }
+  // if (to.path === '/register') {
+  //   let accessToken = Cookies.get('accessToken') ?? '';
+  //   await hydrateUser(accessToken);
+  //   return next();
+  // }
 
-  if (to.path === '/pendingapproval') {
-    let accessToken = Cookies.get('accessToken') ?? '';
-    await hydrateUser(accessToken);
-    return next();
-  }
+  // if (to.path === '/pendingapproval') {
+  //   let accessToken = Cookies.get('accessToken') ?? '';
+  //   await hydrateUser(accessToken);
+  //   return next();
+  // }
 
   // 로그인 페이지 접근 허용(이미 로그인 상태면 홈으로)
   if (to.path === '/login') {
@@ -228,10 +228,11 @@ router.beforeEach(async (to, from, next) => {
     return next('/login');
   }
 
-  if (account.is_confirm) return next();
-  else {
-    next('/pendingapproval');
-  }
+  return next();
+  // if (account.is_confirm) return next();
+  // else {
+  //   next('/pendingapproval');
+  // }
 });
 
 // Workaround for https://github.com/vitejs/vite/issues/11804
