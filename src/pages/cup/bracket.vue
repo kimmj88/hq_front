@@ -224,6 +224,15 @@
                 <v-chip color="amber" variant="flat" size="large">
                   🏆 {{ finalChampion.name }}
                 </v-chip>
+
+                <div class="mt-4 d-flex justify-center" style="gap: 8px">
+                  <v-btn color="success" variant="flat" rounded="pill" @click="finishCup">
+                    우승팀 확정
+                  </v-btn>
+                  <!-- <v-btn variant="tonal" rounded="pill" color="grey" @click="resetFinalWinner">
+                    우승팀 재선택
+                  </v-btn> -->
+                </div>
               </div>
               <div v-else class="text-caption text-disabled text-center mt-2">
                 결승 카드 중 하나를 클릭하면 우승팀이 결정됩니다.
@@ -378,6 +387,24 @@ function initBracket() {
       }
     }
   }
+}
+
+async function finishCup() {
+  console.log(rounds.value);
+  if (!finalChampion.value) return;
+
+  const ok = confirm(`우승팀 ${finalChampion.value.name}로 토너먼트를 종료할까요?`);
+  if (!ok) return;
+
+  let finalMatch: CupMatch;
+  for (const match of cup.value?.cup_matches) {
+    if (match.round == 'F') finalMatch = match;
+  }
+
+  await api.post(`${getBaseUrl('DATA')}/cupmatch/update`, {
+    id: finalMatch.id,
+    winner_team: winnerIndexes.value[1][0] == 0 ? finalMatch.home_team : finalMatch.away_team,
+  });
 }
 
 // 첫 초기화

@@ -48,7 +48,8 @@ import { getBaseUrl } from '@/@core/composable/createUrl';
 
 const team_count = ref<number | null>(null);
 
-const teamCountOptions = [2, 3, 4, 5, 6, 7, 8];
+//const teamCountOptions = [2, 3, 4, 5, 6, 7, 8];
+const teamCountOptions = [4];
 
 const router = useRouter();
 const cup_name = ref('');
