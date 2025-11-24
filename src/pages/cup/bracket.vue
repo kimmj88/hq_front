@@ -377,8 +377,6 @@ function initBracket() {
             winner = finalEntry?.match.winner_team?.id == home?.id ? 0 : 1;
           }
 
-          debugger;
-
           if (home) match.teams.push(home);
           if (away) match.teams.push(away);
 
@@ -394,13 +392,14 @@ async function finishCup() {
   if (!finalChampion.value) return;
 
   const ok = confirm(`우승팀 ${finalChampion.value.name}로 토너먼트를 종료할까요?`);
+
   if (!ok) return;
 
   let finalMatch: CupMatch;
   for (const match of cup.value?.cup_matches) {
     if (match.round == 'F') finalMatch = match;
   }
-
+  debugger;
   await api.post(`${getBaseUrl('DATA')}/cupmatch/update`, {
     id: finalMatch.id,
     winner_team: winnerIndexes.value[1][0] == 0 ? finalMatch.home_team : finalMatch.away_team,
@@ -442,9 +441,13 @@ function removeFromPool(teamId: number) {
 }
 
 /* 🔹 전체 리셋 */
-function resetAll() {
-  // poolTeams.value = [...initialTeams];
-  // initBracket();
+async function resetAll() {
+  //poolTeams.value = cup.value?.cup_teams;
+  for (const item of cup.value?.cup_matches) {
+    await api.post(`${getBaseUrl('DATA')}/cupmatch/delete`, { id: item.id });
+  }
+
+  fetch();
 }
 
 /* 🔹 풀 섞기 */
@@ -567,6 +570,7 @@ async function buildNextRound(roundIndex: number) {
   if (roundIndex === 0) {
     poolTeams.value = [];
   }
+  fetch();
 }
 
 /* 🔹 최종 우승팀 (마지막 라운드 기준) */
