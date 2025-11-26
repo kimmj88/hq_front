@@ -183,25 +183,30 @@
               </v-chip>
 
               <div v-if="slot.player" class="flex-grow-1 ml-2">
+                <!-- 🔹 닉네임 + 별 한 줄 -->
                 <div class="d-flex justify-space-between align-center">
                   <span class="text-body-2 font-weight-medium">
                     {{ slot.player.nickname }}#{{ slot.player.tagname }}
                   </span>
+
+                  <span class="player-stars">
+                    <font-awesome-icon
+                      v-for="index in slot.player?.cup_count"
+                      :key="'main-' + index"
+                      :icon="['fas', 'star']"
+                      class="star-full"
+                    />
+                    <font-awesome-icon
+                      v-for="index in slot.player?.sub_cup_count"
+                      :key="'sub-' + index"
+                      :icon="['far', 'star']"
+                      class="star-sub"
+                    />
+                  </span>
                 </div>
+
                 <div class="text-caption text-medium-emphasis">
                   {{ slot.player.tier?.name }} · {{ slot.player.tier.point + slot.player.point }}pt
-                </div>
-                <div class="text-caption text-medium-emphasis">
-                  <font-awesome-icon
-                    v-for="index in slot.player?.cup_count"
-                    :icon="['fas', 'star']"
-                    class="star-full"
-                  />
-                  <font-awesome-icon
-                    v-for="index in slot.player?.sub_cup_count"
-                    :icon="['far', 'star']"
-                    class="star-full"
-                  />
                 </div>
               </div>
 
