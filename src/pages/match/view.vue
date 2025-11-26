@@ -133,26 +133,23 @@
         <thead>
           <tr>
             <th v-if="match?.type === 'POSITION'">Position</th>
-            <!-- <th style="width: 100px">Star</th> -->
             <th>1팀</th>
             <th>Point</th>
-
             <th>Tier Point</th>
             <th>Tier</th>
             <th>Tier</th>
             <th>Tier Point</th>
             <th>Point</th>
             <th>2팀</th>
-            <!-- <th style="width: 100px">Star</th> -->
             <th v-if="match?.type === 'POSITION'">Position</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="i in team1.length" :key="i">
             <td v-if="match?.type === 'POSITION'">
-              <v-chip :color="getPositionColor(team1[i - 1].position)" variant="flat">
-                {{ team1[i - 1].position }}
-              </v-chip>
+              <div class="pos-icon-wrapper">
+                <v-img :src="getPositionIcon(team1[i - 1].position)" width="26" height="26" cover />
+              </div>
             </td>
             <td>
               <v-btn
@@ -234,18 +231,11 @@
                 class="star-full"
               />
             </td>
-            <!-- <td>
-              <span v-for="index in team2[i - 1]?.player?.cup_count" :key="'full' + i">
-                <font-awesome-icon :icon="['fas', 'star']" class="star-full" />
-              </span>
-              <span v-for="index in team2[i - 1]?.player?.sub_cup_count" :key="'full' + i">
-                <font-awesome-icon :icon="['far', 'star']" class="star-full" />
-              </span>
-            </td> -->
+
             <td v-if="match?.type === 'POSITION'">
-              <v-chip :color="getPositionColor(team2[i - 1].position)" variant="flat">
-                {{ team2[i - 1].position }}
-              </v-chip>
+              <div class="pos-icon-wrapper">
+                <v-img :src="getPositionIcon(team2[i - 1].position)" width="26" height="26" cover />
+              </div>
             </td>
           </tr>
         </tbody>
@@ -329,6 +319,12 @@
 </template>
 
 <script lang="ts" setup>
+import topIcon from '@/assets/positions/top.svg';
+import jugIcon from '@/assets/positions/jug.svg';
+import midIcon from '@/assets/positions/mid.svg';
+import adcIcon from '@/assets/positions/adc.webp';
+import supIcon from '@/assets/positions/sup.svg';
+
 import { can } from '@/stores/usePermissionStore';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import { computed, onMounted, ref } from 'vue';
@@ -397,6 +393,19 @@ function getPositionColor(position: string) {
     default:
       return 'grey';
   }
+}
+
+const positionIconMap: Record<string, string> = {
+  TOP: topIcon,
+  JUG: jugIcon,
+  MID: midIcon,
+  ADC: adcIcon,
+  SUP: supIcon,
+};
+
+function getPositionIcon(pos?: string) {
+  if (!pos) return '';
+  return positionIconMap[pos] ?? '';
 }
 
 let POSITIONS: any[] = [];
@@ -716,5 +725,21 @@ onMounted(fetch);
   vertical-align: middle;
   border: 1px solid #444;
   padding: 8px;
+}
+.full-width-table th,
+.full-width-table td {
+  text-align: center;
+  vertical-align: middle;
+  border: 1px solid #444;
+  padding: 8px;
+}
+
+/* 포지션 아이콘용 */
+.pos-icon-wrapper {
+  width: 28px;
+  height: 28px;
+  margin: 0 auto;
+  border-radius: 6px;
+  overflow: hidden; /* 이미지 밖 부분 잘라내기 */
 }
 </style>

@@ -8,7 +8,16 @@
           :activator-label="pos"
           activator-color="primary"
           @added="onAdded"
-        />
+        >
+          <!-- 🔹 여기부터 커스텀 activator -->
+          <template #activator="{ activatorProps }">
+            <v-btn v-bind="activatorProps" class="pos-icon-btn" variant="tonal" rounded="lg">
+              <div class="pos-icon-wrapper">
+                <v-img :src="getPositionIcon(pos)" width="22" height="22" cover />
+              </div>
+            </v-btn>
+          </template>
+        </CupMemberDialog>
       </v-col>
     </v-row>
 
@@ -73,7 +82,13 @@
     <v-row class="mb-8">
       <v-col v-for="pos in positions" :key="pos" cols="12" md="2">
         <div class="d-flex align-center justify-space-between mb-1">
-          <span class="text-subtitle-2">{{ pos }}</span>
+          <div class="d-flex align-center">
+            <div class="pos-icon-wrapper">
+              <v-img :src="getPositionIcon(pos)" width="20" height="20" cover />
+            </div>
+
+            <span class="text-subtitle-2 ml-1">{{ pos }}</span>
+          </div>
 
           <div class="d-flex align-center" style="gap: 6px">
             <span class="text-caption text-medium-emphasis">
@@ -232,6 +247,24 @@ import { getBaseUrl } from '@/@core/composable/createUrl';
 import api from '@/@core/composable/useAxios';
 import { useRoute, useRouter } from 'vue-router';
 import type { Cup, PositionPlayerList } from '@/data/types/cup';
+
+import topIcon from '@/assets/positions/top.svg';
+import jugIcon from '@/assets/positions/jug.svg';
+import midIcon from '@/assets/positions/mid.svg';
+import adcIcon from '@/assets/positions/adc.webp';
+import supIcon from '@/assets/positions/sup.svg';
+
+const positionIconMap: Record<string, string> = {
+  TOP: topIcon,
+  JUG: jugIcon,
+  MID: midIcon,
+  ADC: adcIcon,
+  SUP: supIcon,
+};
+
+function getPositionIcon(pos: string) {
+  return positionIconMap[pos] ?? '';
+}
 
 const route = useRoute();
 const router = useRouter();
@@ -588,5 +621,28 @@ onMounted(fetch);
 
 .team-slot-row:hover {
   background: rgba(15, 23, 42, 0.8);
+}
+.position-btn-row {
+  row-gap: 12px;
+}
+
+/* 기존 pos-icon-wrapper 그대로 사용 */
+.pos-icon-wrapper {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 상단 포지션 아이콘 버튼용 */
+.pos-icon-btn {
+  min-width: 40px;
+  padding: 4px 6px;
+}
+.pos-icon-btn .v-btn__content {
+  padding: 0; /* 안쪽 여백 줄여서 아이콘만 꽉 차게 */
 }
 </style>
