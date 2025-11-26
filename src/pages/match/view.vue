@@ -173,12 +173,12 @@
               </v-btn>
               <font-awesome-icon
                 v-for="index in team1[i - 1]?.player?.cup_count"
-                :icon="['far', 'star']"
+                :icon="['fas', 'star']"
                 class="star-full"
               />
               <font-awesome-icon
                 v-for="index in team1[i - 1]?.player?.sub_cup_count"
-                :icon="['fas', 'star']"
+                :icon="['far', 'star']"
                 class="star-full"
               />
             </td>
@@ -225,12 +225,12 @@
               </v-btn>
               <font-awesome-icon
                 v-for="index in team2[i - 1]?.player?.cup_count"
-                :icon="['far', 'star']"
+                :icon="['fas', 'star']"
                 class="star-full"
               />
               <font-awesome-icon
                 v-for="index in team2[i - 1]?.player?.sub_cup_count"
-                :icon="['fas', 'star']"
+                :icon="['far', 'star']"
                 class="star-full"
               />
             </td>
