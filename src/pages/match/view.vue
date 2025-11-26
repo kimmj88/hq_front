@@ -133,7 +133,7 @@
         <thead>
           <tr>
             <th v-if="match?.type === 'POSITION'">Position</th>
-            <th style="width: 100px">Star</th>
+            <!-- <th style="width: 100px">Star</th> -->
             <th>1팀</th>
             <th>Point</th>
 
@@ -143,7 +143,7 @@
             <th>Tier Point</th>
             <th>Point</th>
             <th>2팀</th>
-            <th style="width: 100px">Star</th>
+            <!-- <th style="width: 100px">Star</th> -->
             <th v-if="match?.type === 'POSITION'">Position</th>
           </tr>
         </thead>
@@ -153,14 +153,6 @@
               <v-chip :color="getPositionColor(team1[i - 1].position)" variant="flat">
                 {{ team1[i - 1].position }}
               </v-chip>
-            </td>
-            <td>
-              <span v-for="index in team1[i - 1]?.player?.cup_count" :key="'full' + i">
-                <font-awesome-icon :icon="['fas', 'star']" class="star-full" />
-              </span>
-              <span v-for="index in team1[i - 1]?.player?.sub_cup_count" :key="'full' + i">
-                <font-awesome-icon :icon="['far', 'star']" class="star-full" />
-              </span>
             </td>
             <td>
               <v-btn
@@ -179,6 +171,16 @@
                     : '—'
                 }}
               </v-btn>
+              <font-awesome-icon
+                v-for="index in team1[i - 1]?.player?.cup_count"
+                :icon="['far', 'star']"
+                class="star-full"
+              />
+              <font-awesome-icon
+                v-for="index in team1[i - 1]?.player?.sub_cup_count"
+                :icon="['fas', 'star']"
+                class="star-full"
+              />
             </td>
             <td>{{ team1[i - 1]?.player.point }}</td>
             <td>{{ team1[i - 1]?.player.tier.point }}</td>
@@ -221,15 +223,25 @@
                     : '—'
                 }}
               </v-btn>
+              <font-awesome-icon
+                v-for="index in team2[i - 1]?.player?.cup_count"
+                :icon="['fas', 'star']"
+                class="star-full"
+              />
+              <font-awesome-icon
+                v-for="index in team2[i - 1]?.player?.sub_cup_count"
+                :icon="['far', 'star']"
+                class="star-full"
+              />
             </td>
-            <td>
+            <!-- <td>
               <span v-for="index in team2[i - 1]?.player?.cup_count" :key="'full' + i">
                 <font-awesome-icon :icon="['fas', 'star']" class="star-full" />
               </span>
               <span v-for="index in team2[i - 1]?.player?.sub_cup_count" :key="'full' + i">
                 <font-awesome-icon :icon="['far', 'star']" class="star-full" />
               </span>
-            </td>
+            </td> -->
             <td v-if="match?.type === 'POSITION'">
               <v-chip :color="getPositionColor(team2[i - 1].position)" variant="flat">
                 {{ team2[i - 1].position }}
