@@ -133,7 +133,7 @@
         <thead>
           <tr>
             <th v-if="match?.type === 'POSITION'">Position</th>
-            <th>Star</th>
+            <th style="width: 100px">Star</th>
             <th>1팀</th>
             <th>Point</th>
 
@@ -143,7 +143,7 @@
             <th>Tier Point</th>
             <th>Point</th>
             <th>2팀</th>
-            <th>Star</th>
+            <th style="width: 100px">Star</th>
             <th v-if="match?.type === 'POSITION'">Position</th>
           </tr>
         </thead>
