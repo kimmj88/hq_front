@@ -191,6 +191,18 @@
                 <div class="text-caption text-medium-emphasis">
                   {{ slot.player.tier?.name }} · {{ slot.player.tier.point + slot.player.point }}pt
                 </div>
+                <div class="text-caption text-medium-emphasis">
+                  <font-awesome-icon
+                    v-for="index in slot.player?.cup_count"
+                    :icon="['fas', 'star']"
+                    class="star-full"
+                  />
+                  <font-awesome-icon
+                    v-for="index in slot.player?.sub_cup_count"
+                    :icon="['far', 'star']"
+                    class="star-full"
+                  />
+                </div>
               </div>
 
               <span v-else class="text-caption text-disabled flex-grow-1 ml-2"> 미배정 </span>
