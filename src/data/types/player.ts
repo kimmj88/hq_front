@@ -11,4 +11,6 @@ export interface Player {
   positions: Position;
   is_active: boolean;
   cupmember_id: number;
+  cup_count: number;
+  sub_cup_count: number;
 }

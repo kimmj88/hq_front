@@ -5,16 +5,24 @@
  */
 
 // Plugins
-import { registerPlugins } from '@/plugins'
+import { registerPlugins } from '@/plugins';
 
 // Components
-import App from './App.vue'
+import App from './App.vue';
 
 // Composables
-import { createApp } from 'vue'
+import { createApp } from 'vue';
 
-const app = createApp(App)
+import { library } from '@fortawesome/fontawesome-svg-core';
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 
-registerPlugins(app)
+// 별 아이콘 import
+import { faStar as fasStar } from '@fortawesome/free-solid-svg-icons';
+import { faStar as farStar } from '@fortawesome/free-regular-svg-icons';
 
-app.mount('#app')
+library.add(fasStar, farStar);
+const app = createApp(App).component('font-awesome-icon', FontAwesomeIcon);
+
+registerPlugins(app);
+
+app.mount('#app');
