@@ -57,6 +57,9 @@ import PendingApproval from '@/pages/login/PendingApproval.vue';
 //register
 import KakaoLolRegister from '@/pages/login/KakaoLolRegister.vue';
 
+//record
+import Record from '@/pages/record/index.vue';
+
 import Cookies from 'js-cookie';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useAccountStore } from '@/stores/useAccountStore';
@@ -115,6 +118,15 @@ const router = createRouter({
         { path: 'add', component: CupAdd },
         { path: CUP_PATH.VIEW(':id'), component: CupView, props: true },
         { path: CUP_PATH.BRACKET(':id'), component: Bracket, props: true },
+      ],
+    },
+
+    {
+      path: '/record',
+      component: DefaultLayout,
+      children: [
+        { path: '/home', component: Home },
+        { path: '', component: Record },
       ],
     },
   ],
