@@ -54,7 +54,7 @@
                 <v-icon class="ml-2 drag-handle" size="18"> mdi-drag-vertical </v-icon>
 
                 <!-- 삭제 버튼 -->
-                <v-btn
+                <!-- <v-btn
                   icon
                   size="x-small"
                   variant="text"
@@ -62,7 +62,7 @@
                   @click.stop="removeFromPool(element.id)"
                 >
                   <v-icon size="16" color="red-lighten-2">mdi-close</v-icon>
-                </v-btn>
+                </v-btn> -->
               </div>
             </template>
           </draggable>
@@ -308,23 +308,19 @@ function initBracket() {
   let defs: { key: RoundKey; label: string; matchCount: number }[];
 
   if (bracketSize === 2) {
-    // 팀 1~2개 → 결승만
     defs = [{ key: 'F', label: '결승', matchCount: 1 }];
   } else if (bracketSize === 4) {
-    // 팀 3~4개 → 4강 + 결승
     defs = [
       { key: 'SF', label: '4강', matchCount: 2 },
       { key: 'F', label: '결승', matchCount: 1 },
     ];
   } else if (bracketSize === 8) {
-    // 팀 5~8개 → 8강 + 4강 + 결승
     defs = [
       { key: 'QF', label: '8강', matchCount: 4 },
       { key: 'SF', label: '4강', matchCount: 2 },
       { key: 'F', label: '결승', matchCount: 1 },
     ];
   } else {
-    // bracketSize === 16, 팀 9~16개
     defs = [
       { key: 'R16', label: '16강', matchCount: 8 },
       { key: 'QF', label: '8강', matchCount: 4 },
@@ -334,7 +330,6 @@ function initBracket() {
   }
 
   // 3) rounds / winnerIndexes 초기화
-
   rounds.value = defs.map((d) => ({
     key: d.key,
     label: d.label,
@@ -343,48 +338,66 @@ function initBracket() {
 
   winnerIndexes.value = rounds.value.map((r) => Array(r.matches.length).fill(null));
 
-  for (const round of rounds.value) {
-    if (round.key === 'SF') {
-      let index = 0;
-
-      for (const match of cup.value?.cup_matches) {
-        if (match.round == 'SF') {
+  // 4) 라운드별로 winnerIndexes 채우기
+  rounds.value.forEach((round, rIdx) => {
+    if (round.key === 'QF') {
+      // QF (8강)
+      for (const match of cup.value?.cup_matches ?? []) {
+        if (match.round === 'QF') {
           const home = match.home_team;
           const away = match.away_team;
-          const winner = match.winner_team?.id == home.id ? 0 : 1;
+          const winner = match.winner_team?.id === home?.id ? 0 : 1;
 
           if (home) round.matches[match.match_no - 1].teams.push(home);
           if (away) round.matches[match.match_no - 1].teams.push(away);
 
-          winnerIndexes.value[0][match.match_no - 1] = winner;
+          // 🔥 rIdx로 동적 인덱싱
+          winnerIndexes.value[rIdx][match.match_no - 1] = winner;
+        }
+      }
+    } else if (round.key === 'SF') {
+      // SF (4강)
+      for (const match of cup.value?.cup_matches ?? []) {
+        if (match.round === 'SF') {
+          const home = match.home_team;
+          const away = match.away_team;
+          const winner = match.winner_team?.id === home?.id ? 0 : 1;
+
+          if (home) round.matches[match.match_no - 1].teams.push(home);
+          if (away) round.matches[match.match_no - 1].teams.push(away);
+
+          // 🔥 여기서도 rIdx 사용
+          winnerIndexes.value[rIdx][match.match_no - 1] = winner;
         }
       }
     } else if (round.key === 'F') {
-      let index = 0;
+      // F (결승)
+      const hasFinal = cup.value?.cup_matches?.some((v) => v.round === 'F') ?? false;
 
-      const hasFinal = cup.value?.cup_matches?.map((v) => v.round).includes('F') ?? false;
       const finalEntry =
         cup.value?.cup_matches
           ?.map((match, index) => ({ match, index }))
           .find((v) => v.match.round === 'F') ?? null;
 
-      for (const match of round.matches) {
-        if (hasFinal) {
-          const home = finalEntry?.match.home_team;
-          const away = finalEntry?.match.away_team;
-          let winner = null;
-          if (finalEntry?.match.winner_team != undefined) {
-            winner = finalEntry?.match.winner_team?.id == home?.id ? 0 : 1;
-          }
+      if (!hasFinal || !finalEntry) return;
 
-          if (home) match.teams.push(home);
-          if (away) match.teams.push(away);
+      const home = finalEntry.match.home_team;
+      const away = finalEntry.match.away_team;
 
-          winnerIndexes.value[1][0] = winner;
-        }
+      let winner: 0 | 1 | null = null;
+      if (finalEntry.match.winner_team && home && away) {
+        winner = finalEntry.match.winner_team.id === home.id ? 0 : 1;
       }
+
+      // 결승은 matchCount가 1개라서 [0] 고정
+      const matchModel = round.matches[0];
+      if (home) matchModel.teams.push(home);
+      if (away) matchModel.teams.push(away);
+
+      // 🔥 결승도 rIdx 사용 (2, 1, 0 뭐가 되든 자동)
+      winnerIndexes.value[rIdx][0] = winner;
     }
-  }
+  });
 }
 
 async function finishCup() {
@@ -548,6 +561,22 @@ async function buildNextRound(roundIndex: number) {
     });
 
     const { data } = await api.post(`${getBaseUrl('DATA')}/cupmatch/create-many`, createCupMatches);
+  } else if (current.key == 'QF') {
+    const createCupMatches: CupMatch[] = [];
+    let matchIndex = 1;
+
+    for (const match of current.matches) {
+      createCupMatches.push({
+        cup_id: +route.params.id,
+        match_no: matchIndex,
+        home_team: match.teams[0],
+        away_team: match.teams[1],
+        round: 'QF',
+        winner_team: winners[matchIndex - 1],
+      });
+      matchIndex++;
+    }
+    const { data } = await api.post(`${getBaseUrl('DATA')}/cupmatch/create-many`, createCupMatches);
   }
 
   const neededTeams = next.matches.length * 2;
@@ -570,7 +599,10 @@ async function buildNextRound(roundIndex: number) {
   if (roundIndex === 0) {
     poolTeams.value = [];
   }
-  fetch();
+
+  if (current.key == 'SF') {
+    fetch();
+  }
 }
 
 /* 🔹 최종 우승팀 (마지막 라운드 기준) */
