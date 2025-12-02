@@ -291,6 +291,12 @@ import axios from 'axios';
 import { computed, onMounted, ref } from 'vue';
 import { useAccountStore } from '@/stores/useAccountStore';
 import { usePostStore } from '@/stores/usePostSotre';
+import api from '@/@core/composable/useAxios';
+import { useRoute } from 'vue-router';
+import { useRouter } from 'vue-router';
+
+const route = useRoute();
+const router = useRouter();
 
 import { extractYouTubeVideoId, youtubeThumbUrl, youtubeThumbFallback } from '@/utils/youtube';
 
@@ -314,7 +320,7 @@ function dismissAnnouncement() {
 }
 function goToNotice() {
   // 라우팅 연결
-  // router.push({ name: 'notice' });
+  router.push('/board');
   console.log('공지 이동');
 }
 
@@ -344,8 +350,13 @@ const notices = ref([
   { title: '!!!협곡난전 큐드컵!!!', date: '2025-11-01', badge: true },
   { title: '!!!협곡난전 큐드컵!!!', date: '2025-11-01', badge: true },
   { title: '!!!협곡난전 큐드컵!!!', date: '2025-11-01', badge: true },
-  // { title: '운영 정책 변경 안내', date: '2025-10-12', badge: false },
-  // { title: '보안 점검 결과 보고', date: '2025-10-05', badge: false },
+  { title: '운영 정책 변경 안내', date: '2025-10-12', badge: false },
+  { title: '보안 점검 결과 보고', date: '2025-10-05', badge: false },
+  { title: '!!!협곡난전 큐드컵!!!', date: '2025-11-01', badge: true },
+  { title: '!!!협곡난전 큐드컵!!!', date: '2025-11-01', badge: true },
+  { title: '!!!협곡난전 큐드컵!!!', date: '2025-11-01', badge: true },
+  { title: '운영 정책 변경 안내', date: '2025-10-12', badge: false },
+  { title: '보안 점검 결과 보고', date: '2025-10-05', badge: false },
 ]);
 const shares = ref([
   { title: '내전방 1번', snippet: '3명 / 10명', date: '2025-10-22' },
@@ -471,7 +482,10 @@ function openAd(ad: AdItem) {
 onMounted(async () => {
   try {
     isLoading.value = true;
-    await postStore.fetchPosts();
+    //await postStore.fetchPosts();
+    const response = await api.get(`${getBaseUrl('DATA')}/board/all`);
+
+    notices.value = response.data.datas;
   } finally {
     isLoading.value = false;
   }
