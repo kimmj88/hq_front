@@ -1,0 +1,99 @@
+<template>
+  <v-container>
+    <!-- 제목 영역 -->
+    <v-card class="pa-4 mb-4">
+      <h2 class="text-h6 mb-2">{{ notice.title }}</h2>
+      <div class="text-caption text-grey-darken-1">
+        작성자: {{ notice.writer }} · 등록일: {{ notice.createdAt }} · 조회수:
+        {{ notice.viewCount }}
+      </div>
+    </v-card>
+
+    <!-- 본문 영역 -->
+    <v-card class="pa-6 mb-4">
+      <!-- 내부 HTML을 그대로 출력할 수 있는 예시 -->
+      <div v-html="notice.content"></div>
+    </v-card>
+
+    <!-- 버튼 영역 -->
+    <div class="d-flex justify-end gap-2">
+      <v-btn variant="tonal" @click="goList">목록</v-btn>
+      <v-btn
+        v-if="can('NOTICE', 'SYS-SET-NOTICE-U')"
+        color="primary"
+        :to="BOARD_PATH.EDIT(route.params.id)"
+        >수정</v-btn
+      >
+      <v-btn v-if="can('NOTICE', 'SYS-SET-NOTICE-D')" color="error" @click="deleteNotice"
+        >삭제</v-btn
+      >
+    </div>
+  </v-container>
+</template>
+
+<script setup lang="ts">
+import { getBaseUrl } from '@/@core/composable/createUrl';
+import { ref, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import api from '@/@core/composable/useAxios';
+import { BOARD_PATH } from '@/router/board/type';
+import { can } from '@/stores/usePermissionStore';
+
+interface NoticeDetail {
+  id: number;
+  title: string;
+  writer: string;
+  createdAt: string;
+  viewCount: number;
+  content: string;
+}
+
+const route = useRoute();
+const router = useRouter();
+
+const notice = ref<NoticeDetail>({
+  id: 0,
+  title: '',
+  writer: '',
+  createdAt: '',
+  viewCount: 0,
+  content: '',
+});
+
+// 게시글 로딩 (샘플 데이터)
+const loadNotice = async () => {
+  debugger;
+  const id = Number(route.params.id);
+
+  const { data } = await api.get(`${getBaseUrl('DATA')}/board/find?id=${route.params.id}`);
+
+  notice.value = {
+    id,
+    title: data.datas.title,
+    writer: data.datas.account.name,
+    createdAt: data.datas.created_at,
+    viewCount: 0,
+    content: data.datas.description,
+  };
+
+  debugger;
+};
+
+const goList = () => router.push('/board');
+
+const editNotice = () => {
+  //router.push({ name: 'edit', params: { id: notice.value.id } });
+  router.push(BOARD_PATH.EDIT(route.params.id as any));
+};
+
+const deleteNotice = async () => {
+  if (confirm('정말 삭제하시겠습니까?')) {
+    await api.post(`${getBaseUrl('DATA')}/board/delete`, {
+      id: +route.params.id,
+    });
+    goList();
+  }
+};
+
+onMounted(loadNotice);
+</script>

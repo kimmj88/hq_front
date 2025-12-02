@@ -26,7 +26,7 @@
       <!-- 버튼 영역 -->
       <div class="mt-6 text-right">
         <v-btn color="secondary" class="mr-2" @click="createMatch">Add</v-btn>
-        <v-btn color="secondary" @click="$router.push(CUP_PATH.BASE)">CANCEL</v-btn>
+        <v-btn color="secondary" @click="$router.push(BOARD_PATH.BASE)">CANCEL</v-btn>
       </div>
     </v-form>
 
@@ -45,6 +45,7 @@ import { useRouter } from 'vue-router';
 import { CUP_PATH } from '@/router/cup/type';
 import { rules } from '@/@core/validation/rules';
 import { getBaseUrl } from '@/@core/composable/createUrl';
+import { BOARD_PATH } from '@/router/board/type';
 
 const team_count = ref<number | null>(null);
 

@@ -45,6 +45,10 @@ const messages = {
 
       'SYS-SET-CUP-C': '컵 생성',
       'SYS-SET-CUP-D': '컵 삭제',
+
+      'SYS-SET-NOTICE-C': '공지사항 생성',
+      'SYS-SET-NOTICE-U': '공지사항 수정',
+      'SYS-SET-NOTICE-D': '공지사항 삭제',
     },
   },
   en: {

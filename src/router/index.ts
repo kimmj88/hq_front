@@ -60,6 +60,11 @@ import KakaoLolRegister from '@/pages/login/KakaoLolRegister.vue';
 //record
 import Record from '@/pages/record/index.vue';
 
+//Board
+import Board from '@/pages/board/index.vue';
+import BoardAdd from '@/pages/board/add.vue';
+import BoardView from '@/pages/board/view.vue';
+
 import Cookies from 'js-cookie';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useAccountStore } from '@/stores/useAccountStore';
@@ -68,6 +73,7 @@ import axios from 'axios';
 import { CONFIG_PERMISSION_SYSTEM_PATH } from './permission/system/type';
 import { usePermissionStore } from '@/stores/usePermissionStore';
 import type { SystemRole } from '@/data/types/systemrole';
+import { BOARD_PATH } from './board/type';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -127,6 +133,17 @@ const router = createRouter({
       children: [
         { path: '/home', component: Home },
         { path: '', component: Record },
+      ],
+    },
+    {
+      path: '/board',
+      component: DefaultLayout,
+      children: [
+        { path: '/home', component: Home },
+        { path: '', component: Board },
+        { path: 'add', component: BoardAdd },
+        { path: BOARD_PATH.VIEW(':id'), component: BoardView, props: true },
+        { path: BOARD_PATH.EDIT(':id'), component: BoardAdd, props: true },
       ],
     },
   ],

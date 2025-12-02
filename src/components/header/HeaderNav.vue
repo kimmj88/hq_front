@@ -74,6 +74,13 @@ const menuItems = computed(() => {
   });
 
   items.push({
+    key: 'board',
+    title: 'Board',
+    icon: 'mdi-home',
+    to: '/board',
+  });
+
+  items.push({
     key: 'match',
     title: 'Match',
     icon: 'mdi-sword-cross',
