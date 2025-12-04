@@ -90,7 +90,7 @@ const router = useRouter();
 const headers = [
   { title: '번호', key: 'id', align: 'center', width: 80 },
   { title: '제목', key: 'title', align: 'start' },
-  { title: '작성자', key: 'account.name', align: 'center', width: 120 },
+  { title: '작성자', key: 'account.nickname', align: 'center', width: 120 },
   { title: '등록일', key: 'created_at', align: 'center', width: 150 },
 ];
 

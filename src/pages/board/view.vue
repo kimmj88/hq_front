@@ -70,7 +70,7 @@ const loadNotice = async () => {
   notice.value = {
     id,
     title: data.datas.title,
-    writer: data.datas.account.name,
+    writer: data.datas.account.nickname,
     createdAt: data.datas.created_at,
     viewCount: 0,
     content: data.datas.description,
