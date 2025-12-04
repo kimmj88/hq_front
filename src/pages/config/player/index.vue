@@ -82,6 +82,26 @@
         </div>
       </template>
 
+      <template #item.cup_count="{ item }">
+        <div class="d-flex align-center">
+          <font-awesome-icon
+            v-for="index in item?.cup_count"
+            :icon="['fas', 'star']"
+            class="star-full"
+          />
+        </div>
+      </template>
+
+      <template #item.sub_cup_count="{ item }">
+        <div class="d-flex align-center">
+          <font-awesome-icon
+            v-for="index in item?.sub_cup_count"
+            :icon="['far', 'star']"
+            class="star-full"
+          />
+        </div>
+      </template>
+
       <template #item.is_active="{ item }">
         <v-switch v-model="item.is_active" readonly inset hide-details color="success" />
       </template>
@@ -191,6 +211,24 @@
           density="compact"
         />
 
+        <v-divider class="mb-8"></v-divider>
+        <v-text-field
+          label="Cup"
+          v-model="edit.form.cup_count"
+          type="number"
+          variant="outlined"
+          density="compact"
+        />
+
+        <v-divider class="mb-8"></v-divider>
+        <v-text-field
+          label="Sub Cup"
+          v-model="edit.form.sub_cup_count"
+          type="number"
+          variant="outlined"
+          density="compact"
+        />
+
         <v-autocomplete
           label="Custom Tier"
           v-model="selectedCustomTier"
@@ -280,6 +318,8 @@ const headers: VDataTableServer['headers'] = [
   { title: 'TIER', key: 'tier', sortable: false },
   { title: 'CUSTOM_TIER', key: 'custom_tier', sortable: false },
   { title: 'CLAN_TIER', key: 'clan_tier', sortable: false },
+  { title: 'MAIN_CUP', key: 'cup_count', sortable: false },
+  { title: 'SUB_CUP', key: 'sub_cup_count', sortable: true },
   { title: 'POINT', key: 'point', sortable: true },
   { title: 'Position', key: 'positions', sortable: false, width: 240 }, // ⬅️ 추가
   { title: 'ACTIVE', key: 'is_active', sortable: false },
@@ -302,13 +342,15 @@ const edit = ref<{
     id: number;
     name: string;
     point: number | null;
+    cup_count: number | null;
+    sub_cup_count: number | null;
     is_active: boolean;
   };
 }>({
   open: false,
   loading: false,
   target: null,
-  form: { id: 0, name: '', point: null, is_active: false },
+  form: { id: 0, name: '', point: null, cup_count: null, sub_cup_count: null, is_active: false },
 });
 
 function openEdit(item: any) {
@@ -326,6 +368,10 @@ function openEdit(item: any) {
   edit.value.form.id = item.id;
   edit.value.form.name = `${item.nickname}#${item.tagname}`;
   edit.value.form.point = item.point;
+
+  edit.value.form.cup_count = item.cup_count;
+  edit.value.form.sub_cup_count = item.sub_cup_count;
+
   edit.value.form.is_active = item.is_active;
 }
 
@@ -449,6 +495,8 @@ async function handleEditSave() {
       nickname: nick,
       tagname: tag,
       point: edit.value.form.point,
+      cup_count: edit.value.form.cup_count,
+      sub_cup_count: edit.value.form.sub_cup_count,
       custom_tier: selectedCustomTier.value,
       tier: selectedTier.value,
       positions: selectedPositions.value,
