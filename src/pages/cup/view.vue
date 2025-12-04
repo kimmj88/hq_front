@@ -161,7 +161,7 @@
 
     <!-- 🔹 팀 프레임 (SHOT 이후 표시) -->
     <v-row v-if="teams.length" class="team-grid mb-8">
-      <v-col v-for="team in teams" :key="team.id" cols="12" md="3" sm="6">
+      <v-col v-for="(team, teamIndex) in teams" :key="team.id" cols="12" md="3" sm="6">
         <v-card class="team-card" rounded="xl">
           <v-card-title class="d-flex justify-space-between align-center py-3">
             <div class="d-flex flex-column">
@@ -184,6 +184,8 @@
               v-for="slot in team.slots"
               :key="slot.position"
               class="team-slot-row d-flex align-center justify-space-between mb-2"
+              :class="{ 'swap-selected': isSwapSelected(teamIndex, slot.position) }"
+              @click="onClickSwapSlot(teamIndex, slot.position)"
             >
               <v-chip
                 size="x-small"
@@ -261,6 +263,77 @@ const positionIconMap: Record<string, string> = {
   ADC: adcIcon,
   SUP: supIcon,
 };
+
+const swapTarget = ref<{ teamIndex: number; position: string } | null>(null);
+
+function isSwapSelected(teamIndex: number, position: string) {
+  return swapTarget.value?.teamIndex === teamIndex && swapTarget.value?.position === position;
+}
+
+function onClickSwapSlot(teamIndex: number, position: string) {
+  // 확정된 컵이면 스왑 불가
+  if (cup.value?.is_confirm) return;
+
+  const team = teams.value[teamIndex];
+  if (!team) return;
+
+  const slot = team.slots.find((s) => s.position === position);
+  // 빈 슬롯이면 무시
+  if (!slot || !slot.player) return;
+
+  // 아직 첫 선택이 없으면 → 선택 상태로 저장
+  if (!swapTarget.value) {
+    swapTarget.value = { teamIndex, position };
+    snackbar.msg = '교체할 다른 팀의 같은 포지션을 선택하세요.';
+    snackbar.show = true;
+    return;
+  }
+
+  // 같은 슬롯 다시 클릭 → 취소
+  if (swapTarget.value.teamIndex === teamIndex && swapTarget.value.position === position) {
+    swapTarget.value = null;
+    snackbar.msg = '선택이 취소되었습니다.';
+    snackbar.show = true;
+    return;
+  }
+
+  // 포지션 다르면 스왑 불가
+  if (swapTarget.value.position !== position) {
+    snackbar.msg = '같은 포지션끼리만 스왑할 수 있습니다.';
+    snackbar.show = true;
+    swapTarget.value = null;
+    return;
+  }
+
+  // 여기까지 왔으면: 같은 포지션, 다른 팀 → 실제 스왑 수행
+  const prevTeam = teams.value[swapTarget.value.teamIndex];
+  const prevSlot = prevTeam.slots.find((s) => s.position === swapTarget.value!.position);
+
+  if (!prevSlot || !prevSlot.player) {
+    swapTarget.value = null;
+    return;
+  }
+
+  // 🔥 플레이어 스왑
+  const tmp = prevSlot.player;
+  prevSlot.player = slot.player;
+  slot.player = tmp;
+
+  // 팀 점수 다시 계산
+  prevTeam.totalPoint = prevTeam.slots.reduce((sum, s) => {
+    return sum + (s.player ? getPlayerPoint(s.player) : 0);
+  }, 0);
+
+  team.totalPoint = team.slots.reduce((sum, s) => {
+    return sum + (s.player ? getPlayerPoint(s.player) : 0);
+  }, 0);
+
+  // 선택 초기화
+  swapTarget.value = null;
+
+  snackbar.msg = '두 팀의 포지션이 서로 교체되었습니다.';
+  snackbar.show = true;
+}
 
 function getPositionIcon(pos: string) {
   return positionIconMap[pos] ?? '';
@@ -644,5 +717,10 @@ onMounted(fetch);
 }
 .pos-icon-btn .v-btn__content {
   padding: 0; /* 안쪽 여백 줄여서 아이콘만 꽉 차게 */
+}
+
+.swap-selected {
+  outline: 2px solid #facc15; /* 노란색 */
+  background-color: rgba(250, 204, 21, 0.08);
 }
 </style>
