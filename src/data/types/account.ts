@@ -5,6 +5,7 @@ export interface Account {
   id: number;
   email: string;
   name: string;
+  nickname: string;
   department: string;
   created_at: string;
   updated_at: string;

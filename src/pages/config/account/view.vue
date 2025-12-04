@@ -5,12 +5,12 @@
       <v-col cols="12" class="text-center">
         <v-avatar size="96" color="blue-darken-2">
           <span class="text-h5 font-weight-bold text-white">
-            {{ getInitials(account.datas.name) }}
+            {{ getInitials(account.datas.nickname) }}
           </span>
         </v-avatar>
 
         <div class="mt-3 text-h6 font-weight-medium">
-          {{ account.datas.name || '-' }}
+          {{ account.datas.nickname || '-' }}
         </div>
 
         <div class="mt-1 d-flex justify-center align-center" style="gap: 8px">
@@ -48,7 +48,7 @@
         <v-list density="compact" class="text-body-2">
           <v-list-item>
             <v-list-item-title class="font-weight-medium">Username</v-list-item-title>
-            <v-list-item-subtitle>{{ account.datas.name || '-' }}</v-list-item-subtitle>
+            <v-list-item-subtitle>{{ account.datas.nickname || '-' }}</v-list-item-subtitle>
           </v-list-item>
           <v-list-item>
             <v-list-item-title class="font-weight-medium">Email</v-list-item-title>

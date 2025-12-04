@@ -20,17 +20,31 @@
               <v-avatar size="28" class="mr-2">
                 <v-icon>mdi-account</v-icon>
               </v-avatar>
-              <span class="text-body-2 font-weight-medium">{{ account.email }}</span>
+              <span class="text-body-2 font-weight-medium">{{ account.nickname }}</span>
               <v-icon right size="18">mdi-chevron-down</v-icon>
             </v-btn>
           </template>
           <v-list>
-            <v-list-item
-              v-if="can('SETTING', 'SET-R')"
-              title="Config"
-              @click="router.push('/config')"
-            />
-            <v-list-item title="Logout" @click="logout" />
+            <v-list-item v-if="can('SETTING', 'SET-R')" :to="'/config'" router>
+              <template #prepend>
+                <v-icon>mdi-cog</v-icon>
+              </template>
+              <v-list-item-title>Config</v-list-item-title>
+            </v-list-item>
+
+            <v-list-item :to="CONFIG_ACCOUNT_PATH.VIEW(account.id)" router>
+              <template #prepend>
+                <v-icon>mdi-account-circle-outline</v-icon>
+              </template>
+              <v-list-item-title>My Account</v-list-item-title>
+            </v-list-item>
+
+            <v-list-item @click="logout">
+              <template #prepend>
+                <v-icon>mdi-logout</v-icon>
+              </template>
+              <v-list-item-title>Logout</v-list-item-title>
+            </v-list-item>
           </v-list>
         </v-menu>
       </v-col>
@@ -43,6 +57,7 @@ import { can } from '@/stores/usePermissionStore';
 import Cookies from 'js-cookie';
 import { useRouter } from 'vue-router';
 import { useAccountStore } from '@/stores/useAccountStore';
+import { CONFIG_ACCOUNT_PATH } from '@/router/config/type';
 
 import logo from '@/assets/hq_logo11.jpeg';
 
