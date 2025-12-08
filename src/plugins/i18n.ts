@@ -49,6 +49,11 @@ const messages = {
       'SYS-SET-NOTICE-C': '공지사항 생성',
       'SYS-SET-NOTICE-U': '공지사항 수정',
       'SYS-SET-NOTICE-D': '공지사항 삭제',
+
+      'SYS-SET-ENQUIRE-C': '건의사항 생성',
+      'SYS-SET-ENQUIRE-R': '건의사항 읽기',
+      'SYS-SET-ENQUIRE-U': '건의사항 수정',
+      'SYS-SET-ENQUIRE-D': '건의사항 삭제',
     },
   },
   en: {

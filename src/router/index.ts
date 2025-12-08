@@ -65,6 +65,12 @@ import Board from '@/pages/board/index.vue';
 import BoardAdd from '@/pages/board/add.vue';
 import BoardView from '@/pages/board/view.vue';
 
+//Enquire
+import { ENQUIRE_PATH } from '@/router/enquire/type';
+import Enquire from '@/pages/enquire/index.vue';
+import EnquireAdd from '@/pages/enquire/add.vue';
+import EnquireView from '@/pages/enquire/view.vue';
+
 import Cookies from 'js-cookie';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useAccountStore } from '@/stores/useAccountStore';
@@ -144,6 +150,18 @@ const router = createRouter({
         { path: 'add', component: BoardAdd },
         { path: BOARD_PATH.VIEW(':id'), component: BoardView, props: true },
         { path: BOARD_PATH.EDIT(':id'), component: BoardAdd, props: true },
+      ],
+    },
+
+    {
+      path: '/enquire',
+      component: DefaultLayout,
+      children: [
+        { path: '/home', component: Home },
+        { path: '', component: Enquire },
+        { path: 'add', component: EnquireAdd },
+        { path: ENQUIRE_PATH.VIEW(':id'), component: EnquireView, props: true },
+        { path: ENQUIRE_PATH.EDIT(':id'), component: EnquireAdd, props: true },
       ],
     },
   ],

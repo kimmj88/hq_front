@@ -76,7 +76,7 @@ const menuItems = computed(() => {
   items.push({
     key: 'board',
     title: 'Board',
-    icon: 'mdi-home',
+    icon: 'mdi-view-dashboard-outline',
     to: '/board',
   });
 
@@ -92,6 +92,13 @@ const menuItems = computed(() => {
     title: 'CUP',
     icon: 'mdi-trophy-outline',
     to: '/cup',
+  });
+
+  items.push({
+    key: 'enquire',
+    title: 'Enquire',
+    icon: 'mdi-help-circle-outline',
+    to: '/enquire',
   });
 
   // const solutionChildren = [];
