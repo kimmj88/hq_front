@@ -15,6 +15,56 @@
       <div v-html="enquire.content"></div>
     </v-card>
 
+    <v-card class="pa-4 mb-4">
+      <div class="d-flex justify-space-between align-center mb-3">
+        <h3 class="text-subtitle-1">댓글 {{ enquire.comments.length }}</h3>
+      </div>
+
+      <v-divider class="mb-3" />
+
+      <!-- 댓글 입력 -->
+      <div class="d-flex align-start mb-4">
+        <v-textarea
+          v-model="newComment"
+          rows="2"
+          auto-grow
+          placeholder="댓글을 입력하세요."
+          class="flex-grow-1 mr-2"
+        />
+        <v-btn color="primary" :disabled="!newComment.trim()" @click="addComment"> 등록 </v-btn>
+      </div>
+
+      <!-- 댓글 리스트 -->
+      <v-list v-if="enquire.comments.length">
+        <v-list-item v-for="comment in enquire.comments" :key="comment.id" class="px-0">
+          <v-list-item-title class="d-flex align-center">
+            <span class="font-weight-medium mr-2">{{ comment.account.nickname }}</span>
+            <span class="text-caption text-grey-darken-1">
+              {{ comment.created_at }}
+            </span>
+          </v-list-item-title>
+
+          <v-list-item-subtitle class="mt-1">
+            {{ comment.content }}
+          </v-list-item-subtitle>
+
+          <template #append>
+            <v-btn
+              v-if="comment.account.id == account.id"
+              size="small"
+              variant="text"
+              color="error"
+              @click="deleteComment(comment.id)"
+            >
+              삭제
+            </v-btn>
+          </template>
+        </v-list-item>
+      </v-list>
+
+      <div v-else class="text-caption text-grey">아직 작성된 댓글이 없습니다.</div>
+    </v-card>
+
     <!-- 버튼 영역 -->
     <div class="d-flex justify-end gap-2">
       <v-btn variant="tonal" @click="goList">목록</v-btn>
@@ -38,6 +88,10 @@ import { useRoute, useRouter } from 'vue-router';
 import api from '@/@core/composable/useAxios';
 import { ENQUIRE_PATH } from '@/router/enquire/type';
 import { can } from '@/stores/usePermissionStore';
+import { useAccountStore } from '@/stores/useAccountStore';
+import type { Comment } from '@/data/types/comment';
+
+const account = useAccountStore();
 
 interface EnquireDetail {
   id: number;
@@ -46,6 +100,7 @@ interface EnquireDetail {
   createdAt: string;
   viewCount: number;
   content: string;
+  comments: Comment[];
 }
 
 const route = useRoute();
@@ -58,6 +113,7 @@ const enquire = ref<EnquireDetail>({
   createdAt: '',
   viewCount: 0,
   content: '',
+  comments: [],
 });
 
 // 게시글 로딩 (샘플 데이터)
@@ -67,6 +123,7 @@ const loadEnquire = async () => {
 
   const { data } = await api.get(`${getBaseUrl('DATA')}/enquire/find?id=${route.params.id}`);
 
+  debugger;
   enquire.value = {
     id,
     title: data.datas.title,
@@ -74,16 +131,13 @@ const loadEnquire = async () => {
     createdAt: data.datas.created_at,
     viewCount: 0,
     content: data.datas.description,
+    comments: data.datas.comments,
   };
 
   debugger;
 };
 
 const goList = () => router.push('/enquire');
-
-const editEnquire = () => {
-  router.push(ENQUIRE_PATH.EDIT(route.params.id as any));
-};
 
 const deleteEnquire = async () => {
   if (confirm('정말 삭제하시겠습니까?')) {
@@ -92,6 +146,35 @@ const deleteEnquire = async () => {
     });
     goList();
   }
+};
+
+const newComment = ref('');
+
+const addComment = async () => {
+  const content = newComment.value.trim();
+  if (!content) return;
+
+  await api.post(`${getBaseUrl('DATA')}/comment/create`, {
+    ref_id: +route.params.id,
+    content: content,
+    type: 'ENQUIRE',
+    account_id: account.id,
+  });
+
+  newComment.value = '';
+
+  loadEnquire();
+};
+
+const deleteComment = async (id: number) => {
+  const ok = confirm('정말 이 댓글을 삭제하시겠습니까?');
+  if (!ok) return;
+
+  await api.post(`${getBaseUrl('DATA')}/comment/delete`, {
+    id,
+  });
+
+  loadEnquire();
 };
 
 onMounted(loadEnquire);

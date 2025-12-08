@@ -28,16 +28,31 @@
     >
       <!-- 제목 컬럼 (상세 이동) -->
       <template #item.title="{ item }">
+        <!-- 운영진이거나, 본인 글이면 → 진짜 제목 / 클릭 가능 -->
         <span
-          v-if="can('ENQUIRE', 'SYS-SET-ENQUIRE-R')"
+          v-if="isStaff || isOwner(item)"
           class="text-primary"
           style="cursor: pointer; text-decoration: underline"
           @click="onClickRow(item)"
         >
-          {{ item.title }}
+          {{ item.hidden_title || item.title }}
         </span>
+
+        <!-- 그 외 유저 → 제목 가리기 (backend에서 hidden_title 내려주면 그거 쓰거나, 프론트에서 직접 마스킹) -->
         <span v-else>
           {{ item.title }}
+        </span>
+      </template>
+
+      <template #item.account.nickname="{ item }">
+        <!-- 운영진이거나 본인 글이면 → 실제 작성자 -->
+        <span v-if="isStaff || isOwner(item)">
+          {{ item.hidden_account?.nickname || item.account.nickname }}
+        </span>
+
+        <!-- 그 외 → 마스킹 -->
+        <span v-else>
+          {{ item.account.nickname }}
         </span>
       </template>
 
@@ -86,6 +101,9 @@ import { ENQUIRE_PATH } from '@/router/enquire/type';
 import { can } from '@/stores/usePermissionStore';
 import type { Enquire } from '@/data/types/enquire';
 import { useAccountStore } from '@/stores/useAccountStore';
+
+const isStaff = computed(() => can('ENQUIRE', 'SYS-SET-ENQUIRE-R'));
+const isOwner = (item: Enquire) => accountStore.id === item.account.id;
 
 const accountStore = useAccountStore();
 
@@ -146,6 +164,7 @@ async function loadItems(options: DataTableOptions) {
         account: accountStore.id,
       },
     });
+    debugger;
 
     serverItems.value = response.data.datas;
     totalItems.value = response.data.totalCount;
