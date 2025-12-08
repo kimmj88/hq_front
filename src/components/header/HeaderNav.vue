@@ -74,13 +74,6 @@ const menuItems = computed(() => {
   });
 
   items.push({
-    key: 'board',
-    title: 'Board',
-    icon: 'mdi-view-dashboard-outline',
-    to: '/board',
-  });
-
-  items.push({
     key: 'match',
     title: 'Match',
     icon: 'mdi-sword-cross',
@@ -92,6 +85,13 @@ const menuItems = computed(() => {
     title: 'CUP',
     icon: 'mdi-trophy-outline',
     to: '/cup',
+  });
+
+  items.push({
+    key: 'board',
+    title: 'Board',
+    icon: 'mdi-view-dashboard-outline',
+    to: '/board',
   });
 
   items.push({
