@@ -44,7 +44,7 @@
             </span>
           </v-list-item-title>
 
-          <v-list-item-subtitle class="mt-1">
+          <v-list-item-subtitle class="mt-1 comment-content">
             {{ comment.content }}
           </v-list-item-subtitle>
 
@@ -179,3 +179,11 @@ const deleteComment = async (id: number) => {
 
 onMounted(loadEnquire);
 </script>
+<style scoped>
+.comment-content {
+  white-space: normal !important;
+  overflow: visible !important;
+  -webkit-line-clamp: initial !important;
+  display: block !important;
+}
+</style>
