@@ -9,8 +9,23 @@
           </span>
         </v-avatar>
 
-        <div class="mt-3 text-h6 font-weight-medium">
-          {{ account.datas.nickname || '-' }}
+        <!-- 닉네임 + 수정 버튼 -->
+        <div class="mt-3 d-flex justify-center align-center" style="gap: 8px">
+          <div class="text-h6 font-weight-medium">
+            {{ account.datas.nickname || '-' }}
+          </div>
+
+          <!-- 닉네임 수정 버튼 -->
+          <v-btn
+            icon
+            size="small"
+            variant="text"
+            density="comfortable"
+            color="white"
+            @click="openNicknameDialog"
+          >
+            <v-icon>mdi-pencil</v-icon>
+          </v-btn>
         </div>
 
         <div class="mt-1 d-flex justify-center align-center" style="gap: 8px">
@@ -205,6 +220,28 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
+
+  <!-- 닉네임 변경 다이얼로그 -->
+  <v-dialog v-model="nicknameDialog" max-width="400">
+    <v-card>
+      <v-card-title class="text-h6">닉네임 수정</v-card-title>
+      <v-card-text>
+        <v-text-field
+          v-model="editNickname"
+          label="새 닉네임"
+          maxlength="20"
+          counter="20"
+          autocomplete="off"
+        />
+      </v-card-text>
+      <v-card-actions class="justify-end">
+        <v-btn variant="text" @click="nicknameDialog = false">취소</v-btn>
+        <v-btn color="primary" :disabled="!editNickname.trim()" @click="submitNickname">
+          저장
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script setup lang="ts">
@@ -228,6 +265,7 @@ const accountIsConfirm = ref<boolean>(false);
 const account = ref<{
   datas: {
     name: string;
+    nickname: string; // 🔹 추가
     email: string;
     department: string;
     systemrole: SystemRole | null;
@@ -237,6 +275,7 @@ const account = ref<{
 }>({
   datas: {
     name: '',
+    nickname: '', // 🔹 추가
     email: '',
     department: '',
     systemrole: null,
@@ -244,6 +283,32 @@ const account = ref<{
     player: null,
   },
 });
+
+const nicknameDialog = ref(false);
+const editNickname = ref('');
+
+function openNicknameDialog() {
+  editNickname.value = account.value.datas.nickname || '';
+  nicknameDialog.value = true;
+}
+
+async function submitNickname() {
+  if (!editNickname.value.trim()) return;
+
+  debugger;
+  try {
+    await api.post(`${getBaseUrl('DATA')}/account/update`, {
+      id: props.id,
+      nickname: editNickname.value.trim(),
+    });
+
+    // 로컬 상태 반영
+    account.value.datas.nickname = editNickname.value.trim();
+    nicknameDialog.value = false;
+  } catch (error) {
+    console.error('닉네임 수정 실패:', error);
+  }
+}
 
 const player = computed<Player | null>(() => account.value.datas.player ?? null);
 
