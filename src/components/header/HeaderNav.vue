@@ -95,6 +95,13 @@ const menuItems = computed(() => {
   });
 
   items.push({
+    key: 'forum',
+    title: 'Forum',
+    icon: 'mdi-forum-outline',
+    to: '/forum',
+  });
+
+  items.push({
     key: 'enquire',
     title: 'Enquire',
     icon: 'mdi-help-circle-outline',

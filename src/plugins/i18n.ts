@@ -54,6 +54,11 @@ const messages = {
       'SYS-SET-ENQUIRE-R': '건의사항 읽기',
       'SYS-SET-ENQUIRE-U': '건의사항 수정',
       'SYS-SET-ENQUIRE-D': '건의사항 삭제',
+
+      'SYS-SET-FORUM-C': '자유게시판 생성',
+      'SYS-SET-FORUM-R': '자유게시판 읽기',
+      'SYS-SET-FORUM-U': '자유게시판 수정',
+      'SYS-SET-FORUM-D': '자유게시판 삭제',
     },
   },
   en: {

@@ -65,6 +65,12 @@ import Board from '@/pages/board/index.vue';
 import BoardAdd from '@/pages/board/add.vue';
 import BoardView from '@/pages/board/view.vue';
 
+//Forum
+import { FORUM_PATH } from '@/router/forum/type';
+import Forum from '@/pages/forum/index.vue';
+import ForumAdd from '@/pages/forum/add.vue';
+import ForumView from '@/pages/forum/view.vue';
+
 //Enquire
 import { ENQUIRE_PATH } from '@/router/enquire/type';
 import Enquire from '@/pages/enquire/index.vue';
@@ -162,6 +168,18 @@ const router = createRouter({
         { path: 'add', component: EnquireAdd },
         { path: ENQUIRE_PATH.VIEW(':id'), component: EnquireView, props: true },
         { path: ENQUIRE_PATH.EDIT(':id'), component: EnquireAdd, props: true },
+      ],
+    },
+
+    {
+      path: '/forum',
+      component: DefaultLayout,
+      children: [
+        { path: '/home', component: Home },
+        { path: '', component: Forum },
+        { path: 'add', component: ForumAdd },
+        { path: FORUM_PATH.VIEW(':id'), component: ForumView, props: true },
+        { path: FORUM_PATH.EDIT(':id'), component: ForumAdd, props: true },
       ],
     },
   ],
