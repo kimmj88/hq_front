@@ -49,7 +49,7 @@
           <!-- 이름에 링크 -->
           <div>
             <router-link :to="CONFIG_ACCOUNT_PATH.VIEW(item.id)" class="account-link">
-              {{ item.name }}
+              {{ item.name }} / {{ item.nickname }}
             </router-link>
             <div class="text-caption text-grey">
               {{ item.email }}
