@@ -4,8 +4,8 @@
     <v-card class="pa-4 mb-4">
       <h2 class="text-h6 mb-2">{{ notice.title }}</h2>
       <div class="text-caption text-grey-darken-1">
-        작성자: {{ notice.writer }} · 등록일: {{ notice.createdAt }} · 조회수:
-        {{ notice.viewCount }}
+        작성자: {{ notice.account.nickname }} · 등록일: {{ notice.createdAt }} · 조회수:
+        {{ notice.view_cnt }}
       </div>
     </v-card>
 
@@ -69,7 +69,7 @@
     <div class="d-flex justify-end gap-2">
       <v-btn variant="tonal" @click="goList">목록</v-btn>
       <v-btn
-        v-if="can('FORUM', 'SYS-SET-FORUM-U')"
+        v-if="can('FORUM', 'SYS-SET-FORUM-U') && notice.account.id == account.id"
         color="primary"
         :to="FORUM_PATH.EDIT(route.params.id)"
         >수정</v-btn
@@ -88,15 +88,19 @@ import { FORUM_PATH } from '@/router/forum/type';
 import { can } from '@/stores/usePermissionStore';
 import { useAccountStore } from '@/stores/useAccountStore';
 import type { Comment } from '@/data/types/comment';
+import type { Account } from '@/data/types/account';
 
 const account = useAccountStore();
 
 interface NoticeDetail {
   id: number;
   title: string;
-  writer: string;
+  account: {
+    id: number;
+    nickname: string;
+  } | null;
   createdAt: string;
-  viewCount: number;
+  view_cnt: number;
   content: string;
   comments: Comment[];
 }
@@ -107,9 +111,9 @@ const router = useRouter();
 const notice = ref<NoticeDetail>({
   id: 0,
   title: '',
-  writer: '',
+  account: { id: 0, nickname: '' },
   createdAt: '',
-  viewCount: 0,
+  view_cnt: 0,
   content: '',
   comments: [],
 });
@@ -120,13 +124,13 @@ const loadNotice = async () => {
   const id = Number(route.params.id);
 
   const { data } = await api.get(`${getBaseUrl('DATA')}/forum/find?id=${route.params.id}`);
-  debugger;
+
   notice.value = {
     id,
     title: data.datas.title,
-    writer: data.datas.account.nickname,
+    account: data.datas.account,
     createdAt: data.datas.created_at,
-    viewCount: 0,
+    view_cnt: data.datas.view_cnt,
     content: data.datas.description,
     comments: data.datas.comments,
   };

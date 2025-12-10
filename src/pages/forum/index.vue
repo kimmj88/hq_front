@@ -28,8 +28,21 @@
     >
       <!-- 제목 컬럼 (상세 이동) -->
       <template #item.title="{ item }">
-        <span class="text-primary" style="cursor: pointer" @click="onClickRow(item)">
+        <span
+          class="text-primary"
+          style="cursor: pointer; text-decoration: underline"
+          @click="onClickRow(item)"
+        >
           {{ item.title }}
+        </span>
+
+        <!-- 댓글 수 표시 -->
+        <span
+          v-if="item.comment_cnt > 0"
+          class="text-grey-darken-1"
+          style="font-size: 0.85rem; margin-left: 6px"
+        >
+          [ {{ item.comment_cnt }} ]
         </span>
       </template>
 
@@ -92,6 +105,12 @@ const headers = [
   { title: '제목', key: 'title', align: 'start' },
   { title: '작성자', key: 'account.nickname', align: 'center', width: 120 },
   { title: '등록일', key: 'created_at', align: 'center', width: 150 },
+  {
+    title: '조회수',
+    key: 'view_cnt',
+    align: 'center',
+    width: 90, // 🔹 조금 여유 있게
+  },
 ];
 
 // 페이지 계산용
