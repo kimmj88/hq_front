@@ -109,14 +109,12 @@ const menuItems = computed(() => {
     });
   }
 
-  if (can('ENQUIRE', 'SYS-SET-ENQUIRE-R')) {
-    items.push({
-      key: 'enquire',
-      title: 'Enquire',
-      icon: 'mdi-help-circle-outline',
-      to: '/enquire',
-    });
-  }
+  items.push({
+    key: 'enquire',
+    title: 'Enquire',
+    icon: 'mdi-help-circle-outline',
+    to: '/enquire',
+  });
 
   // const solutionChildren = [];
 
