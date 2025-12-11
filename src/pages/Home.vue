@@ -118,7 +118,7 @@
         </v-card>
 
         <!-- 공지/공유 보드 -->
-        <v-row class="mb-4" dense>
+        <v-row v-if="can('NOTICE', 'SYS-SET-NOTICE-R')" class="mb-4" dense>
           <v-col cols="12" md="6">
             <v-card class="rounded-xl">
               <v-card-title class="py-2">
@@ -294,6 +294,7 @@ import { usePostStore } from '@/stores/usePostSotre';
 import api from '@/@core/composable/useAxios';
 import { useRoute } from 'vue-router';
 import { useRouter } from 'vue-router';
+import { can } from '@/stores/usePermissionStore';
 
 const route = useRoute();
 const router = useRouter();

@@ -26,6 +26,7 @@ const messages = {
       'SYS-SET-ACC-U': '계정 수정',
 
       'SYS-SET-MATCH-C': '매치 생성',
+      'SYS-SET-MATCH-R': '매치 조회',
       'SYS-SET-MATCH-D': '매치 삭제',
 
       'SYS-SET-PMS-C': '권한 생성',
@@ -44,19 +45,21 @@ const messages = {
       'SYS-SET-PROFILE-U': '프로파일 수정',
 
       'SYS-SET-CUP-C': '컵 생성',
+      'SYS-SET-CUP-R': '컵 조회',
       'SYS-SET-CUP-D': '컵 삭제',
 
       'SYS-SET-NOTICE-C': '공지사항 생성',
+      'SYS-SET-NOTICE-R': '공지사항 조회',
       'SYS-SET-NOTICE-U': '공지사항 수정',
       'SYS-SET-NOTICE-D': '공지사항 삭제',
 
       'SYS-SET-ENQUIRE-C': '건의사항 생성',
-      'SYS-SET-ENQUIRE-R': '건의사항 읽기',
+      'SYS-SET-ENQUIRE-R': '건의사항 조회',
       'SYS-SET-ENQUIRE-U': '건의사항 수정',
       'SYS-SET-ENQUIRE-D': '건의사항 삭제',
 
       'SYS-SET-FORUM-C': '자유게시판 생성',
-      'SYS-SET-FORUM-R': '자유게시판 읽기',
+      'SYS-SET-FORUM-R': '자유게시판 조회',
       'SYS-SET-FORUM-U': '자유게시판 수정',
       'SYS-SET-FORUM-D': '자유게시판 삭제',
     },

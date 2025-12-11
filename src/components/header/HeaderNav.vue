@@ -49,6 +49,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { can } from '@/stores/usePermissionStore';
 
 const router = useRouter();
 
@@ -73,40 +74,49 @@ const menuItems = computed(() => {
     to: '/home',
   });
 
-  items.push({
-    key: 'match',
-    title: 'Match',
-    icon: 'mdi-sword-cross',
-    to: '/match',
-  });
+  if (can('MATCH', 'SYS-SET-MATCH-R')) {
+    items.push({
+      key: 'match',
+      title: 'Match',
+      icon: 'mdi-sword-cross',
+      to: '/match',
+    });
+  }
 
-  items.push({
-    key: 'cup',
-    title: 'CUP',
-    icon: 'mdi-trophy-outline',
-    to: '/cup',
-  });
+  if (can('CUP', 'SYS-SET-CUP-R')) {
+    items.push({
+      key: 'cup',
+      title: 'CUP',
+      icon: 'mdi-trophy-outline',
+      to: '/cup',
+    });
+  }
+  if (can('NOTICE', 'SYS-SET-NOTICE-R')) {
+    items.push({
+      key: 'board',
+      title: 'Board',
+      icon: 'mdi-view-dashboard-outline',
+      to: '/board',
+    });
+  }
 
-  items.push({
-    key: 'board',
-    title: 'Board',
-    icon: 'mdi-view-dashboard-outline',
-    to: '/board',
-  });
+  if (can('FORUM', 'SYS-SET-FORUM-R')) {
+    items.push({
+      key: 'forum',
+      title: 'Forum',
+      icon: 'mdi-forum-outline',
+      to: '/forum',
+    });
+  }
 
-  items.push({
-    key: 'forum',
-    title: 'Forum',
-    icon: 'mdi-forum-outline',
-    to: '/forum',
-  });
-
-  items.push({
-    key: 'enquire',
-    title: 'Enquire',
-    icon: 'mdi-help-circle-outline',
-    to: '/enquire',
-  });
+  if (can('ENQUIRE', 'SYS-SET-ENQUIRE-R')) {
+    items.push({
+      key: 'enquire',
+      title: 'Enquire',
+      icon: 'mdi-help-circle-outline',
+      to: '/enquire',
+    });
+  }
 
   // const solutionChildren = [];
 
