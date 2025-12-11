@@ -4,7 +4,7 @@
     <v-card class="pa-4 mb-4">
       <h2 class="text-h6 mb-2">{{ enquire.title }}</h2>
       <div class="text-caption text-grey-darken-1">
-        작성자: {{ enquire.writer }} · 등록일: {{ enquire.createdAt }} · 조회수:
+        작성자: {{ enquire.writer }} · 등록일: {{ formatDateTime(enquire.createdAt) }} · 조회수:
         {{ enquire.viewCount }}
       </div>
     </v-card>
@@ -40,7 +40,7 @@
           <v-list-item-title class="d-flex align-center">
             <span class="font-weight-medium mr-2">{{ comment.account.nickname }}</span>
             <span class="text-caption text-grey-darken-1">
-              {{ comment.created_at }}
+              {{ formatDateTime(comment.created_at) }}
             </span>
           </v-list-item-title>
 
@@ -90,6 +90,7 @@ import { ENQUIRE_PATH } from '@/router/enquire/type';
 import { can } from '@/stores/usePermissionStore';
 import { useAccountStore } from '@/stores/useAccountStore';
 import type { Comment } from '@/data/types/comment';
+import { formatDateTime } from '@/utils/date';
 
 const account = useAccountStore();
 

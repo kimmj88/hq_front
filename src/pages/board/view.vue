@@ -4,7 +4,7 @@
     <v-card class="pa-4 mb-4">
       <h2 class="text-h6 mb-2">{{ notice.title }}</h2>
       <div class="text-caption text-grey-darken-1">
-        작성자: {{ notice.writer }} · 등록일: {{ notice.createdAt }} · 조회수:
+        작성자: {{ notice.writer }} · 등록일: {{ formatDateTime(notice.createdAt) }} · 조회수:
         {{ notice.viewCount }}
       </div>
     </v-card>
@@ -40,7 +40,7 @@
           <v-list-item-title class="d-flex align-center">
             <span class="font-weight-medium mr-2">{{ comment.account.nickname }}</span>
             <span class="text-caption text-grey-darken-1">
-              {{ comment.created_at }}
+              {{ formatDateTime(comment.created_at) }}
             </span>
           </v-list-item-title>
 
@@ -90,6 +90,7 @@ import { BOARD_PATH } from '@/router/board/type';
 import { can } from '@/stores/usePermissionStore';
 import { useAccountStore } from '@/stores/useAccountStore';
 import type { Comment } from '@/data/types/comment';
+import { formatDateTime } from '@/utils/date';
 
 const account = useAccountStore();
 
@@ -132,8 +133,6 @@ const loadNotice = async () => {
     content: data.datas.description,
     comments: data.datas.comments,
   };
-
-  debugger;
 };
 
 const goList = () => router.push('/board');
