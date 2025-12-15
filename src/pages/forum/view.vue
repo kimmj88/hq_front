@@ -121,7 +121,6 @@ const notice = ref<NoticeDetail>({
 
 // 게시글 로딩 (샘플 데이터)
 const loadNotice = async () => {
-  debugger;
   const id = Number(route.params.id);
 
   const { data } = await api.get(`${getBaseUrl('DATA')}/forum/find?id=${route.params.id}`);
@@ -135,8 +134,6 @@ const loadNotice = async () => {
     content: data.datas.description,
     comments: data.datas.comments,
   };
-
-  debugger;
 };
 
 const goList = () => router.push('/forum');

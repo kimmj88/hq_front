@@ -119,11 +119,9 @@ const notice = ref<NoticeDetail>({
 
 // 게시글 로딩 (샘플 데이터)
 const loadNotice = async () => {
-  debugger;
   const id = Number(route.params.id);
 
   const { data } = await api.get(`${getBaseUrl('DATA')}/board/find?id=${route.params.id}`);
-  debugger;
   notice.value = {
     id,
     title: data.datas.title,

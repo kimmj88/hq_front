@@ -295,7 +295,6 @@ function openNicknameDialog() {
 async function submitNickname() {
   if (!editNickname.value.trim()) return;
 
-  debugger;
   try {
     await api.post(`${getBaseUrl('DATA')}/account/update`, {
       id: props.id,

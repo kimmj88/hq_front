@@ -497,7 +497,6 @@ async function fetch() {
 
   const { data } = await api.get(`${getBaseUrl('DATA')}/match/find?id=${route.params.id}`);
   match.value = data.datas as Match;
-  debugger;
 
   isConfirmed.value = truthy(match.value?.is_confirm);
   winnerTeam.value = (match.value?.winner_team ?? null) as number | null;

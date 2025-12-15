@@ -164,7 +164,6 @@ async function loadItems(options: DataTableOptions) {
         account: accountStore.id,
       },
     });
-    debugger;
 
     serverItems.value = response.data.datas;
     totalItems.value = response.data.totalCount;

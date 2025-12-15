@@ -108,7 +108,6 @@ const rules = {
 
 // 에디터 초기화
 onMounted(async () => {
-  debugger;
   // 수정 모드면 데이터 먼저 가져오기
   if (isEdit.value) {
     const id = Number(route.params.id);

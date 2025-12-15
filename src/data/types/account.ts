@@ -1,3 +1,4 @@
+import type { Clan } from './clan';
 import type { Player } from './player';
 import type { SystemRole } from './systemrole';
 
@@ -13,4 +14,5 @@ export interface Account {
   systemrole: SystemRole;
   is_confirm: boolean;
   player: Player;
+  clan: Clan;
 }

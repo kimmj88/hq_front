@@ -298,6 +298,9 @@ import type { Tier } from '@/data/types/tier';
 import { can } from '@/stores/usePermissionStore';
 import type { Codedict } from '@/data/types/codedict';
 import type { Position } from '@/data/types/position';
+import { useAccountStore } from '@/stores/useAccountStore';
+
+const account = useAccountStore();
 
 const itemsPerPage = ref<number>(10);
 
@@ -413,7 +416,9 @@ async function loadItems(options: FetchParams) {
     const response = await api.get(
       `${getBaseUrl('DATA')}/player/search?keyword=${search.value}&page=${
         options.page
-      }&itemsPerPage=${options.itemsPerPage}&sortBy=${sortKey}&orderBy=${sortOrder}`
+      }&itemsPerPage=${options.itemsPerPage}&sortBy=${sortKey}&orderBy=${sortOrder}&clan=${
+        account.clan.name
+      }`
     );
     loading.value = true;
 

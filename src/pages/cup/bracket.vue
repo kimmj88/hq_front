@@ -412,7 +412,6 @@ async function finishCup() {
   for (const match of cup.value?.cup_matches) {
     if (match.round == 'F') finalMatch = match;
   }
-  debugger;
   await api.post(`${getBaseUrl('DATA')}/cupmatch/update`, {
     id: finalMatch.id,
     winner_team: winnerIndexes.value[1][0] == 0 ? finalMatch.home_team : finalMatch.away_team,

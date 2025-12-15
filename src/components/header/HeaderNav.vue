@@ -50,6 +50,10 @@
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { can } from '@/stores/usePermissionStore';
+import { CLAN_PATH } from '@/router/clan/type';
+import { useAccountStore } from '@/stores/useAccountStore';
+
+const account = useAccountStore();
 
 const router = useRouter();
 
@@ -116,32 +120,23 @@ const menuItems = computed(() => {
     to: '/enquire',
   });
 
-  // const solutionChildren = [];
-
-  // solutionChildren.push({ title: "Solution", to: "/package/solution" });
-
-  // solutionChildren.push({ title: "Product", to: "/package/product" });
-
-  // items.push({
-  //   key: "package",
-  //   title: "Solution",
-  //   icon: "mdi-package-variant",
-  //   children: solutionChildren,
-  // });
-
-  // items.push({
-  //   key: "customer",
-  //   title: "Customer",
-  //   icon: "mdi-card-account-details-outline",
-  //   to: "/customer",
-  // });
-
-  // items.push({
-  //   key: "pipeline",
-  //   title: "Pipeline",
-  //   icon: "mdi-card-account-details-outline",
-  //   to: "/pipeline",
-  // });
+  if (can('NOTICE', 'SYS-SET-NOTICE-C')) {
+    if (account.clan != null) {
+      items.push({
+        key: 'clan',
+        title: 'Clan',
+        icon: 'mdi-help-circle-outline',
+        to: `${CLAN_PATH.VIEW(account.clan.name)}`,
+      });
+    } else {
+      items.push({
+        key: 'clan',
+        title: 'Clan',
+        icon: 'mdi-help-circle-outline',
+        to: `/clan`,
+      });
+    }
+  }
 
   return items;
 });

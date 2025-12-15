@@ -31,6 +31,7 @@ import SystemPermission from '@/pages/config/permission/system/index.vue';
 //DefaultLayout
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import ConfigLayout from '@/layouts/ConfigLayout.vue';
+import ClanLayout from '@/layouts/ClanLayout.vue';
 
 //match
 import { MATCH_PATH } from '@/router/match/type';
@@ -77,6 +78,12 @@ import Enquire from '@/pages/enquire/index.vue';
 import EnquireAdd from '@/pages/enquire/add.vue';
 import EnquireView from '@/pages/enquire/view.vue';
 
+//Clan
+import { CLAN_PATH, CLAN_PLAYER_PATH } from '@/router/clan/type';
+import Clan from '@/pages/clan/index.vue';
+import ClanPlayer from '@/pages/clan/player.vue';
+import MyClan from '@/pages/clan/myclan.vue';
+
 import Cookies from 'js-cookie';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useAccountStore } from '@/stores/useAccountStore';
@@ -115,6 +122,14 @@ const router = createRouter({
         { path: CONFIG_PERMISSION_SYSTEM_PATH.BASE, component: SystemPermission },
       ],
     },
+
+    //Clan router
+    {
+      path: CLAN_PATH.VIEW(':name'),
+      component: ClanLayout,
+      children: [{ path: CLAN_PLAYER_PATH.BASE, component: ClanPlayer }],
+    },
+
     {
       path: '/match',
       component: DefaultLayout,
@@ -182,6 +197,16 @@ const router = createRouter({
         { path: FORUM_PATH.EDIT(':id'), component: ForumAdd, props: true },
       ],
     },
+
+    {
+      path: '/clan',
+      component: DefaultLayout,
+      children: [
+        { path: '/home', component: Home },
+        { path: '', component: Clan },
+        // { path: CLAN_PATH.VIEW(':name'), component: MyClan, props: true },
+      ],
+    },
   ],
 });
 
@@ -218,6 +243,7 @@ async function hydrateUser(accessToken: string) {
   const account = useAccountStore();
   const permission = usePermissionStore();
 
+  debugger;
   const me = data.datas;
   const systemPermissions = await setSystemRole(me.systemrole.id);
 

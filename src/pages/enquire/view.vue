@@ -119,12 +119,10 @@ const enquire = ref<EnquireDetail>({
 
 // 게시글 로딩 (샘플 데이터)
 const loadEnquire = async () => {
-  debugger;
   const id = Number(route.params.id);
 
   const { data } = await api.get(`${getBaseUrl('DATA')}/enquire/find?id=${route.params.id}`);
 
-  debugger;
   enquire.value = {
     id,
     title: data.datas.title,
@@ -134,8 +132,6 @@ const loadEnquire = async () => {
     content: data.datas.description,
     comments: data.datas.comments,
   };
-
-  debugger;
 };
 
 const goList = () => router.push('/enquire');

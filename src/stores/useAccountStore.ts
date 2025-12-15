@@ -1,5 +1,4 @@
 import type { Account } from '@/data/types/account';
-import type { Player } from '@/data/types/player';
 import { defineStore } from 'pinia';
 
 export const useAccountStore = defineStore('account', {
@@ -10,6 +9,7 @@ export const useAccountStore = defineStore('account', {
     nickname: '' as string,
     is_confirm: false as boolean,
     player: null as any,
+    clan: null as any,
   }),
   actions: {
     setAccount(account: Account) {
@@ -19,6 +19,7 @@ export const useAccountStore = defineStore('account', {
       this.nickname = account.nickname;
       this.is_confirm = account.is_confirm;
       this.player = account.player;
+      this.clan = account.clan;
     },
     clear() {
       this.id = 0;
@@ -27,6 +28,7 @@ export const useAccountStore = defineStore('account', {
       this.nickname = '';
       this.is_confirm = false;
       this.player = null;
+      this.clan = null;
     },
   },
 });
