@@ -89,7 +89,10 @@ const menuItems = computed(() => {
     items.push({
       title: 'Permission',
       icon: 'mdi-shield-lock-outline',
-      children: [{ title: 'System', icon: 'mdi-server-cog', to: '/config/permission/system' }],
+      children: [
+        { title: 'System', icon: 'mdi-server-cog', to: '/config/permission/system' },
+        { title: 'Clan', icon: 'mdi-server-cog', to: '/config/permission/clan' },
+      ],
     });
   }
 

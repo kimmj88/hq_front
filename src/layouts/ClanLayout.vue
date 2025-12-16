@@ -37,15 +37,29 @@
           <v-list-item
             :active="section === 'notice'"
             prepend-icon="mdi-bullhorn-outline"
-            title="공지"
-            @click="section = 'notice'"
+            title="공지 사항"
+            :to="CLAN_PATH.NOTICE(account.clan.name)"
+          />
+
+          <v-list-item
+            :active="section === 'enquire'"
+            prepend-icon="mdi-help-circle-outline"
+            title="문의 사항"
+            :to="CLAN_PATH.ENQUIRE(account.clan.name)"
           />
 
           <v-list-item
             :active="section === 'players'"
-            prepend-icon="mdi-account-multiple-outline"
+            prepend-icon="mdi-gamepad-variant-outline"
             title="플레이어"
-            :to="CLAN_PLAYER_PATH.BASE"
+            :to="CLAN_PATH.PLAYER(account.clan.name)"
+          />
+
+          <v-list-item
+            :active="section === 'accounts'"
+            prepend-icon="mdi-account-group-outline"
+            title="멤버"
+            :to="CLAN_PATH.ACCOUNT(account.clan.name)"
           />
 
           <v-list-item
@@ -98,7 +112,7 @@ import { useAccountStore } from '@/stores/useAccountStore';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import api from '@/@core/composable/useAxios';
 import { useRouter } from 'vue-router';
-import { CLAN_PLAYER_PATH } from '@/router/clan/type';
+import { CLAN_PATH } from '@/router/clan/type';
 
 const router = useRouter();
 

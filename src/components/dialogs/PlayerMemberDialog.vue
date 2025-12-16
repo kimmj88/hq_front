@@ -113,6 +113,10 @@ import { useRoute } from 'vue-router';
 import api from '@/@core/composable/useAxios';
 import type { Tier } from '@/data/types/tier';
 import axios from 'axios';
+import { useAccountStore } from '@/stores/useAccountStore';
+
+const account = useAccountStore();
+
 const route = useRoute();
 
 const tiers = ref<Tier[]>([]);
@@ -240,6 +244,8 @@ async function handleAdd() {
   for (const item of tiers.value) {
     if (item.name == `${tier.value} ${rank.value}`) {
       findID = item.id;
+    } else if (item.name == tier.value && item.name == 'CHALLENGER') {
+      findID = item.id;
     }
   }
   const response = await api.post(`${getBaseUrl('DATA')}/player/create`, {
@@ -248,6 +254,7 @@ async function handleAdd() {
     tier: {
       id: findID,
     },
+    clan: { id: account.clan.id },
   });
 
   searchId.value = '';

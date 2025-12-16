@@ -1,0 +1,32 @@
+import { defineStore } from 'pinia';
+import { AbilityBuilder, createMongoAbility } from '@casl/ability';
+
+export const ability = createMongoAbility(); // 전역에서 공유하는 CASL 인스턴스
+
+export function can(action: string, subject: string) {
+  return ability.can(action, subject);
+}
+
+export const useClanPermissionStore = defineStore('clanpermission', {
+  state: () => ({
+    rules: [] as any[],
+  }),
+
+  actions: {
+    setClanPermissions(permissions: { action: string; subject: string }[]) {
+      const { can, rules } = new AbilityBuilder(createMongoAbility);
+
+      permissions.forEach(({ action, subject }) => {
+        can(action, subject);
+      });
+
+      this.rules = rules;
+      ability.update(rules);
+    },
+
+    clear() {
+      this.rules = [];
+      ability.update([]);
+    },
+  },
+});

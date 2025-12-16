@@ -435,6 +435,8 @@ async function onCreate() {
     form.value.description = '';
     createDialog.value = false;
     toast('클랜이 생성되었어.');
+
+    router.replace(CLAN_PATH.VIEW(data.data.datas?.name));
   }
 
   // 성공

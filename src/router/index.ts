@@ -27,6 +27,7 @@ import Profile from '@/pages/config/profile/index.vue';
 
 //Config Permission System
 import SystemPermission from '@/pages/config/permission/system/index.vue';
+import ClanPermission from '@/pages/config/permission/clan/index.vue';
 
 //DefaultLayout
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
@@ -79,9 +80,18 @@ import EnquireAdd from '@/pages/enquire/add.vue';
 import EnquireView from '@/pages/enquire/view.vue';
 
 //Clan
-import { CLAN_PATH, CLAN_PLAYER_PATH } from '@/router/clan/type';
+import { CLAN_PATH } from '@/router/clan/type';
 import Clan from '@/pages/clan/index.vue';
+import ClanBoard from '@/pages/clan/board/index.vue';
+import ClanBoardAdd from '@/pages/clan/board/add.vue';
+import ClanBoardView from '@/pages/clan/board/view.vue';
+import ClanEnquire from '@/pages/clan/enquire/index.vue';
+import ClanEnquireAdd from '@/pages/clan/enquire/add.vue';
+import ClanEnquireView from '@/pages/clan/enquire/view.vue';
 import ClanPlayer from '@/pages/clan/player.vue';
+import ClanAccount from '@/pages/clan/account/index.vue';
+import ClanAccountView from '@/pages/clan/account/view.vue';
+
 import MyClan from '@/pages/clan/myclan.vue';
 
 import Cookies from 'js-cookie';
@@ -89,10 +99,15 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useAccountStore } from '@/stores/useAccountStore';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import axios from 'axios';
-import { CONFIG_PERMISSION_SYSTEM_PATH } from './permission/system/type';
+import {
+  CONFIG_PERMISSION_SYSTEM_PATH,
+  CONFIG_PERMISSION_CLAN_PATH,
+} from './permission/system/type';
 import { usePermissionStore } from '@/stores/usePermissionStore';
+import { useClanPermissionStore } from '@/stores/useClanPermissionStore';
 import type { SystemRole } from '@/data/types/systemrole';
 import { BOARD_PATH } from './board/type';
+import type { ClanRole } from '@/data/types/clanrole';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -120,6 +135,7 @@ const router = createRouter({
         { path: CONFIG_TIER_PATH.BASE, component: Tier },
         { path: CONFIG_PROFILE_PATH.BASE, component: Profile },
         { path: CONFIG_PERMISSION_SYSTEM_PATH.BASE, component: SystemPermission },
+        { path: CONFIG_PERMISSION_CLAN_PATH.BASE, component: ClanPermission },
       ],
     },
 
@@ -127,7 +143,18 @@ const router = createRouter({
     {
       path: CLAN_PATH.VIEW(':name'),
       component: ClanLayout,
-      children: [{ path: CLAN_PLAYER_PATH.BASE, component: ClanPlayer }],
+      children: [
+        { path: CLAN_PATH.NOTICE(':name'), component: ClanBoard },
+        { path: CLAN_PATH.NOTICE_ADD(':name'), component: ClanBoardAdd },
+        { path: CLAN_PATH.NOTICE_VIEW(':name', ':id'), component: ClanBoardView, props: true },
+        { path: CLAN_PATH.ENQUIRE(':name'), component: ClanEnquire },
+        { path: CLAN_PATH.ENQUIRE_ADD(':name'), component: ClanEnquireAdd },
+        { path: CLAN_PATH.ENQUIRE_VIEW(':name', ':id'), component: ClanEnquireView, props: true },
+        { path: CLAN_PATH.PLAYER(':name'), component: ClanPlayer },
+        { path: CLAN_PATH.ACCOUNT(':name'), component: ClanAccount },
+        { path: CLAN_PATH.ACCOUNT_VIEW(':name', ':id'), component: ClanAccountView, props: true },
+        { path: CLAN_PATH.PERMISSION(':name'), component: ClanPermission },
+      ],
     },
 
     {
@@ -241,15 +268,17 @@ async function hydrateUser(accessToken: string) {
   );
   const auth = useAuthStore();
   const account = useAccountStore();
-  const permission = usePermissionStore();
+  const systemPermissionStore = usePermissionStore();
+  const clanPermissionStore = useClanPermissionStore();
 
-  debugger;
   const me = data.datas;
   const systemPermissions = await setSystemRole(me.systemrole.id);
+  const clanPermissions = await setClanRole(me.systemrole.id);
 
   auth.setTokens(accessToken);
   account.setAccount(me);
-  permission.setPermissions(systemPermissions);
+  systemPermissionStore.setPermissions(systemPermissions);
+  clanPermissionStore.setClanPermissions(clanPermissions);
 }
 
 async function ensureSession(): Promise<boolean> {
@@ -360,6 +389,25 @@ async function setSystemRole(systemrole_id: number): Promise<any> {
   }
 
   return systemPermissions;
+}
+
+async function setClanRole(clanrole_id: number): Promise<any> {
+  const resClanPermission = await api.get(`${getBaseUrl('DATA')}/clanrole/find?id=${clanrole_id}`);
+
+  const clanRole: ClanRole = resClanPermission.data.datas;
+  const clanPermissions = [];
+
+  if (clanRole.permissionGroups) {
+    for (const item of clanRole.permissionGroups) {
+      for (const subItem of item.children) {
+        if (subItem.access === true) {
+          clanPermissions.push({ action: item.code, subject: subItem.code });
+        }
+      }
+    }
+  }
+
+  return clanPermissions;
 }
 
 router.isReady().then(() => {
