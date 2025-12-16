@@ -162,6 +162,7 @@ async function loadItems(options: DataTableOptions) {
         sortBy: sortKey,
         orderBy: sortOrder,
         account: accountStore.id,
+        type: 'ANY',
       },
     });
 

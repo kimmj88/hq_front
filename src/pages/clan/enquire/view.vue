@@ -135,7 +135,7 @@ const loadEnquire = async () => {
   };
 };
 
-const goList = () => router.push('/enquire');
+const goList = () => router.push(CLAN_PATH.ENQUIRE(account.clan.name));
 
 const deleteEnquire = async () => {
   if (confirm('정말 삭제하시겠습니까?')) {

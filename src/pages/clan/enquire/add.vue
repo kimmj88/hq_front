@@ -75,7 +75,7 @@ const editorRoot = ref<HTMLElement | null>(null);
 const editorInstance = ref<Editor | null>(null);
 
 const form = ref<Enquire>({
-  type: 'ANY',
+  type: 'CLAN',
   title: '',
   description: '', // 여기 HTML 저장
   attachments: [],

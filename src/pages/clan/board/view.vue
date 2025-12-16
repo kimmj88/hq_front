@@ -87,6 +87,7 @@ import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '@/@core/composable/useAxios';
 import { BOARD_PATH } from '@/router/board/type';
+import { CLAN_PATH } from '@/router/clan/type';
 import { can } from '@/stores/usePermissionStore';
 import { useAccountStore } from '@/stores/useAccountStore';
 import type { Comment } from '@/data/types/comment';
@@ -133,7 +134,7 @@ const loadNotice = async () => {
   };
 };
 
-const goList = () => router.push('/board');
+const goList = () => router.push(CLAN_PATH.NOTICE(account.clan.name));
 
 const deleteNotice = async () => {
   if (confirm('정말 삭제하시겠습니까?')) {

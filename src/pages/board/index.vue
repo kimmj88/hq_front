@@ -131,6 +131,7 @@ async function loadItems(options: DataTableOptions) {
         itemsPerPage: options.itemsPerPage,
         sortBy: sortKey,
         orderBy: sortOrder,
+        type: 'ANY',
       },
     });
 
