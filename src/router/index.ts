@@ -273,7 +273,7 @@ async function hydrateUser(accessToken: string) {
 
   const me = data.datas;
   const systemPermissions = await setSystemRole(me.systemrole.id);
-  const clanPermissions = await setClanRole(me.systemrole.id);
+  const clanPermissions = await setClanRole(me.clanrole.id);
 
   auth.setTokens(accessToken);
   account.setAccount(me);

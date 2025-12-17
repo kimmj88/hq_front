@@ -21,6 +21,7 @@ const messages = {
       },
     },
     system_permission: {
+      //System Permission
       'SET-R': '설정 조회',
       'SYS-SET-ACC-R': '계정 조회',
       'SYS-SET-ACC-U': '계정 수정',
@@ -62,6 +63,26 @@ const messages = {
       'SYS-SET-FORUM-R': '자유게시판 조회',
       'SYS-SET-FORUM-U': '자유게시판 수정',
       'SYS-SET-FORUM-D': '자유게시판 삭제',
+    },
+
+    clan_permission: {
+      //Clan Permission
+      'CLAN-SET-ACC-R': '계정 조회',
+      'CLAN-SET-ACC-U': '계정 수정',
+
+      'CLAN-SET-PLAYER-C': '플레이어 생성',
+      'CLAN-SET-PLAYER-R': '플레이어 조회',
+      'CLAN-SET-PLAYER-U': '플레이어 수정',
+
+      'CLAN-SET-NOTICE-C': '공지사항 생성',
+      'CLAN-SET-NOTICE-R': '공지사항 조회',
+      'CLAN-SET-NOTICE-U': '공지사항 수정',
+      'CLAN-SET-NOTICE-D': '공지사항 삭제',
+
+      'CLAN-SET-ENQUIRE-C': '건의사항 생성',
+      'CLAN-SET-ENQUIRE-R': '건의사항 조회',
+      'CLAN-SET-ENQUIRE-U': '건의사항 수정',
+      'CLAN-SET-ENQUIRE-D': '건의사항 삭제',
     },
   },
   en: {
