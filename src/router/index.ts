@@ -273,12 +273,14 @@ async function hydrateUser(accessToken: string) {
 
   const me = data.datas;
   const systemPermissions = await setSystemRole(me.systemrole.id);
-  const clanPermissions = await setClanRole(me.clanrole.id);
+  if (me.clan != null) {
+    const clanPermissions = await setClanRole(me.clanrole.id);
+    clanPermissionStore.setClanPermissions(clanPermissions);
+  }
 
   auth.setTokens(accessToken);
   account.setAccount(me);
   systemPermissionStore.setPermissions(systemPermissions);
-  clanPermissionStore.setClanPermissions(clanPermissions);
 }
 
 async function ensureSession(): Promise<boolean> {

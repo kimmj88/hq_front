@@ -318,6 +318,7 @@ import api from '@/@core/composable/useAxios';
 import { useAccountStore } from '@/stores/useAccountStore';
 import { useRouter } from 'vue-router';
 import { CLAN_PATH } from '@/router/clan/type';
+import type { ClanRole } from '@/data/types/clanrole';
 
 const router = useRouter();
 const account = useAccountStore();
@@ -325,6 +326,8 @@ const account = useAccountStore();
 const joinDialog = ref(false);
 const selectedClan = ref<Clan | null>(null);
 const joining = ref(false);
+
+const defaultClanRoleMember = ref<ClanRole>();
 
 function openJoinDialog(clan: Clan) {
   selectedClan.value = clan;
@@ -341,6 +344,7 @@ async function confirmJoin() {
     await api.post(`${getBaseUrl('DATA')}/account/update`, {
       id: account.id,
       clan_id: selectedClan.value.id,
+      clanrole_id: defaultClanRoleMember.value?.id,
     });
 
     toast('클랜에 합류했어.');
@@ -542,7 +546,11 @@ watch([sort, playStyle, joinType], () => {
 });
 //watch(page, () => runSearch());
 
-onMounted(() => {
+onMounted(async () => {
+  const res = await api.post(`${getBaseUrl('DATA')}/clanrole/list`, {
+    name: 'member',
+  });
+  defaultClanRoleMember.value = res.data.datas[0];
   handleSearch();
 });
 

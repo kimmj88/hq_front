@@ -5,7 +5,7 @@
       <h2 class="text-h5">공지사항</h2>
 
       <v-btn
-        v-if="can('NOTICE', 'SYS-SET-NOTICE-C')"
+        v-if="can('NOTICE', 'CLAN-SET-NOTICE-C')"
         color="primary"
         prepend-icon="mdi-pencil"
         @click="$router.push(CLAN_PATH.NOTICE_ADD(account.clan.name))"
@@ -75,7 +75,7 @@ import { useRouter } from 'vue-router';
 import api from '@/@core/composable/useAxios';
 import type { Board } from '@/data/types/board';
 import { CLAN_PATH } from '@/router/clan/type';
-import { can } from '@/stores/usePermissionStore';
+import { can } from '@/stores/useClanPermissionStore';
 import { useAccountStore } from '@/stores/useAccountStore';
 
 const account = useAccountStore();

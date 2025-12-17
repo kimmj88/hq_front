@@ -5,7 +5,7 @@
       <h2 class="text-h5">문의</h2>
 
       <v-btn
-        v-if="can('ENQUIRE', 'SYS-SET-ENQUIRE-C')"
+        v-if="can('ENQUIRE', 'CLAN-SET-ENQUIRE-C')"
         color="primary"
         prepend-icon="mdi-pencil"
         @click="$router.push(CLAN_PATH.ENQUIRE_ADD(accountStore.clan.name))"
@@ -98,11 +98,11 @@ import { useRouter } from 'vue-router';
 import api from '@/@core/composable/useAxios';
 import type { Board } from '@/data/types/board';
 import { CLAN_PATH } from '@/router/clan/type';
-import { can } from '@/stores/usePermissionStore';
+import { can } from '@/stores/useClanPermissionStore';
 import type { Enquire } from '@/data/types/enquire';
 import { useAccountStore } from '@/stores/useAccountStore';
 
-const isStaff = computed(() => can('ENQUIRE', 'SYS-SET-ENQUIRE-R'));
+const isStaff = computed(() => can('ENQUIRE', 'CLAN-SET-ENQUIRE-R'));
 const isOwner = (item: Enquire) => accountStore.id === item.account.id;
 
 const accountStore = useAccountStore();

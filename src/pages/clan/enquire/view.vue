@@ -69,12 +69,12 @@
     <div class="d-flex justify-end gap-2">
       <v-btn variant="tonal" @click="goList">목록</v-btn>
       <v-btn
-        v-if="can('ENQUIRE', 'SYS-SET-ENQUIRE-U')"
+        v-if="can('ENQUIRE', 'CLAN-SET-ENQUIRE-U')"
         color="primary"
         :to="ENQUIRE_PATH.EDIT(route.params.id)"
         >수정</v-btn
       >
-      <v-btn v-if="can('ENQUIRE', 'SYS-SET-ENQUIRE-D')" color="error" @click="deleteEnquire"
+      <v-btn v-if="can('ENQUIRE', 'CLAN-SET-ENQUIRE-D')" color="error" @click="deleteEnquire"
         >삭제</v-btn
       >
     </div>
@@ -88,7 +88,7 @@ import { useRoute, useRouter } from 'vue-router';
 import api from '@/@core/composable/useAxios';
 import { ENQUIRE_PATH } from '@/router/enquire/type';
 import { CLAN_PATH } from '@/router/clan/type';
-import { can } from '@/stores/usePermissionStore';
+import { can } from '@/stores/useClanPermissionStore';
 import { useAccountStore } from '@/stores/useAccountStore';
 import type { Comment } from '@/data/types/comment';
 import { formatDateTime } from '@/utils/date';

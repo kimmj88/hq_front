@@ -6,14 +6,6 @@ export interface ClanRole {
   updated_at?: string;
 }
 
-export interface ClanRole {
-  id?: number;
-  name?: string;
-  permissionGroups?: GroupPermission[];
-  created_at?: string;
-  updated_at?: string;
-}
-
 interface GroupPermission {
   code: string;
   order: number;

@@ -56,6 +56,7 @@
           />
 
           <v-list-item
+            v-if="can('ACCOUNT', 'CLAN-SET-ACC-R')"
             :active="section === 'accounts'"
             prepend-icon="mdi-account-group-outline"
             title="멤버"
@@ -107,7 +108,7 @@
 <script lang="ts" setup>
 import { ref, computed } from 'vue';
 import HeaderBar from '@/components/header/Header.vue';
-import { can } from '@/stores/usePermissionStore';
+import { can } from '@/stores/useClanPermissionStore';
 import { useAccountStore } from '@/stores/useAccountStore';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import api from '@/@core/composable/useAxios';
@@ -120,10 +121,53 @@ const account = useAccountStore();
 
 const leaveDialog = ref(false);
 
-const openGroups = ref<Record<string, boolean>>({
-  Solution: false,
-  Customer: false,
-  Pipeline: false,
+const menuItems = computed(() => {
+  const items = [];
+
+  if (can('ACCOUNT', 'SYS-SET-ACC-R')) {
+    items.push({
+      title: 'Account',
+      icon: 'mdi-account-supervisor-circle',
+      to: '/config/account',
+    });
+  }
+
+  if (can('PLAYER', 'SYS-SET-PLAYER-R')) {
+    items.push({
+      title: 'Player',
+      icon: 'mdi-gamepad-variant',
+      to: '/config/player',
+    });
+  }
+
+  if (can('TIER', 'SYS-SET-TIER-R')) {
+    items.push({
+      title: 'Tier',
+      icon: 'mdi-trophy-outline',
+      to: '/config/tier',
+    });
+  }
+
+  if (can('PROFILE', 'SYS-SET-PROFILE-R')) {
+    items.push({
+      title: 'Profile',
+      icon: 'mdi-id-card',
+      to: '/config/profile',
+    });
+  }
+
+  if (can('PERMISSION', 'SYS-SET-PMS-R')) {
+    items.push({
+      title: 'Permission',
+      icon: 'mdi-shield-lock-outline',
+      children: [
+        { title: 'System', icon: 'mdi-server-cog', to: '/config/permission/system' },
+        { title: 'Clan', icon: 'mdi-server-cog', to: '/config/permission/clan' },
+      ],
+    });
+  }
+
+  return items;
 });
 
 async function leaveClan() {

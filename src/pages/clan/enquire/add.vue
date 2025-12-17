@@ -32,7 +32,7 @@
         <div class="d-flex justify-end gap-2 mt-6">
           <v-btn variant="tonal" @click="goList">취소</v-btn>
           <v-btn
-            v-if="can('ENQUIRE', 'SYS-SET-ENQUIRE-C')"
+            v-if="can('ENQUIRE', 'CLAN-SET-ENQUIRE-C')"
             color="primary"
             :disabled="!isValid"
             @click="onSubmit"
@@ -52,7 +52,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '@/@core/composable/useAxios';
 import { useAccountStore } from '@/stores/useAccountStore';
-import { can } from '@/stores/usePermissionStore';
+import { can } from '@/stores/useClanPermissionStore';
 import { CLAN_PATH } from '@/router/clan/type';
 
 // 🔥 Toast UI Editor core import

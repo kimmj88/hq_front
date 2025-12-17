@@ -20,7 +20,7 @@
       </v-col>
       <v-spacer />
       <v-col cols="auto">
-        <PlayerMemberDialog v-if="can('PLAYER', 'SYS-SET-PLAYER-C')" @added="handleAdd" />
+        <PlayerMemberDialog v-if="can('PLAYER', 'CLAN-SET-PLAYER-C')" @added="handleAdd" />
       </v-col>
     </v-row>
   </v-container>
@@ -295,7 +295,7 @@ import ServerDataTable from '@/components/common/ServerDataTable.vue';
 import PlayerMemberDialog from '@/components/dialogs/PlayerMemberDialog.vue';
 import type { Player } from '@/data/types/player';
 import type { Tier } from '@/data/types/tier';
-import { can } from '@/stores/usePermissionStore';
+import { can } from '@/stores/useClanPermissionStore';
 import type { Codedict } from '@/data/types/codedict';
 import type { Position } from '@/data/types/position';
 import { useAccountStore } from '@/stores/useAccountStore';
