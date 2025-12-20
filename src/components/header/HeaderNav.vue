@@ -120,22 +120,20 @@ const menuItems = computed(() => {
     to: '/enquire',
   });
 
-  if (can('NOTICE', 'SYS-SET-NOTICE-C')) {
-    if (account.clan != null) {
-      items.push({
-        key: 'clan',
-        title: 'Clan',
-        icon: 'mdi-help-circle-outline',
-        to: `${CLAN_PATH.VIEW(account.clan.name)}`,
-      });
-    } else {
-      items.push({
-        key: 'clan',
-        title: 'Clan',
-        icon: 'mdi-help-circle-outline',
-        to: `/clan`,
-      });
-    }
+  if (account.clan != null) {
+    items.push({
+      key: 'clan',
+      title: 'Clan',
+      icon: 'mdi-help-circle-outline',
+      to: `${CLAN_PATH.VIEW(account.clan.name)}`,
+    });
+  } else {
+    items.push({
+      key: 'clan',
+      title: 'Clan',
+      icon: 'mdi-help-circle-outline',
+      to: `/clan`,
+    });
   }
 
   return items;
