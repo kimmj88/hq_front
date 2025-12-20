@@ -329,7 +329,6 @@ import { CLAN_PATH } from '@/router/clan/type';
 import type { ClanRole } from '@/data/types/clanrole';
 
 import logo from '@/assets/hq_logo.jpeg';
-import gm4 from '@/assets/image.png';
 
 const router = useRouter();
 const account = useAccountStore();
