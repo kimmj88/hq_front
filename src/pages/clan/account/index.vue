@@ -23,7 +23,7 @@
   </v-container>
   <v-container>
     <server-data-table
-      v-if="can('ACCOUNT', 'SYS-SET-ACC-R')"
+      v-if="can('ACCOUNT', 'CLAN-SET-ACC-R')"
       :headers="headers"
       :items="serverItems"
       :items-length="totalItems"
