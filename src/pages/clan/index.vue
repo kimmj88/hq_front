@@ -575,7 +575,7 @@ watch([sort, playStyle, joinType], () => {
 
 onMounted(async () => {
   const res = await api.post(`${getBaseUrl('DATA')}/clanrole/list`, {
-    name: 'visitor',
+    name: 'guest',
   });
   defaultClanRoleMember.value = res.data.datas[0];
   handleSearch();
