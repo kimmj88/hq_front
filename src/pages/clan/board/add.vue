@@ -36,7 +36,7 @@
         </div>
 
         <!-- 이미지/파일 첨부 -->
-        <v-file-input
+        <!-- <v-file-input
           v-model="form.attachments"
           label="첨부 파일"
           prepend-icon="mdi-paperclip"
@@ -45,7 +45,7 @@
           variant="outlined"
           density="comfortable"
           class="mt-4"
-        />
+        /> -->
 
         <!-- 버튼 영역 -->
         <div class="d-flex justify-end gap-2 mt-6">

@@ -4,11 +4,13 @@
       <!-- 로고 -->
       <v-col cols="auto">
         <router-link to="/home" style="display: inline-block">
-          <img
-            :src="logo"
-            alt="로고"
-            style="height: 130px; width: 2000px; display: block; cursor: pointer"
-          />
+          <v-col cols="auto">
+            <router-link to="/home" class="brand">
+              <span class="brand__clan">CLAN</span>
+              <span class="brand__dot">.</span>
+              <span class="brand__gg">GG</span>
+            </router-link>
+          </v-col>
         </router-link>
       </v-col>
 
@@ -69,3 +71,26 @@ function logout() {
   router.push('/login');
 }
 </script>
+<style scoped>
+.brand {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  font-size: 26px;
+  line-height: 1;
+}
+
+.brand__clan {
+  color: #ffffff;
+}
+.brand__dot {
+  color: #3dff7a;
+} /* 포인트 컬러 */
+.brand__gg {
+  color: #ffffff;
+  opacity: 0.95;
+}
+</style>

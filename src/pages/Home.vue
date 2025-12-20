@@ -79,7 +79,7 @@
         </v-carousel>
 
         <!-- 빠른 액션 -->
-        <v-card class="mb-4 pa-3 rounded-xl">
+        <!-- <v-card class="mb-4 pa-3 rounded-xl">
           <div class="d-flex align-center flex-wrap" style="gap: 8px">
             <v-btn size="small" prepend-icon="mdi-plus-circle" @click="addPost">새 글</v-btn>
             <v-btn size="small" variant="tonal" prepend-icon="mdi-ticket-percent" @click="goEvent"
@@ -94,7 +94,7 @@
             <v-spacer />
             <v-chip size="small" variant="flat" color="indigo"> #프로모션 #업데이트 </v-chip>
           </div>
-        </v-card>
+        </v-card> -->
         <!-- 스폰서/광고 카드 (메인 안쪽 배너) -->
         <v-card class="mb-6 rounded-xl overflow-hidden elevation-2" @click="openSponsor">
           <v-row no-gutters>
@@ -147,7 +147,7 @@
             </v-card>
           </v-col>
 
-          <v-col cols="12" md="6">
+          <!-- <v-col cols="12" md="6">
             <v-card class="rounded-xl">
               <v-card-title class="py-2">
                 <v-icon size="18" class="mr-2">mdi-share-variant</v-icon> 내전 리스트
@@ -170,7 +170,7 @@
                 </v-list-item>
               </v-list>
             </v-card>
-          </v-col>
+          </v-col> -->
         </v-row>
 
         <!-- 기존 피드 -->
@@ -442,38 +442,38 @@ const leftAds = computed<AdItem[]>(() =>
 // ✅ 원본(이미지 없을 수 있음): 유튜브 영상 링크만 있어도 OK
 const leftAdsRaw = ref<AdItem[]>([
   // 유튜브 영상 링크 → 썸네일 자동
-  {
-    title: '힐링큐 Youtube',
-    subtitle: '구독과 좋아요 눌러주세요!!!!',
-    href: 'https://www.youtube.com/watch?v=mJ4cBFQQiiQ',
-    cta: '참여하기',
-  },
-  // 일반 이미지 광고
-  {
-    title: '프리미엄 구독',
-    subtitle: '더 강력한 도구 모음',
-    image:
-      'https://past-coral-fwbnqvr8jk.edgeone.app/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA%202025-10-31%20%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE%204.55.50.png',
-    href: '#',
-    cta: '업그레이드',
-  },
-]);
-const rightAds = ref<AdItem[]>([
-  {
-    title: '디자인 템플릿',
-    subtitle: '새로운 UI 킷 공개',
-    image:
-      'https://past-coral-fwbnqvr8jk.edgeone.app/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA%202025-10-31%20%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE%204.55.50.png',
-    href: '#',
-  },
-  {
-    title: '데이터 인사이트',
-    subtitle: '리포트 다운받기',
-    image:
-      'https://past-coral-fwbnqvr8jk.edgeone.app/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA%202025-10-31%20%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE%204.55.50.png',
-    href: '#',
-    cta: '다운받기',
-  },
+  //   {
+  //     title: '힐링큐 Youtube',
+  //     subtitle: '구독과 좋아요 눌러주세요!!!!',
+  //     href: 'https://www.youtube.com/watch?v=mJ4cBFQQiiQ',
+  //     cta: '참여하기',
+  //   },
+  //   // 일반 이미지 광고
+  //   {
+  //     title: '프리미엄 구독',
+  //     subtitle: '더 강력한 도구 모음',
+  //     image:
+  //       'https://past-coral-fwbnqvr8jk.edgeone.app/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA%202025-10-31%20%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE%204.55.50.png',
+  //     href: '#',
+  //     cta: '업그레이드',
+  //   },
+  // ]);
+  // const rightAds = ref<AdItem[]>([
+  //   {
+  //     title: '디자인 템플릿',
+  //     subtitle: '새로운 UI 킷 공개',
+  //     image:
+  //       'https://past-coral-fwbnqvr8jk.edgeone.app/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA%202025-10-31%20%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE%204.55.50.png',
+  //     href: '#',
+  //   },
+  //   {
+  //     title: '데이터 인사이트',
+  //     subtitle: '리포트 다운받기',
+  //     image:
+  //       'https://past-coral-fwbnqvr8jk.edgeone.app/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA%202025-10-31%20%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE%204.55.50.png',
+  //     href: '#',
+  //     cta: '다운받기',
+  //   },
 ]);
 
 function openAd(ad: AdItem) {
