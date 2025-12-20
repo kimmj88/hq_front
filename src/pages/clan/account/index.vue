@@ -93,7 +93,7 @@
           </template>
           <v-list>
             <v-list-item
-              v-if="can('ACCOUNT', 'SYS-SET-ACC-U')"
+              v-if="can('ACCOUNT', 'CLAN-SET-ACC-U')"
               :to="CLAN_PATH.ACCOUNT_VIEW(account.clan.name, item.id)"
             >
               <v-list-item-title>{{ $t('form_control.button.edit') }}</v-list-item-title>
@@ -113,7 +113,7 @@ import api from '@/@core/composable/useAxios';
 import type { Account } from '@/data/types/account';
 import type { VDataTableServer } from 'vuetify/components';
 import ServerDataTable from '@/components/common/ServerDataTable.vue';
-import { can } from '@/stores/usePermissionStore';
+import { can } from '@/stores/useClanPermissionStore';
 import { useAccountStore } from '@/stores/useAccountStore';
 
 const account = useAccountStore();
