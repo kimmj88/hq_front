@@ -15,7 +15,7 @@
                 </div> -->
               </div>
 
-              <!-- <v-chip size="small" label>{{ my.roleLabel }}</v-chip> -->
+              <v-chip size="small" label>{{ account.clanrole.name }}</v-chip>
             </div>
 
             <div class="mt-3 d-flex gap-2">
@@ -49,6 +49,7 @@
           />
 
           <v-list-item
+            v-if="can('PLAYER', 'CLAN-SET-PLAYER-R')"
             :active="section === 'players'"
             prepend-icon="mdi-gamepad-variant-outline"
             title="플레이어"
@@ -61,6 +62,22 @@
             prepend-icon="mdi-account-group-outline"
             title="멤버"
             :to="CLAN_PATH.ACCOUNT(account.clan.name)"
+          />
+
+          <v-list-item
+            v-if="can('MATCH', 'CLAN-SET-MATCH-R')"
+            :active="section === 'matches'"
+            prepend-icon="mdi-sword-cross"
+            title="내전 매치"
+            :to="CLAN_PATH.MATCH(account.clan.name)"
+          />
+
+          <v-list-item
+            v-if="can('CUP', 'CLAN-SET-CUP-R')"
+            :active="section === 'cups'"
+            prepend-icon="mdi-trophy-outline"
+            title="내전 컵"
+            :to="CLAN_PATH.CUP(account.clan.name)"
           />
 
           <v-list-item
@@ -77,6 +94,11 @@
         <v-divider class="my-2" />
 
         <v-list nav density="compact">
+          <v-list-item
+            prepend-icon="mdi-account-search-outline"
+            title="클랜 찾기"
+            :to="CLAN_PATH.BASE"
+          />
           <v-list-item
             prepend-icon="mdi-exit-run"
             title="클랜 나가기"

@@ -92,6 +92,15 @@ import ClanPlayer from '@/pages/clan/player.vue';
 import ClanAccount from '@/pages/clan/account/index.vue';
 import ClanAccountView from '@/pages/clan/account/view.vue';
 
+import ClanMatch from '@/pages/clan/match/index.vue';
+import ClanMatchAdd from '@/pages/clan/match/add.vue';
+import ClanMatchView from '@/pages/clan/match/view.vue';
+
+import ClanCup from '@/pages/clan/cup/index.vue';
+import ClanCupAdd from '@/pages/clan/cup/add.vue';
+import ClanCupView from '@/pages/clan/cup/view.vue';
+import ClanCupBracket from '@/pages/clan/cup/bracket.vue';
+
 import MyClan from '@/pages/clan/myclan.vue';
 
 import Cookies from 'js-cookie';
@@ -154,6 +163,13 @@ const router = createRouter({
         { path: CLAN_PATH.ACCOUNT(':name'), component: ClanAccount },
         { path: CLAN_PATH.ACCOUNT_VIEW(':name', ':id'), component: ClanAccountView, props: true },
         { path: CLAN_PATH.PERMISSION(':name'), component: ClanPermission },
+        { path: CLAN_PATH.MATCH(':name'), component: ClanMatch },
+        { path: CLAN_PATH.MATCH_ADD(':name'), component: ClanMatchAdd },
+        { path: CLAN_PATH.MATCH_VIEW(':name', ':id'), component: ClanMatchView, props: true },
+        { path: CLAN_PATH.CUP(':name'), component: ClanCup },
+        { path: CLAN_PATH.CUP_ADD(':name'), component: ClanCupAdd },
+        { path: CLAN_PATH.CUP_VIEW(':name', ':id'), component: ClanCupView, props: true },
+        { path: CLAN_PATH.CUP_BRACKET(':name', ':id'), component: ClanCupBracket, props: true },
       ],
     },
 
@@ -231,7 +247,7 @@ const router = createRouter({
       children: [
         { path: '/home', component: Home },
         { path: '', component: Clan },
-        // { path: CLAN_PATH.VIEW(':name'), component: MyClan, props: true },
+        { path: 'myclan', component: MyClan, props: true },
       ],
     },
   ],
@@ -273,6 +289,7 @@ async function hydrateUser(accessToken: string) {
 
   const me = data.datas;
   const systemPermissions = await setSystemRole(me.systemrole.id);
+
   if (me.clan != null) {
     const clanPermissions = await setClanRole(me.clanrole.id);
     clanPermissionStore.setClanPermissions(clanPermissions);

@@ -157,7 +157,7 @@
     <!-- 하단 컨트롤 -->
     <v-row align="center" justify="space-between">
       <v-col cols="12" md="6" class="d-flex align-center" style="gap: 12px">
-        <v-switch
+        <!-- <v-switch
           v-model="accountIsConfirm"
           color="success"
           inset
@@ -166,7 +166,7 @@
         />
         <span class="text-caption text-medium-emphasis">
           승인 시 해당 계정으로 로그인할 수 있습니다.
-        </span>
+        </span> -->
       </v-col>
 
       <v-col cols="12" md="6" class="d-flex justify-end" style="gap: 8px">
@@ -178,7 +178,7 @@
         >
           Edit Role
         </v-btn>
-        <v-btn color="primary" variant="tonal" @click="submitEdit"> 저장 </v-btn>
+        <!-- <v-btn color="primary" variant="tonal" @click="submitEdit"> 저장 </v-btn> -->
         <v-btn color="secondary" variant="text" @click="router.push('/config/account')">
           뒤로
         </v-btn>

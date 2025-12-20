@@ -78,23 +78,23 @@ const menuItems = computed(() => {
     to: '/home',
   });
 
-  if (can('MATCH', 'SYS-SET-MATCH-R')) {
-    items.push({
-      key: 'match',
-      title: 'Match',
-      icon: 'mdi-sword-cross',
-      to: '/match',
-    });
-  }
+  // if (can('MATCH', 'SYS-SET-MATCH-R')) {
+  //   items.push({
+  //     key: 'match',
+  //     title: 'Match',
+  //     icon: 'mdi-sword-cross',
+  //     to: '/match',
+  //   });
+  // }
 
-  if (can('CUP', 'SYS-SET-CUP-R')) {
-    items.push({
-      key: 'cup',
-      title: 'CUP',
-      icon: 'mdi-trophy-outline',
-      to: '/cup',
-    });
-  }
+  // if (can('CUP', 'SYS-SET-CUP-R')) {
+  //   items.push({
+  //     key: 'cup',
+  //     title: 'CUP',
+  //     icon: 'mdi-trophy-outline',
+  //     to: '/cup',
+  //   });
+  // }
   if (can('NOTICE', 'SYS-SET-NOTICE-R')) {
     items.push({
       key: 'board',

@@ -83,6 +83,14 @@ const messages = {
       'CLAN-SET-ENQUIRE-R': '건의사항 조회',
       'CLAN-SET-ENQUIRE-U': '건의사항 수정',
       'CLAN-SET-ENQUIRE-D': '건의사항 삭제',
+
+      'CLAN-SET-MATCH-C': '매치 생성',
+      'CLAN-SET-MATCH-R': '매치 조회',
+      'CLAN-SET-MATCH-D': '매치 삭제',
+
+      'CLAN-SET-CUP-C': '컵 생성',
+      'CLAN-SET-CUP-R': '컵 조회',
+      'CLAN-SET-CUP-D': '컵 삭제',
     },
   },
   en: {

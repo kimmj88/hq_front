@@ -156,20 +156,18 @@
 
     <!-- 하단 컨트롤 -->
     <v-row align="center" justify="space-between">
-      <v-col cols="12" md="6" class="d-flex align-center" style="gap: 12px">
-        <v-switch
-          v-model="accountIsConfirm"
-          color="success"
-          inset
-          hide-details
-          :label="accountIsConfirm ? '플레이어 승인됨' : '플레이어 승인대기'"
-        />
-        <span class="text-caption text-medium-emphasis">
-          승인 시 해당 계정으로 로그인할 수 있습니다.
-        </span>
-      </v-col>
+      <v-col cols="12" md="6" class="d-flex align-center" style="gap: 12px"> </v-col>
 
       <v-col cols="12" md="6" class="d-flex justify-end" style="gap: 8px">
+        <v-btn
+          v-if="accountStore.clan.account.id == accountStore.id"
+          color="warning"
+          variant="outlined"
+          prepend-icon="mdi-crown-outline"
+          @click="openTransferMasterDialog"
+        >
+          마스터 변경
+        </v-btn>
         <v-btn
           v-if="can('ACCOUNT', 'SYS-SET-ACC-U')"
           color="primary"
@@ -178,7 +176,7 @@
         >
           Edit Role
         </v-btn>
-        <v-btn color="primary" variant="tonal" @click="submitEdit"> 저장 </v-btn>
+        <!-- <v-btn color="primary" variant="tonal" @click="submitEdit"> 저장 </v-btn> -->
         <v-btn color="secondary" variant="text" @click="router.push('/config/account')">
           뒤로
         </v-btn>
@@ -242,23 +240,49 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
+
+  <v-dialog v-model="transferMasterDialog" max-width="420">
+    <v-card>
+      <v-card-title class="text-h6"> 마스터 변경 </v-card-title>
+
+      <v-card-text class="text-body-2 text-medium-emphasis">
+        정말로 이 계정을 <b>클랜 마스터</b>로 변경하시겠습니까?<br />
+        기존 마스터는 일반 멤버로 변경됩니다.
+      </v-card-text>
+
+      <v-card-actions class="justify-end">
+        <v-btn variant="text" @click="transferMasterDialog = false"> 취소 </v-btn>
+        <v-btn color="warning" @click="confirmTransferMaster"> 확인 </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
+  <v-snackbar v-model="snack.show" :timeout="2200">{{ snack.msg }}</v-snackbar>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import api from '@/@core/composable/useAxios';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import { can } from '@/stores/usePermissionStore';
 import type { Player } from '@/data/types/player';
 import type { ClanRole } from '@/data/types/clanrole';
 import { useAccountStore } from '@/stores/useAccountStore';
+import { CLAN_PATH } from '@/router/clan/type';
+
+const route = useRoute();
+const router = useRouter();
 
 const accountStore = useAccountStore();
 
-const props = defineProps<{ id: string }>();
+const snack = ref({ show: false, msg: '' });
+function toast(msg: string) {
+  snack.value.msg = msg;
+  snack.value.show = true;
+}
 
-const router = useRouter();
+const props = defineProps<{ id: string }>();
 
 const dialog = ref(false);
 const selectedSystemRole = ref<ClanRole | null>(null);
@@ -286,6 +310,28 @@ const account = ref<{
     player: null,
   },
 });
+
+const transferMasterDialog = ref(false);
+
+function openTransferMasterDialog() {
+  transferMasterDialog.value = true;
+}
+
+async function confirmTransferMaster() {
+  try {
+    await api.post(`${getBaseUrl('DATA')}/clan/change_master`, {
+      before_master: accountStore.id,
+      after_master: props.id,
+    });
+
+    toast('마스터가 변경되었습니다.');
+    transferMasterDialog.value = false;
+    router.push(CLAN_PATH.NOTICE(accountStore.clan.name));
+  } catch (e) {
+    console.error(e);
+    toast('마스터 변경 중 오류가 발생했습니다.');
+  }
+}
 
 const nicknameDialog = ref(false);
 const editNickname = ref('');

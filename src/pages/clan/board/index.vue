@@ -127,7 +127,6 @@ async function loadItems(options: DataTableOptions) {
         ? options.sortBy[0].order
         : 'desc';
 
-    debugger;
     const response = await api.get(`${getBaseUrl('DATA')}/board/search`, {
       params: {
         keyword: search.value,

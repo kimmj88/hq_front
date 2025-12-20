@@ -135,7 +135,7 @@
 
           <v-list density="compact">
             <!-- 수정: 기존 라우팅 유지 -->
-            <v-list-item v-if="can('PLAYER', 'SYS-SET-PLAYER-U')" @click="openEdit(item)">
+            <v-list-item v-if="can('PLAYER', 'CLAN-SET-PLAYER-U')" @click="openEdit(item)">
               <v-list-item-title>
                 <v-icon size="16" class="mr-2">mdi-pencil</v-icon> 수정
               </v-list-item-title>

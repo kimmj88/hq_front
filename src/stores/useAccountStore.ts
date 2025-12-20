@@ -10,6 +10,7 @@ export const useAccountStore = defineStore('account', {
     is_confirm: false as boolean,
     player: null as any,
     clan: null as any,
+    clanrole: null as any,
   }),
   actions: {
     setAccount(account: Account) {
@@ -20,6 +21,7 @@ export const useAccountStore = defineStore('account', {
       this.is_confirm = account.is_confirm;
       this.player = account.player;
       this.clan = account.clan;
+      this.clanrole = account.clanrole;
     },
     clear() {
       this.id = 0;
@@ -29,6 +31,7 @@ export const useAccountStore = defineStore('account', {
       this.is_confirm = false;
       this.player = null;
       this.clan = null;
+      this.clanrole = null;
     },
   },
 });

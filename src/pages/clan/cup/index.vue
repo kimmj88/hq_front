@@ -23,9 +23,9 @@
 
       <v-col cols="auto">
         <v-btn
-          v-if="can('MATCH', 'SYS-SET-MATCH-C')"
+          v-if="can('CUP', 'CLAN-SET-CUP-C')"
           color="secondary"
-          @click="$router.push(MATCH_PATH.ADD)"
+          @click="$router.push(CLAN_PATH.CUP_ADD(account.clan.name))"
         >
           {{ $t('form_control.button.add') }}
         </v-btn>
@@ -42,7 +42,7 @@
       @update:options="loadItems"
     >
       <template #item.name="{ item }">
-        <router-link :to="MATCH_PATH.VIEW(item.id)" class="account-link">
+        <router-link :to="CLAN_PATH.CUP_VIEW(account.clan.name, item.id)" class="account-link">
           {{ item.name }}
         </router-link>
       </template>
@@ -63,7 +63,7 @@
             </template>
           </v-tooltip> -->
 
-        <v-tooltip v-if="can('MATCH', 'SYS-SET-MATCH-D')" text="삭제">
+        <v-tooltip v-if="can('CUP', 'CLAN-SET-CUP-D')" text="삭제">
           <template #activator="{ props }">
             <v-btn
               v-bind="props"
@@ -111,18 +111,19 @@
 
 <script lang="ts" setup>
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { can } from '@/stores/usePermissionStore';
+import { can } from '@/stores/useClanPermissionStore';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import api from '@/@core/composable/useAxios';
 import type { VDataTableServer } from 'vuetify/components';
-import { MATCH_PATH } from '@/router/match/type';
+import { CLAN_PATH } from '@/router/clan/type';
+import { useAccountStore } from '@/stores/useAccountStore';
+
+const account = useAccountStore();
 
 const search = ref<string>('');
 const serverItems = ref<Match[]>([]);
 const loading = ref<boolean>(false);
 const totalItems = ref<number>(0);
-const router = useRouter();
 
 interface Match {
   id: number;
@@ -160,10 +161,6 @@ const headers = ref<VDataTableServer['headers']>([
     title: 'confirm',
     key: 'is_confirm',
   },
-  {
-    title: 'winner',
-    key: 'winner_team',
-  },
   { title: 'Created', key: 'created_at', sortable: true },
   { title: 'Updated', key: 'updated_at', sortable: true },
   {
@@ -181,11 +178,16 @@ async function loadItems(options: FetchParams) {
     const sortKey = options.sortBy[0]?.key || 'created_at';
     const sortOrder = options.sortBy[0]?.order || 'desc';
 
-    const response = await api.get(
-      `${getBaseUrl('DATA')}/match/search?keyword=${search.value}&page=${
-        options.page
-      }&itemsPerPage=${options.itemsPerPage}&sortBy=${sortKey}&orderBy=${sortOrder}`
-    );
+    const response = await api.get(`${getBaseUrl('DATA')}/cup/search`, {
+      params: {
+        keyword: search.value,
+        page: options.page,
+        itemsPerPage: options.itemsPerPage,
+        sortBy: sortKey,
+        orderBy: sortOrder,
+        clan: account.clan,
+      },
+    });
 
     loading.value = true;
     serverItems.value = response.data.datas;
@@ -203,7 +205,7 @@ function modifyItem(item: Match) {
 async function deleteItem(item: Match) {
   if (confirm(`정말로 '${item.name}'을(를) 삭제하시겠습니까?`)) {
     try {
-      await api.post(`${getBaseUrl('DATA')}/match/delete`, { id: item.id });
+      await api.post(`${getBaseUrl('DATA')}/cup/delete`, { id: item.id });
       alert('삭제 완료!');
       loadItems({
         keyword: '',

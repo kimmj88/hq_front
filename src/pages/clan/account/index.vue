@@ -63,16 +63,25 @@
 
       <!-- ROLE -->
       <template #item.clanrole="{ item }">
-        <v-icon start size="large">
-          {{ item.clanrole.name === 'admin' ? 'mdi-crown' : 'mdi-account' }}
-        </v-icon>
-        {{ item.clanrole.name }}
+        <div class="d-flex align-center" style="gap: 8px">
+          <v-icon :color="getRoleColor(item?.clanrole?.name)" size="20">
+            {{ getRoleIcon(item?.clanrole?.name) }}
+          </v-icon>
+
+          <v-chip size="small" label variant="tonal" :color="getRoleColor(item?.clanrole?.name)">
+            {{ getRoleLabel(item?.clanrole?.name) }}
+          </v-chip>
+        </div>
       </template>
 
       <template #item.status="{ item }">
         <v-chip :color="getStatusColor('active')" size="large" label>
           {{ 'active' }}
         </v-chip>
+      </template>
+
+      <template #item.created_at="{ item }">
+        {{ item.created_at.slice(0, 10) }}
       </template>
 
       <template #item.actions="{ item }">
@@ -98,7 +107,6 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { CONFIG_ACCOUNT_PATH } from '@/router/config/type';
 import { CLAN_PATH } from '@/router/clan/type';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import api from '@/@core/composable/useAxios';
@@ -118,10 +126,11 @@ const loading = ref<boolean>(true);
 const totalItems = ref<number>(0);
 
 const headers: VDataTableServer['headers'] = [
-  { title: 'NAME', key: 'name' },
-  { title: 'ROLE', key: 'clanrole' },
-  { title: 'DEPARTMENT', key: 'department' },
-  { title: 'STATUS', key: 'status' },
+  { title: '이름 / 닉네임', key: 'name' },
+  { title: '권한', key: 'clanrole' },
+  //{ title: 'DEPARTMENT', key: 'department' },
+  { title: '가입날짜', key: 'created_at' },
+  // { title: 'STATUS', key: 'status' },
   { title: 'ACTIONS', key: 'actions', sortable: false, align: 'center', width: '1px' },
 ] as const;
 
@@ -183,6 +192,59 @@ function getAvatarColor(name: string): string {
   if (!name) return avatarColors[0];
   const code = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return avatarColors[code % avatarColors.length];
+}
+
+type ClanRoleName = 'master' | 'manager' | 'member' | 'guest';
+
+function getRoleIcon(role?: string) {
+  const r = (role ?? '').toLowerCase() as ClanRoleName;
+
+  switch (r) {
+    case 'master':
+      return 'mdi-crown'; // 👑 소유자
+    case 'manager':
+      return 'mdi-shield-account'; // 🛡 운영자
+    case 'member':
+      return 'mdi-account'; // 👤 멤버
+    case 'guest':
+      return 'mdi-account-outline'; // 👁 게스트
+    default:
+      return 'mdi-help-circle-outline';
+  }
+}
+
+function getRoleColor(role?: string) {
+  const r = (role ?? '').toLowerCase() as ClanRoleName;
+
+  switch (r) {
+    case 'master':
+      return 'amber-darken-2'; // 골드
+    case 'manager':
+      return 'deep-purple'; // 보라 (관리자 느낌)
+    case 'member':
+      return 'indigo'; // 파랑 (일반 멤버)
+    case 'guest':
+      return 'grey-darken-1'; // 회색 (제한됨)
+    default:
+      return 'grey';
+  }
+}
+
+function getRoleLabel(role?: string) {
+  const r = (role ?? '').toLowerCase() as ClanRoleName;
+
+  switch (r) {
+    case 'master':
+      return 'MASTER';
+    case 'manager':
+      return 'MANAGER';
+    case 'member':
+      return 'MEMBER';
+    case 'guest':
+      return 'GUEST';
+    default:
+      return role ?? '-';
+  }
 }
 
 function getInitials(name: string) {

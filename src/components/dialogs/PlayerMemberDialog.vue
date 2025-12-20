@@ -104,6 +104,10 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
+
+  <v-snackbar v-model="snack.show" :timeout="2200">
+    {{ snack.msg }}
+  </v-snackbar>
 </template>
 
 <script setup lang="ts">
@@ -239,6 +243,12 @@ async function fetch() {
   }
 }
 
+const snack = ref({ show: false, msg: '' });
+function toast(msg: string) {
+  snack.value.msg = msg;
+  snack.value.show = true;
+}
+
 async function handleAdd() {
   let findID = 0;
   for (const item of tiers.value) {
@@ -248,6 +258,7 @@ async function handleAdd() {
       findID = item.id;
     }
   }
+
   const response = await api.post(`${getBaseUrl('DATA')}/player/create`, {
     nickname: searchId.value,
     tagname: searchTag.value,
@@ -256,6 +267,11 @@ async function handleAdd() {
     },
     clan: { id: account.clan.id },
   });
+
+  if (response.status == 409) {
+    toast('이미 다른 클랜에 추가되어 있습니다.');
+    return;
+  }
 
   searchId.value = '';
   searchTag.value = '';

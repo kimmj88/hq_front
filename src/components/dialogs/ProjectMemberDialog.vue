@@ -43,7 +43,10 @@ import axios from 'axios';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import { useRoute } from 'vue-router';
 import api from '@/@core/composable/useAxios';
+import { useAccountStore } from '@/stores/useAccountStore';
 const route = useRoute();
+
+const account = useAccountStore();
 
 const emit = defineEmits<{
   (e: 'added', users: UserOption[]): void;
@@ -79,7 +82,10 @@ watch(selectedUsers, () => {
 
 onMounted(async () => {
   try {
-    const res = await api.get(`${getBaseUrl('DATA')}/player/all`); // 예: 전체 사용자 리스트
+    const res = await api.post(`${getBaseUrl('DATA')}/player/list`, {
+      clan: account.clan,
+    }); // 예: 전체 사용자 리스트
+
     allUsers.value = res.data.datas.map((user: any) => ({
       ...user,
       display: `${user.nickname}#${user.tagname}`,

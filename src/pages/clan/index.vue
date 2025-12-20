@@ -11,7 +11,12 @@
       </div>
 
       <!-- ✅ Primary CTA: 한 군데만 크게 -->
-      <v-btn color="primary" prepend-icon="mdi-account-group" @click="openCreateDialog">
+      <v-btn
+        v-if="account.clan == null"
+        color="primary"
+        prepend-icon="mdi-account-group"
+        @click="openCreateDialog"
+      >
         클랜 만들기
       </v-btn>
     </div>
@@ -134,11 +139,12 @@
             <v-row class="align-center">
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="q"
+                  v-model="search"
                   label="클랜 검색 (이름/태그/설명)"
                   prepend-inner-icon="mdi-magnify"
                   clearable
                   hide-details
+                  @keyup.enter="handleSearch"
                 />
               </v-col>
 
@@ -187,30 +193,32 @@
               <v-col cols="12" v-else>
                 <v-row>
                   <v-col v-for="clan in serverItems" :key="clan.id" cols="12" md="6" lg="4">
-                    <v-card rounded="lg" variant="outlined">
+                    <v-card
+                      rounded="lg"
+                      variant="outlined"
+                      class="clan-card"
+                      :style="cardBgStyle(clan)"
+                    >
                       <v-card-title class="d-flex align-center justify-space-between">
                         <div class="text-subtitle-1 font-weight-bold">
                           {{ clan.name }}
                           <span class="text-medium-emphasis">[{{ clan.tag }}]</span>
                         </div>
-                        <v-chip size="small" label> {{ clan.members }}/{{ clan.capacity }} </v-chip>
+                        <!-- <v-chip size="small" label> {{ clan.members }}/{{ clan.capacity }} </v-chip> -->
+                        <v-chip size="small" label> 클랜원 : {{ clan.accounts.length }} 명</v-chip>
                       </v-card-title>
 
                       <v-card-text class="text-body-2 text-medium-emphasis">
                         {{ clan.description }}
-                        <div class="mt-2 d-flex flex-wrap gap-1">
-                          <v-chip size="small" label>{{ clan.playStyleLabel }}</v-chip>
-                          <v-chip size="small" label>{{ clan.joinTypeLabel }}</v-chip>
-                          <v-chip size="small" label>활동도 {{ clan.activity }}</v-chip>
-                        </div>
                       </v-card-text>
 
                       <v-divider />
 
                       <v-card-actions class="justify-end">
-                        <v-btn variant="text" @click="openClanDetail(clan)">자세히</v-btn>
+                        <!-- <v-btn variant="text" @click="openClanDetail(clan)">자세히</v-btn> -->
 
                         <v-btn
+                          v-if="!account.clan"
                           color="primary"
                           :disabled="clan.members >= clan.capacity"
                           @click="openJoinDialog(clan)"
@@ -319,6 +327,9 @@ import { useAccountStore } from '@/stores/useAccountStore';
 import { useRouter } from 'vue-router';
 import { CLAN_PATH } from '@/router/clan/type';
 import type { ClanRole } from '@/data/types/clanrole';
+
+import logo from '@/assets/hq_logo.jpeg';
+import gm4 from '@/assets/image.png';
 
 const router = useRouter();
 const account = useAccountStore();
@@ -448,6 +459,7 @@ async function onCreate() {
 
 /** Search */
 const q = ref('');
+const search = ref<string>('');
 const sort = ref<'latest' | 'members' | 'activity'>('latest');
 const sortItems = [
   { title: '최신순', value: 'latest' },
@@ -484,6 +496,22 @@ function resetFilters() {
   page.value = 1;
   runSearch();
   filterDrawer.value = false;
+}
+
+function cardBgStyle(clan: any) {
+  const url = clan.bannerUrl || '/images/clan-default.jpg'; // public 폴더 기준
+  let source = '';
+  if (clan.name == 'HealingQ') {
+    source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75)), url(${logo})`;
+  } else {
+    source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75))`;
+  }
+  return {
+    backgroundImage: source,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+  };
 }
 
 /** debounce */
@@ -548,13 +576,12 @@ watch([sort, playStyle, joinType], () => {
 
 onMounted(async () => {
   const res = await api.post(`${getBaseUrl('DATA')}/clanrole/list`, {
-    name: 'member',
+    name: 'visitor',
   });
   defaultClanRoleMember.value = res.data.datas[0];
   handleSearch();
 });
 
-const search = ref<string>('');
 const serverItems = ref<Clan[]>([]);
 const totalItems = ref<number>(0);
 
@@ -606,60 +633,15 @@ async function loadItems(options: DataTableOptions) {
     loading.value = false;
   }
 }
-
-/** ----------------------
- *  샘플 데이터 생성기
- *  ---------------------- */
-function makeSample(params: any): { items: Clan[]; total: number } {
-  const all: Clan[] = Array.from({ length: 32 }).map((_, i) => {
-    const joinType = i % 3 === 0 ? 'approval' : 'open';
-    const playStyle = i % 2 === 0 ? 'casual' : 'rank';
-    const members = (i * 3) % 100;
-    const capacity = 100;
-    return {
-      id: i + 1,
-      name: `Clan ${i + 1}`,
-      tag: `TAG${(i % 99) + 1}`,
-      desc: '클랜 소개 문구가 들어가는 자리. 분위기/시간대/디스코드 여부 등.',
-      members,
-      capacity,
-      playStyle,
-      joinType,
-      activity: 10 + (i % 90),
-      playStyleLabel: playStyle === 'casual' ? '캐주얼' : '랭크',
-      joinTypeLabel: joinType === 'approval' ? '승인제' : '자유가입',
-    };
-  });
-
-  // 간단 필터링
-  const keyword = (params.q ?? '').trim().toLowerCase();
-  let filtered = all.filter((c) => {
-    if (keyword) {
-      const s = `${c.name} ${c.tag} ${c.desc}`.toLowerCase();
-      if (!s.includes(keyword)) return false;
-    }
-    if (params.playStyle !== 'any' && c.playStyle !== params.playStyle) return false;
-    if (params.joinType !== 'any' && c.joinType !== params.joinType) return false;
-    if (c.members < params.memberMin || c.members > params.memberMax) return false;
-    if (params.hasSeatOnly && c.members >= c.capacity) return false;
-    return true;
-  });
-
-  // 정렬
-  if (params.sort === 'members') filtered = filtered.sort((a, b) => b.members - a.members);
-  if (params.sort === 'activity') filtered = filtered.sort((a, b) => b.activity - a.activity);
-  // latest는 샘플이라 id 역순으로
-  if (params.sort === 'latest') filtered = filtered.sort((a, b) => b.id - a.id);
-
-  const total = filtered.length;
-  const start = (params.page - 1) * params.size;
-  const items = filtered.slice(start, start + params.size);
-  return { items, total };
-}
 </script>
 
 <style scoped>
 .gap-2 {
   gap: 8px;
+}
+.clan-card {
+  color: white;
+  border: 0 !important;
+  overflow: hidden;
 }
 </style>

@@ -23,9 +23,9 @@
 
       <v-col cols="auto">
         <v-btn
-          v-if="can('MATCH', 'SYS-SET-MATCH-C')"
+          v-if="can('MATCH', 'CLAN-SET-MATCH-C')"
           color="secondary"
-          @click="$router.push(MATCH_PATH.ADD)"
+          @click="$router.push(CLAN_PATH.MATCH_ADD(account.clan.name))"
         >
           {{ $t('form_control.button.add') }}
         </v-btn>
@@ -42,7 +42,7 @@
       @update:options="loadItems"
     >
       <template #item.name="{ item }">
-        <router-link :to="MATCH_PATH.VIEW(item.id)" class="account-link">
+        <router-link :to="CLAN_PATH.MATCH_VIEW(account.clan.name, item.id)" class="account-link">
           {{ item.name }}
         </router-link>
       </template>
@@ -63,7 +63,7 @@
             </template>
           </v-tooltip> -->
 
-        <v-tooltip v-if="can('MATCH', 'SYS-SET-MATCH-D')" text="삭제">
+        <v-tooltip v-if="can('MATCH', 'CLAN-SET-MATCH-D')" text="삭제">
           <template #activator="{ props }">
             <v-btn
               v-bind="props"
@@ -112,11 +112,14 @@
 <script lang="ts" setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { can } from '@/stores/usePermissionStore';
+import { can } from '@/stores/useClanPermissionStore';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import api from '@/@core/composable/useAxios';
 import type { VDataTableServer } from 'vuetify/components';
-import { MATCH_PATH } from '@/router/match/type';
+import { CLAN_PATH } from '@/router/clan/type';
+import { useAccountStore } from '@/stores/useAccountStore';
+
+const account = useAccountStore();
 
 const search = ref<string>('');
 const serverItems = ref<Match[]>([]);
@@ -181,11 +184,16 @@ async function loadItems(options: FetchParams) {
     const sortKey = options.sortBy[0]?.key || 'created_at';
     const sortOrder = options.sortBy[0]?.order || 'desc';
 
-    const response = await api.get(
-      `${getBaseUrl('DATA')}/match/search?keyword=${search.value}&page=${
-        options.page
-      }&itemsPerPage=${options.itemsPerPage}&sortBy=${sortKey}&orderBy=${sortOrder}`
-    );
+    const response = await api.get(`${getBaseUrl('DATA')}/match/search`, {
+      params: {
+        keyword: search.value,
+        page: options.page,
+        itemsPerPage: options.itemsPerPage,
+        sortBy: sortKey,
+        orderBy: sortOrder,
+        clan: account.clan,
+      },
+    });
 
     loading.value = true;
     serverItems.value = response.data.datas;

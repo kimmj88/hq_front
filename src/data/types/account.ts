@@ -1,4 +1,5 @@
 import type { Clan } from './clan';
+import type { ClanRole } from './clanrole';
 import type { Player } from './player';
 import type { SystemRole } from './systemrole';
 
@@ -15,4 +16,5 @@ export interface Account {
   is_confirm: boolean;
   player: Player;
   clan: Clan;
+  clanrole: ClanRole;
 }
