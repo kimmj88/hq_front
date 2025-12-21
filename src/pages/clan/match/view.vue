@@ -4,14 +4,14 @@
 
     <div class="d-flex justify-center gap-2 mb-2">
       <v-btn
-        v-if="can('MATCH', 'SYS-SET-MATCH-C')"
+        v-if="can('MATCH', 'CLAN-SET-MATCH-C')"
         color="indigo"
         @click="onShot"
         :disabled="!canShot"
         >SHOT</v-btn
       >
       <v-btn
-        v-if="can('MATCH', 'SYS-SET-MATCH-C')"
+        v-if="can('MATCH', 'CLAN-SET-MATCH-C')"
         color="success"
         :disabled="!canConfirm"
         @click="openConfirm"
@@ -325,7 +325,7 @@ import midIcon from '@/assets/positions/mid.svg';
 import adcIcon from '@/assets/positions/adc.webp';
 import supIcon from '@/assets/positions/sup.svg';
 
-import { can } from '@/stores/usePermissionStore';
+import { can } from '@/stores/useClanPermissionStore';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import { computed, onMounted, ref } from 'vue';
 import api from '@/@core/composable/useAxios';
