@@ -94,7 +94,7 @@
 
           <v-card-text class="pa-0">
             <v-list lines="two" density="comfortable">
-              <v-list-item v-for="(p, i) in topList" :key="p.id" @click="openPlayer(p)">
+              <v-list-item v-for="(p, i) in topRankList" :key="p.id" @click="openPlayer(p)">
                 <template #prepend>
                   <v-avatar size="34" :color="avatarColor(p.nickname)">
                     <span class="text-caption font-weight-bold text-white">
