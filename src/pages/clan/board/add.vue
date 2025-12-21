@@ -51,7 +51,7 @@
         <div class="d-flex justify-end gap-2 mt-6">
           <v-btn variant="tonal" @click="goList">취소</v-btn>
           <v-btn
-            v-if="can('NOTICE', 'SYS-SET-NOTICE-C')"
+            v-if="can('NOTICE', 'CLAN-SET-NOTICE-C')"
             color="primary"
             :disabled="!isValid"
             @click="onSubmit"
