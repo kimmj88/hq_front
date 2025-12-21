@@ -71,7 +71,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '@/@core/composable/useAxios';
 import { useAccountStore } from '@/stores/useAccountStore';
-import { can } from '@/stores/usePermissionStore';
+import { can } from '@/stores/useClanPermissionStore';
 import { CLAN_PATH } from '@/router/clan/type';
 
 // 🔥 Toast UI Editor core import
