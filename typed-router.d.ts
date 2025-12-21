@@ -35,6 +35,7 @@ declare module 'vue-router/auto-routes' {
     '/clan/enquire/': RouteRecordInfo<'/clan/enquire/', '/clan/enquire', Record<never, never>, Record<never, never>>,
     '/clan/enquire/add': RouteRecordInfo<'/clan/enquire/add', '/clan/enquire/add', Record<never, never>, Record<never, never>>,
     '/clan/enquire/view': RouteRecordInfo<'/clan/enquire/view', '/clan/enquire/view', Record<never, never>, Record<never, never>>,
+    '/clan/index2': RouteRecordInfo<'/clan/index2', '/clan/index2', Record<never, never>, Record<never, never>>,
     '/clan/match/': RouteRecordInfo<'/clan/match/', '/clan/match', Record<never, never>, Record<never, never>>,
     '/clan/match/add': RouteRecordInfo<'/clan/match/add', '/clan/match/add', Record<never, never>, Record<never, never>>,
     '/clan/match/view': RouteRecordInfo<'/clan/match/view', '/clan/match/view', Record<never, never>, Record<never, never>>,
