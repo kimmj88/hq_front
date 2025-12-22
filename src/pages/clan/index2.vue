@@ -221,8 +221,18 @@ const playerDialog = ref(false);
 const selectedPlayer = ref<TopPlayer | null>(null);
 
 function openPlayer(p: TopPlayer) {
-  selectedPlayer.value = p;
-  playerDialog.value = true;
+  if (!p.nickname || !p.tagname) {
+    console.warn('닉네임 또는 태그가 없습니다.');
+    return;
+  }
+
+  const region = 'kr'; // 고정이면 OK, 나중에 확장 가능
+  const riotId = `${p.nickname}-${p.tagname}`;
+  const encoded = encodeURIComponent(riotId);
+
+  const url = `https://www.op.gg/summoners/${region}/${encoded}`;
+
+  window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 function initials(name?: string) {

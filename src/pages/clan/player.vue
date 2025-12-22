@@ -36,22 +36,27 @@
     >
       <!-- 유저 프로필/이메일 -->
       <template #item.name="{ item }">
-        <div class="d-flex align-center">
-          <template v-if="item.avatar">
-            <v-img :src="item.avatar" />
-          </template>
-          <template v-else>
-            <span class="text-caption font-weight-bold">
-              {{ item.nickname }}
-            </span>
-          </template>
-
-          <!-- 이름에 링크 -->
-          <div>
-            <div class="text-caption text-grey">
-              {{ '#' + item.tagname }}
-            </div>
+        <div
+          class="d-flex align-center opgg-link"
+          role="button"
+          tabindex="0"
+          @click="openOpgg(item)"
+          @keyup.enter="openOpgg(item)"
+          style="cursor: pointer"
+        >
+          <div class="text-caption font-weight-bold">
+            {{ item.nickname + '#' }}
           </div>
+
+          <div class="text-caption text-grey">
+            {{ item.tagname }}
+          </div>
+
+          <!-- <div class="ml-2">
+            <div class="text-caption text-grey">
+              {{  }}
+            </div>
+          </div> -->
         </div>
       </template>
 
@@ -349,6 +354,21 @@ const edit = ref<{
   form: { id: 0, name: '', point: null, cup_count: null, sub_cup_count: null, is_active: false },
 });
 
+function openOpgg(item: any) {
+  if (!item.nickname || !item.tagname) {
+    console.warn('닉네임 또는 태그가 없습니다.');
+    return;
+  }
+
+  const region = 'kr'; // 고정이면 OK, 나중에 확장 가능
+  const riotId = `${item.nickname}-${item.tagname}`;
+  const encoded = encodeURIComponent(riotId);
+
+  const url = `https://www.op.gg/summoners/${region}/${encoded}`;
+
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
 function openEdit(item: any) {
   // 참조 끊기: 깊은 복사
   const clone = (v: any) => JSON.parse(JSON.stringify(v));
@@ -542,5 +562,9 @@ onMounted(fetch);
 
 .account-link:hover {
   color: #2196f3; /* Vuetify 기본 primary 색상 */
+}
+
+.opgg-link:hover {
+  text-decoration: underline;
 }
 </style>
