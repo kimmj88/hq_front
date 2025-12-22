@@ -225,18 +225,37 @@
   <v-dialog v-model="nicknameDialog" max-width="400">
     <v-card>
       <v-card-title class="text-h6">닉네임 수정</v-card-title>
+
       <v-card-text>
+        <!-- ✅ 변경 가능/불가 안내 -->
+        <v-alert
+          v-if="nicknameGate.checked"
+          :type="nicknameGate.allowed ? 'info' : 'warning'"
+          variant="tonal"
+          density="compact"
+          class="mb-3"
+        >
+          {{ nicknameGate.message }}
+        </v-alert>
+
         <v-text-field
           v-model="editNickname"
           label="새 닉네임"
           maxlength="20"
           counter="20"
           autocomplete="off"
+          :disabled="nicknameGate.checked && !nicknameGate.allowed"
         />
       </v-card-text>
+
       <v-card-actions class="justify-end">
         <v-btn variant="text" @click="nicknameDialog = false">취소</v-btn>
-        <v-btn color="primary" :disabled="!editNickname.trim()" @click="submitNickname">
+        <v-btn
+          color="primary"
+          :disabled="!canSubmitNickname"
+          :loading="nicknameGate.loading"
+          @click="submitNickname"
+        >
           저장
         </v-btn>
       </v-card-actions>
@@ -287,13 +306,55 @@ const account = ref<{
 const nicknameDialog = ref(false);
 const editNickname = ref('');
 
-function openNicknameDialog() {
+const nicknameGate = ref({
+  loading: false,
+  checked: false,
+  allowed: true,
+  message: '',
+});
+
+const canSubmitNickname = computed(() => {
+  if (!editNickname.value.trim()) return false;
+  if (nicknameGate.value.loading) return false;
+  if (nicknameGate.value.checked && !nicknameGate.value.allowed) return false;
+  return true;
+});
+
+async function openNicknameDialog() {
   editNickname.value = account.value.datas.nickname || '';
   nicknameDialog.value = true;
+
+  // ✅ 다이얼로그 열릴 때마다 갱신
+  nicknameGate.value.loading = true;
+  nicknameGate.value.checked = false;
+  nicknameGate.value.allowed = true;
+  nicknameGate.value.message = '';
+
+  try {
+    const res = await api.get(`${getBaseUrl('DATA')}/account/can_nickname`, {
+      params: { id: props.id },
+    });
+
+    const allowed = !!res.data?.datas; // 서버가 true/false로 준다고 가정
+    nicknameGate.value.allowed = allowed;
+    nicknameGate.value.checked = true;
+
+    nicknameGate.value.message = allowed
+      ? '닉네임을 변경할 수 있어요.'
+      : '닉네임은 30일에 한 번만 변경할 수 있어요. 다음 변경 가능 날짜를 기다려주세요.';
+  } catch (e) {
+    // 체크 실패면 안전하게 막거나(보수적) 일단 허용(낙관적) 중 택1
+    nicknameGate.value.allowed = false;
+    nicknameGate.value.checked = true;
+    nicknameGate.value.message =
+      '닉네임 변경 가능 여부를 확인하지 못했어요. 잠시 후 다시 시도해줘.';
+  } finally {
+    nicknameGate.value.loading = false;
+  }
 }
 
 async function submitNickname() {
-  if (!editNickname.value.trim()) return;
+  if (!canSubmitNickname.value) return;
 
   try {
     await api.post(`${getBaseUrl('DATA')}/account/update`, {
@@ -301,7 +362,6 @@ async function submitNickname() {
       nickname: editNickname.value.trim(),
     });
 
-    // 로컬 상태 반영
     account.value.datas.nickname = editNickname.value.trim();
     nicknameDialog.value = false;
   } catch (error) {
