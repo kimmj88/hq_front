@@ -57,6 +57,7 @@ declare module 'vue-router/auto-routes' {
     '/enquire/add': RouteRecordInfo<'/enquire/add', '/enquire/add', Record<never, never>, Record<never, never>>,
     '/enquire/view': RouteRecordInfo<'/enquire/view', '/enquire/view', Record<never, never>, Record<never, never>>,
     '/exception/Exception': RouteRecordInfo<'/exception/Exception', '/exception/Exception', Record<never, never>, Record<never, never>>,
+    '/forbidden': RouteRecordInfo<'/forbidden', '/forbidden', Record<never, never>, Record<never, never>>,
     '/forum/': RouteRecordInfo<'/forum/', '/forum', Record<never, never>, Record<never, never>>,
     '/forum/add': RouteRecordInfo<'/forum/add', '/forum/add', Record<never, never>, Record<never, never>>,
     '/forum/view': RouteRecordInfo<'/forum/view', '/forum/view', Record<never, never>, Record<never, never>>,

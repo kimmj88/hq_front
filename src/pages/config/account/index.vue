@@ -80,10 +80,7 @@
             </v-btn>
           </template>
           <v-list>
-            <v-list-item
-              v-if="can('ACCOUNT', 'SYS-SET-ACC-U')"
-              :to="CONFIG_ACCOUNT_PATH.VIEW(item.id)"
-            >
+            <v-list-item v-if="can('ACCOUNT', 'SYS-SET-ACC-U')" :to="getAccessNextPath(item.id)">
               <v-list-item-title>{{ $t('form_control.button.edit') }}</v-list-item-title>
             </v-list-item>
           </v-list>
@@ -94,7 +91,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { CONFIG_ACCOUNT_PATH } from '@/router/config/type';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import api from '@/@core/composable/useAxios';
@@ -102,6 +99,12 @@ import type { Account } from '@/data/types/account';
 import type { VDataTableServer } from 'vuetify/components';
 import ServerDataTable from '@/components/common/ServerDataTable.vue';
 import { can } from '@/stores/usePermissionStore';
+import { useAccountStore } from '@/stores/useAccountStore';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
+
+const account = useAccountStore();
 
 const itemsPerPage = ref<number>(10);
 
@@ -129,6 +132,13 @@ function getStatusColor(status: string) {
     default:
       return 'blue';
   }
+}
+
+function getAccessNextPath(id: number): string {
+  if (account.id == id || can('ACCOUNT', 'SYS-SET-ACC-R')) {
+    return CONFIG_ACCOUNT_PATH.VIEW(id);
+  }
+  return '/forbidden';
 }
 
 interface FetchParams {

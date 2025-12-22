@@ -169,7 +169,7 @@
           마스터 변경
         </v-btn>
         <v-btn
-          v-if="can('ACCOUNT', 'SYS-SET-ACC-U')"
+          v-if="can('ACCOUNT', 'CLAN-SET-ACC-U')"
           color="primary"
           variant="flat"
           @click="dialog = true"
@@ -265,7 +265,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '@/@core/composable/useAxios';
 import { getBaseUrl } from '@/@core/composable/createUrl';
-import { can } from '@/stores/usePermissionStore';
+import { can } from '@/stores/useClanPermissionStore';
 import type { Player } from '@/data/types/player';
 import type { ClanRole } from '@/data/types/clanrole';
 import { useAccountStore } from '@/stores/useAccountStore';
@@ -417,7 +417,13 @@ async function submitEdit() {
   }
 }
 
-onMounted(fetchAccount);
+onMounted(async () => {
+  if (can('ACCOUNT', 'CLAN-SET-ACC-R') == true) {
+    await fetchAccount();
+  } else {
+    router.push('/forbidden');
+  }
+});
 </script>
 
 <style scoped>

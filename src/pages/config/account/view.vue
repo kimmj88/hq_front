@@ -265,16 +265,19 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import api from '@/@core/composable/useAxios';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import { can } from '@/stores/usePermissionStore';
 import type { SystemRole } from '@/data/types/systemrole';
 import type { Player } from '@/data/types/player';
+import { useAccountStore } from '@/stores/useAccountStore';
 
 const props = defineProps<{ id: string }>();
 
 const router = useRouter();
+const route = useRoute();
+const accountStore = useAccountStore();
 
 const dialog = ref(false);
 const selectedSystemRole = ref<SystemRole | null>(null);
@@ -427,7 +430,15 @@ async function submitEdit() {
   }
 }
 
-onMounted(fetchAccount);
+onMounted(async () => {
+  if (can('ACCOUNT', 'SYS-SET-ACC-R') == true) {
+    await fetchAccount();
+  } else if (accountStore.id != +route.params.id) {
+    router.push('/forbidden');
+  } else {
+    await fetchAccount();
+  }
+});
 </script>
 
 <style scoped>

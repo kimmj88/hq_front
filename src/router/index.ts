@@ -29,6 +29,9 @@ import Profile from '@/pages/config/profile/index.vue';
 import SystemPermission from '@/pages/config/permission/system/index.vue';
 import ClanPermission from '@/pages/config/permission/clan/index.vue';
 
+//Forbidden
+import Forbidden from '@/pages/forbidden.vue';
+
 //DefaultLayout
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import ConfigLayout from '@/layouts/ConfigLayout.vue';
@@ -251,6 +254,11 @@ const router = createRouter({
         { path: '', component: Clan },
         { path: 'myclan', component: MyClan, props: true },
       ],
+    },
+
+    {
+      path: '/forbidden',
+      component: Forbidden,
     },
   ],
 });
