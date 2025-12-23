@@ -77,6 +77,9 @@ import { getBaseUrl } from '@/@core/composable/createUrl';
 import { useRoute } from 'vue-router';
 import api from '@/@core/composable/useAxios';
 import type { Player } from '@/data/types/player';
+import { useAccountStore } from '@/stores/useAccountStore';
+
+const account = useAccountStore();
 
 const route = useRoute();
 
@@ -167,7 +170,12 @@ watch(
 
 onMounted(async () => {
   try {
-    const res = await api.get(`${getBaseUrl('DATA')}/player/all`);
+    //const res = await api.get(`${getBaseUrl('DATA')}/player/all`);
+
+    const res = await api.post(`${getBaseUrl('DATA')}/player/list`, {
+      clan: account.clan,
+    }); // 예: 전체 사용자 리스트
+
     allUsers.value = res.data.datas.map((user: any) => ({
       ...user,
       display: `${user.nickname}#${user.tagname}`,
