@@ -256,6 +256,10 @@ async function handleAdd() {
       findID = item.id;
     } else if (item.name == tier.value && item.name == 'CHALLENGER') {
       findID = item.id;
+    } else if (item.name == tier.value && item.name == 'MASTER') {
+      findID = item.id;
+    } else if (item.name == tier.value && item.name == 'GRANDMASTER') {
+      findID = item.id;
     }
   }
 
