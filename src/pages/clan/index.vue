@@ -330,6 +330,8 @@ import type { ClanRole } from '@/data/types/clanrole';
 
 import logo from '@/assets/hq_logo.jpeg';
 
+import ca from '@/assets/ca.png';
+
 const router = useRouter();
 const account = useAccountStore();
 
@@ -502,6 +504,8 @@ function cardBgStyle(clan: any) {
   let source = '';
   if (clan.name == 'HealingQ') {
     source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75)), url(${logo})`;
+  } else if (clan.name == '청 아') {
+    source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75)), url(${ca})`;
   } else {
     source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75))`;
   }
