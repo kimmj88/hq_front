@@ -81,11 +81,12 @@
           />
 
           <v-list-item
-            v-if="isManager"
-            :active="section === 'settings'"
+            v-if="account.clanrole.name == 'master'"
+            :active="section === 'setting'"
             prepend-icon="mdi-cog-outline"
             title="설정"
-            @click="section = 'settings'"
+            :to="CLAN_PATH.SETTING(account.clan.name)"
+            @click="section = 'setting'"
           />
         </v-list>
 

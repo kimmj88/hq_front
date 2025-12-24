@@ -93,6 +93,7 @@ import ClanEnquire from '@/pages/clan/enquire/index.vue';
 import ClanEnquireAdd from '@/pages/clan/enquire/add.vue';
 import ClanEnquireView from '@/pages/clan/enquire/view.vue';
 import ClanPlayer from '@/pages/clan/player.vue';
+import ClanSetting from '@/pages/clan/setting.vue';
 import ClanAccount from '@/pages/clan/account/index.vue';
 import ClanAccountView from '@/pages/clan/account/view.vue';
 
@@ -165,6 +166,7 @@ const router = createRouter({
         { path: CLAN_PATH.ENQUIRE_ADD(':name'), component: ClanEnquireAdd },
         { path: CLAN_PATH.ENQUIRE_VIEW(':name', ':id'), component: ClanEnquireView, props: true },
         { path: CLAN_PATH.PLAYER(':name'), component: ClanPlayer },
+        { path: CLAN_PATH.SETTING(':name'), component: ClanSetting },
         { path: CLAN_PATH.ACCOUNT(':name'), component: ClanAccount },
         { path: CLAN_PATH.ACCOUNT_VIEW(':name', ':id'), component: ClanAccountView, props: true },
         { path: CLAN_PATH.PERMISSION(':name'), component: ClanPermission },

@@ -2,6 +2,7 @@ export const CLAN_PATH = {
   BASE: '/clan/',
   VIEW: (name: string | number = ':name') => `/clan/${name}`,
   PLAYER: (name: string | number = ':name') => `/clan/${name}/player`,
+  SETTING: (name: string | number = ':name') => `/clan/${name}/setting`,
   ACCOUNT: (name: string | number = ':name') => `/clan/${name}/account`,
   ACCOUNT_VIEW: (name: string | number = ':name', id: string | number = ':id') =>
     `/clan/${name}/account/view/${id}`,
