@@ -344,6 +344,16 @@ router.beforeEach(async (to, from, next) => {
     return next();
   }
 
+  if (to.path.startsWith('/clan/')) {
+    await ensureSession();
+    const account = useAccountStore();
+    const targetClan = String(to.params.name ?? '');
+
+    if (account.clan.name && targetClan && account.clan.name !== targetClan) {
+      return next('/forbidden');
+    }
+  }
+
   // if (to.path === '/register') {
   //   let accessToken = Cookies.get('accessToken') ?? '';
   //   await hydrateUser(accessToken);
