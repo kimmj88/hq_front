@@ -217,17 +217,25 @@ async function searchPlayer() {
       { headers: { 'X-Riot-Token': 'RGAPI-ee1558af-f139-456c-aaf5-0e7b82135e35' } }
     );
 
-    for (const item of b.data) {
-      if (item.queueType === 'RANKED_SOLO_5x5') {
-        tier.value = item.tier;
-        rank.value = item.rank;
-        point.value = item.leaguePoints;
-        win.value = item.wins;
-        lose.value = item.losses;
+    if (b.status == 200) {
+      for (const item of b.data) {
+        if (item.queueType === 'RANKED_SOLO_5x5') {
+          tier.value = item.tier;
+          rank.value = item.rank;
+          point.value = item.leaguePoints;
+          win.value = item.wins;
+          lose.value = item.losses;
 
-        searched.value = true;
-        lastKey.value = currentKey.value;
+          searched.value = true;
+          lastKey.value = currentKey.value;
+          return;
+        }
       }
+
+      tier.value = 'UNRANK';
+
+      searched.value = true;
+      lastKey.value = currentKey.value;
     }
   } catch (e) {
     console.error('라이엇 조회 실패', e);
@@ -251,6 +259,7 @@ function toast(msg: string) {
 
 async function handleAdd() {
   let findID = 0;
+  debugger;
   for (const item of tiers.value) {
     if (item.name == `${tier.value} ${rank.value}`) {
       findID = item.id;
@@ -259,6 +268,8 @@ async function handleAdd() {
     } else if (item.name == tier.value && item.name == 'MASTER') {
       findID = item.id;
     } else if (item.name == tier.value && item.name == 'GRANDMASTER') {
+      findID = item.id;
+    } else if (item.name == tier.value && item.name == 'UNRANK') {
       findID = item.id;
     }
   }
