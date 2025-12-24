@@ -39,6 +39,7 @@
             prepend-icon="mdi-bullhorn-outline"
             title="공지 사항"
             :to="CLAN_PATH.NOTICE(account.clan.name)"
+            @click="section = 'notice'"
           />
 
           <v-list-item
@@ -46,6 +47,7 @@
             prepend-icon="mdi-help-circle-outline"
             title="문의 사항"
             :to="CLAN_PATH.ENQUIRE(account.clan.name)"
+            @click="section = 'enquire'"
           />
 
           <v-list-item
@@ -54,6 +56,7 @@
             prepend-icon="mdi-gamepad-variant-outline"
             title="플레이어"
             :to="CLAN_PATH.PLAYER(account.clan.name)"
+            @click="section = 'players'"
           />
 
           <v-list-item
@@ -62,6 +65,7 @@
             prepend-icon="mdi-account-group-outline"
             title="멤버"
             :to="CLAN_PATH.ACCOUNT(account.clan.name)"
+            @click="section = 'accounts'"
           />
 
           <v-list-item
@@ -70,6 +74,7 @@
             prepend-icon="mdi-sword-cross"
             title="내전 매치"
             :to="CLAN_PATH.MATCH(account.clan.name)"
+            @click="section = 'matches'"
           />
 
           <v-list-item
@@ -78,6 +83,7 @@
             prepend-icon="mdi-trophy-outline"
             title="내전 컵"
             :to="CLAN_PATH.CUP(account.clan.name)"
+            @click="section = 'cups'"
           />
 
           <v-list-item
