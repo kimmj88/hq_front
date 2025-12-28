@@ -366,8 +366,10 @@ import { CONFIG_ACCOUNT_PATH } from '@/router/config/type';
 import type { ClanRole } from '@/data/types/clanrole';
 
 import logo from '@/assets/hq_logo.jpeg';
-
 import ca from '@/assets/ca.png';
+import sample_1 from '@/assets/sample_1.png';
+import slime from '@/assets/slime.png';
+import gamosa from '@/assets/gamosa.png';
 
 const router = useRouter();
 const account = useAccountStore();
@@ -557,6 +559,12 @@ function cardBgStyle(clan: any) {
     source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75)), url(${logo})`;
   } else if (clan.name == '청 아') {
     source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75)), url(${ca})`;
+  } else if (clan.name == '데마시아') {
+    source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75)), url(${sample_1})`;
+  } else if (clan.name == '슬라임') {
+    source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75)), url(${slime})`;
+  } else if (clan.name == '겜모사') {
+    source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75)), url(${gamosa})`;
   } else {
     source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75))`;
   }
@@ -677,6 +685,7 @@ async function loadItems(options: DataTableOptions) {
     });
 
     serverItems.value = response.data.datas;
+    debugger;
     totalItems.value = response.data.totalCount;
 
     page.value = options.page;
