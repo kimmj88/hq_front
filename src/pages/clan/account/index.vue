@@ -52,11 +52,11 @@
               :to="CLAN_PATH.ACCOUNT_VIEW(account.clan.name, item.id)"
               class="account-link"
             >
-              {{ item.name }} / {{ item.nickname }}
+              {{ item.nickname }}
             </router-link>
-            <div class="text-caption text-grey">
+            <!-- <div class="text-caption text-grey">
               {{ item.email }}
-            </div>
+            </div> -->
           </div>
         </div>
       </template>

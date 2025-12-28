@@ -203,6 +203,7 @@ async function leaveClan() {
   await api.post(`${getBaseUrl('DATA')}/account/update`, {
     id: account.id,
     clan_id: null,
+    player_id: null,
   });
 
   leaveDialog.value = false;

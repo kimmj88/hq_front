@@ -12,7 +12,7 @@
 
       <!-- ✅ Primary CTA: 한 군데만 크게 -->
       <v-btn
-        v-if="account.clan == null"
+        v-if="account.clan == null && isLoggedIn"
         color="primary"
         prepend-icon="mdi-account-group"
         @click="openCreateDialog"
@@ -272,22 +272,58 @@
 
     <v-dialog v-model="joinDialog" max-width="460">
       <v-card rounded="xl">
-        <v-card-title class="text-h6 font-weight-bold">클랜 가입</v-card-title>
+        <v-card-title class="text-h6 font-weight-bold">
+          {{ isLoggedIn ? '클랜 가입' : '로그인 필요' }}
+        </v-card-title>
 
         <v-card-text class="text-body-2 text-medium-emphasis">
-          <div>
-            <b>{{ selectedClan?.name }}</b> 클랜에 합류 하시겠습니까?
-          </div>
-          <div v-if="selectedClan?.joinType === 'approval'" class="mt-1">
-            (승인제 클랜입니다. 가입 신청이 전송돼요.)
-          </div>
+          <!-- ✅ 로그인 상태 -->
+          <template v-if="isLoggedIn && isPlayerLink">
+            <div>
+              <b>{{ selectedClan?.name }}</b> 클랜에 합류 하시겠습니까?
+            </div>
+          </template>
+
+          <template v-else-if="isLoggedIn && !isPlayerLink">
+            <div>
+              <div>클랜에 가입하려면 [리그오브레전드] 계정연동이 필요해요.</div>
+            </div>
+          </template>
+
+          <!-- ❌ 비로그인 상태 -->
+          <template v-else>
+            <div>클랜에 가입하려면 로그인이 필요해요.</div>
+            <div class="mt-1 text-caption">로그인 페이지로 이동할까요?</div>
+          </template>
         </v-card-text>
 
         <v-card-actions class="justify-end">
+          <!-- 공통 -->
           <v-btn variant="text" @click="joinDialog = false">취소</v-btn>
-          <v-btn color="primary" :loading="joining" :disabled="joining" @click="confirmJoin">
+
+          <!-- 로그인 상태 -->
+          <v-btn
+            v-if="isLoggedIn && isPlayerLink"
+            color="primary"
+            :loading="joining"
+            :disabled="joining"
+            @click="confirmJoin"
+          >
             확인
           </v-btn>
+
+          <v-btn
+            v-else-if="isLoggedIn && !isPlayerLink"
+            color="primary"
+            :loading="joining"
+            :disabled="joining"
+            @click="goPlayerLink"
+          >
+            롤 계정 연동
+          </v-btn>
+
+          <!-- 비로그인 상태 -->
+          <v-btn v-else color="primary" @click="goLogin"> 로그인 </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -326,6 +362,7 @@ import api from '@/@core/composable/useAxios';
 import { useAccountStore } from '@/stores/useAccountStore';
 import { useRouter } from 'vue-router';
 import { CLAN_PATH } from '@/router/clan/type';
+import { CONFIG_ACCOUNT_PATH } from '@/router/config/type';
 import type { ClanRole } from '@/data/types/clanrole';
 
 import logo from '@/assets/hq_logo.jpeg';
@@ -334,6 +371,20 @@ import ca from '@/assets/ca.png';
 
 const router = useRouter();
 const account = useAccountStore();
+
+const isLoggedIn = computed(() => account.isLoggedIn);
+
+const isPlayerLink = computed(() => account.isPlayerLinked);
+
+function goLogin() {
+  joinDialog.value = false;
+  router.push('/login');
+}
+
+function goPlayerLink() {
+  joinDialog.value = false;
+  router.push(CONFIG_ACCOUNT_PATH.VIEW(account.id));
+}
 
 const joinDialog = ref(false);
 const selectedClan = ref<Clan | null>(null);

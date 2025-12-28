@@ -22,7 +22,9 @@
               <v-avatar size="28" class="mr-2">
                 <v-icon>mdi-account</v-icon>
               </v-avatar>
-              <span class="text-body-2 font-weight-medium">{{ account.nickname }}</span>
+              <span class="text-body-2 font-weight-medium">{{
+                account.isLoggedIn ? account.nickname : 'Guest'
+              }}</span>
               <v-icon right size="18">mdi-chevron-down</v-icon>
             </v-btn>
           </template>
@@ -34,18 +36,28 @@
               <v-list-item-title>Config</v-list-item-title>
             </v-list-item>
 
-            <v-list-item :to="CONFIG_ACCOUNT_PATH.VIEW(account.id)" router>
+            <v-list-item
+              v-if="account.isLoggedIn"
+              :to="CONFIG_ACCOUNT_PATH.VIEW(account.id)"
+              router
+            >
               <template #prepend>
                 <v-icon>mdi-account-circle-outline</v-icon>
               </template>
               <v-list-item-title>My Account</v-list-item-title>
             </v-list-item>
 
-            <v-list-item @click="logout">
+            <v-list-item v-if="account.isLoggedIn" @click="logout">
               <template #prepend>
                 <v-icon>mdi-logout</v-icon>
               </template>
               <v-list-item-title>Logout</v-list-item-title>
+            </v-list-item>
+            <v-list-item v-else :to="'/login'">
+              <template #prepend>
+                <v-icon>mdi-login</v-icon>
+              </template>
+              <v-list-item-title>Login</v-list-item-title>
             </v-list-item>
           </v-list>
         </v-menu>
@@ -61,14 +73,13 @@ import { useRouter } from 'vue-router';
 import { useAccountStore } from '@/stores/useAccountStore';
 import { CONFIG_ACCOUNT_PATH } from '@/router/config/type';
 
-import logo from '@/assets/hq_logo11.jpeg';
-
 const router = useRouter();
 const account = useAccountStore();
 
 function logout() {
   Cookies.remove('refreshToken');
-  router.push('/login');
+  Cookies.remove('accessToken');
+  window.location.href = '/home';
 }
 </script>
 <style scoped>

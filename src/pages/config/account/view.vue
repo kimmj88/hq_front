@@ -84,9 +84,12 @@
       <v-col cols="12" md="6">
         <div class="section-title mb-2">플레이어 정보</div>
 
-        <v-alert v-if="!player" type="info" variant="tonal" density="compact" class="mb-2">
-          아직 등록된 플레이어 정보가 없습니다.
-        </v-alert>
+        <div v-if="!player">
+          <v-alert type="info" variant="tonal" density="compact" class="mb-2">
+            아직 등록된 플레이어 정보가 없습니다.
+          </v-alert>
+          <AccountPlayerMemberDialog @added="handleAdd"></AccountPlayerMemberDialog>
+        </div>
 
         <template v-else>
           <div class="d-flex align-center mb-3" style="gap: 12px">
@@ -272,6 +275,7 @@ import { can } from '@/stores/usePermissionStore';
 import type { SystemRole } from '@/data/types/systemrole';
 import type { Player } from '@/data/types/player';
 import { useAccountStore } from '@/stores/useAccountStore';
+import AccountPlayerMemberDialog from '@/components/dialogs/AccountPlayerMemberDialog.vue';
 
 const props = defineProps<{ id: string }>();
 
@@ -428,6 +432,10 @@ async function submitEdit() {
   } catch (err) {
     console.error('계정 업데이트 실패:', err);
   }
+}
+
+function handleAdd(param: any) {
+  fetchAccount();
 }
 
 onMounted(async () => {

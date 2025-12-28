@@ -2,7 +2,7 @@
   <v-dialog v-model="dialog" max-width="640">
     <!-- 액티베이터 -->
     <template #activator="{ props }">
-      <v-btn color="secondary" v-bind="props" prepend-icon="mdi-account-plus">Add Player</v-btn>
+      <v-btn color="secondary" v-bind="props" prepend-icon="mdi-account-plus">롤 계정 동기화</v-btn>
     </template>
 
     <v-card>
@@ -171,35 +171,6 @@ watch(selectedUsers, () => {
 
 onMounted(fetch);
 
-// async function searchPlayer() {
-//   try {
-//     const res = await api.get(
-//       `https://asia.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${searchId.value}/${searchTag.value}?api_key=RGAPI-ee1558af-f139-456c-aaf5-0e7b82135e35`
-//     ); // 예: 전체 사용자 리스트
-
-//     const res2 = await api
-//       .get(
-//         `https://kr.api.riotgames.com/lol/league/v4/entries/by-puuid/${res.data.puuid}?api_key=RGAPI-ee1558af-f139-456c-aaf5-0e7b82135e35`
-//       )
-//       .then((value) => {
-//         for (const item of value.data) {
-//           if (item.queueType == 'RANKED_SOLO_5x5') {
-//             tier.value = item.tier;
-//             rank.value = item.rank;
-//             point.value = item.leaguePoints;
-//             win.value = item.wins;
-//             lose.value = item.losses;
-
-//             searched.value = true;
-//             lastKey.value = currentKey.value;
-//           }
-//         }
-//       });
-//   } catch (e) {
-//     console.error('사용자 목록 로드 실패', e);
-//   }
-// }
-
 async function searchPlayer() {
   try {
     const name = encodeURIComponent(searchId.value.trim());
@@ -280,7 +251,7 @@ async function handleAdd() {
     tier: {
       id: findID,
     },
-    clan: { id: account.clan.id },
+    account: { id: account.id },
   });
 
   if (response.status == 409) {

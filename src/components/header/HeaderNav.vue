@@ -95,23 +95,20 @@ const menuItems = computed(() => {
   //     to: '/cup',
   //   });
   // }
-  if (can('NOTICE', 'SYS-SET-NOTICE-R')) {
-    items.push({
-      key: 'board',
-      title: 'Board',
-      icon: 'mdi-view-dashboard-outline',
-      to: '/board',
-    });
-  }
 
-  if (can('FORUM', 'SYS-SET-FORUM-R')) {
-    items.push({
-      key: 'forum',
-      title: 'Forum',
-      icon: 'mdi-forum-outline',
-      to: '/forum',
-    });
-  }
+  items.push({
+    key: 'board',
+    title: 'Board',
+    icon: 'mdi-view-dashboard-outline',
+    to: '/board',
+  });
+
+  items.push({
+    key: 'forum',
+    title: 'Forum',
+    icon: 'mdi-forum-outline',
+    to: '/forum',
+  });
 
   items.push({
     key: 'enquire',
