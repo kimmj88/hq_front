@@ -370,6 +370,8 @@ import ca from '@/assets/ca.png';
 import sample_1 from '@/assets/sample_1.png';
 import slime from '@/assets/slime.png';
 import gamosa from '@/assets/gamosa.png';
+import combat from '@/assets/combat.png';
+import maybe from '@/assets/maybe.png';
 
 const router = useRouter();
 const account = useAccountStore();
@@ -565,6 +567,10 @@ function cardBgStyle(clan: any) {
     source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75)), url(${slime})`;
   } else if (clan.name == '겜모사') {
     source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75)), url(${gamosa})`;
+  } else if (clan.name == 'Combat') {
+    source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75)), url(${combat})`;
+  } else if (clan.name == 'Maybe') {
+    source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75)), url(${maybe})`;
   } else {
     source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75))`;
   }
