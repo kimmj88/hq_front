@@ -405,7 +405,7 @@ async function submitEdit() {
       is_confirm: accountIsConfirm.value,
     };
 
-    await api.post(`${getBaseUrl('DATA')}/account/update`, payload);
+    await api.post(`${getBaseUrl('DATA')}/account/edit_clanrole`, payload);
 
     // 로컬 상태 반영
     account.value.datas.clanrole = selectedSystemRole.value || null;
