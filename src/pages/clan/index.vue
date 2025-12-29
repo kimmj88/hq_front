@@ -79,6 +79,7 @@
                 <div class="mt-6 d-flex flex-wrap gap-2">
                   <!-- ✅ 가이드에서도 버튼은 존재하되 덜 강하게 -->
                   <v-btn
+                    v-if="account.clan == null && isLoggedIn"
                     variant="tonal"
                     color="primary"
                     prepend-icon="mdi-plus"
@@ -250,22 +251,28 @@
     <v-dialog v-model="createDialog" max-width="560">
       <v-card rounded="xl">
         <v-card-title class="text-h6 font-weight-bold">클랜 만들기</v-card-title>
-        <v-card-text>
+        <v-card-text v-if="isLoggedIn && isPlayerLink">
           <v-text-field v-model="form.name" label="클랜명" />
-          <!-- <v-text-field
-            v-model="form.tag"
-            label="태그 (3~5자)"
-            hint="닉네임 옆에 표시됨"
-            persistent-hint
-          /> -->
-          <v-textarea v-model="form.description" label="소개" rows="3" />
 
-          <!-- <v-select v-model="form.joinType" :items="joinTypeCreateItems" label="가입 방식" />
-          <v-select v-model="form.playStyle" :items="playStyleItems" label="플레이 성향" /> -->
+          <v-textarea v-model="form.description" label="소개" rows="3" />
+        </v-card-text>
+        <v-card-text v-else>
+          <div>
+            <div>클랜에 가입하려면 [리그오브레전드] 계정연동이 필요해요.</div>
+          </div>
         </v-card-text>
         <v-card-actions class="justify-end">
           <v-btn variant="text" @click="createDialog = false">취소</v-btn>
-          <v-btn color="primary" @click="onCreate">생성</v-btn>
+          <v-btn v-if="isLoggedIn && isPlayerLink" color="primary" @click="onCreate">생성</v-btn>
+          <v-btn
+            v-else-if="isLoggedIn && !isPlayerLink"
+            color="primary"
+            :loading="joining"
+            :disabled="joining"
+            @click="goPlayerLink"
+          >
+            롤 계정 연동
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -365,7 +372,7 @@ import { CLAN_PATH } from '@/router/clan/type';
 import { CONFIG_ACCOUNT_PATH } from '@/router/config/type';
 import type { ClanRole } from '@/data/types/clanrole';
 
-import logo from '@/assets/hq_logo.jpeg';
+import HQ from '@/assets/HQ.png';
 import ca from '@/assets/ca.png';
 import sample_1 from '@/assets/sample_1.png';
 import slime from '@/assets/slime.png';
@@ -558,7 +565,7 @@ function cardBgStyle(clan: any) {
   const url = clan.bannerUrl || '/images/clan-default.jpg'; // public 폴더 기준
   let source = '';
   if (clan.name == 'HealingQ') {
-    source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75)), url(${logo})`;
+    source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75)), url(${HQ})`;
   } else if (clan.name == '청 아') {
     source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75)), url(${ca})`;
   } else if (clan.name == '데마시아') {

@@ -41,14 +41,14 @@
           </v-chip>
 
           <!-- 승인 상태 -->
-          <v-chip
+          <!-- <v-chip
             :color="account.datas.is_confirm ? 'green' : 'orange'"
             text-color="white"
             size="small"
             variant="flat"
           >
             {{ account.datas.is_confirm ? '승인됨' : '승인대기' }}
-          </v-chip>
+          </v-chip> -->
         </div>
       </v-col>
     </v-row>
@@ -182,9 +182,9 @@
           Edit Role
         </v-btn>
         <!-- <v-btn color="primary" variant="tonal" @click="submitEdit"> 저장 </v-btn> -->
-        <v-btn color="secondary" variant="text" @click="router.push('/config/account')">
+        <!-- <v-btn color="secondary" variant="text" @click="router.push('/config/account')">
           뒤로
-        </v-btn>
+        </v-btn> -->
       </v-col>
     </v-row>
   </v-card>

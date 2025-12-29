@@ -200,7 +200,7 @@ const menuItems = computed(() => {
 });
 
 async function leaveClan() {
-  await api.post(`${getBaseUrl('DATA')}/account/update`, {
+  await api.post(`${getBaseUrl('DATA')}/account/leave_clan`, {
     id: account.id,
     clan_id: null,
     player_id: null,
