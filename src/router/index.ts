@@ -347,7 +347,6 @@ router.beforeEach(async (to, from, next) => {
     return next();
   }
 
-  debugger;
   if (to.path.startsWith('/clan/')) {
     await ensureSession();
     const account = useAccountStore();

@@ -698,7 +698,6 @@ async function loadItems(options: DataTableOptions) {
     });
 
     serverItems.value = response.data.datas;
-    debugger;
     totalItems.value = response.data.totalCount;
 
     page.value = options.page;

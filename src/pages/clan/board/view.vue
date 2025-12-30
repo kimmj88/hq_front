@@ -71,7 +71,7 @@
       <v-btn
         v-if="can('NOTICE', 'CLAN-SET-NOTICE-U')"
         color="primary"
-        :to="CLAN_PATH.NOTICE_EDIT(account.clan.name, 68)"
+        :to="CLAN_PATH.NOTICE_EDIT(account.clan.name, +route.params.id)"
         >수정</v-btn
       >
       <v-btn v-if="can('NOTICE', 'CLAN-SET-NOTICE-D')" color="error" @click="deleteNotice"
