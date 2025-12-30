@@ -13,4 +13,5 @@ export interface Player {
   cupmember_id: number;
   cup_count: number;
   sub_cup_count: number;
+  clan_tier: Tier;
 }

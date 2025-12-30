@@ -119,7 +119,7 @@
             <div class="d-flex flex-column">
               <span class="text-body-2 font-weight-medium"> {{ p.nickname }}#{{ p.tagname }} </span>
               <span class="text-caption text-medium-emphasis">
-                {{ p.tier?.name }} · {{ p.tier?.point + p.point }}pt
+                {{ p.clan_tier?.name }} · {{ p.clan_tier?.point + p.point }}pt
               </span>
             </div>
 
@@ -448,6 +448,7 @@ async function onEdited(position: string, oldPlayer: any, newPlayer: Player) {
 
 /* 선택 콜백 */
 async function onAdded(payload: { users: Player[]; label: string }) {
+  debugger;
   const pos = payload.label;
   const prev = selectedByPosition[pos] ?? [];
 
