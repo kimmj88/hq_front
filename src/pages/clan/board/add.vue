@@ -15,7 +15,7 @@
         <v-row dense>
           <!-- 상단 고정 -->
           <v-col cols="12" md="3">
-            <v-switch v-model="form.isPinned" label="상단 고정" inset />
+            <v-switch v-model="form.is_pin" label="상단 고정" color="success" inset hide-details />
           </v-col>
         </v-row>
 
@@ -100,7 +100,7 @@ const form = ref<Board>({
   attachments: [],
   // Board 타입에 isPinned 없으면 타입에 추가하거나 any로
   // @ts-ignore
-  isPinned: false,
+  is_pin: false,
 });
 
 const rules = {
@@ -116,6 +116,7 @@ onMounted(async () => {
     const { data } = await api.get(`${getBaseUrl('DATA')}/board/find?id=${route.params.id}`);
     form.value.title = data.datas.title;
     form.value.description = data.datas.description;
+    form.value.is_pin = data.datas.is_pin;
     // const data = res.data as Board;
 
     // form.value = {
@@ -188,7 +189,7 @@ const onSubmit = async () => {
         account_id: account.id,
         type: form.value.type,
         // @ts-ignore
-        isPinned: form.value.isPinned,
+        is_pin: form.value.is_pin,
       });
     } else {
       await api.post(`${getBaseUrl('DATA')}/board/create`, {
@@ -197,7 +198,7 @@ const onSubmit = async () => {
         account_id: account.id,
         type: form.value.type,
         // @ts-ignore
-        isPinned: form.value.isPinned,
+        is_pin: form.value.is_pin,
         clan: account.clan,
       });
     }

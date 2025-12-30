@@ -11,6 +11,8 @@ export const CLAN_PATH = {
   NOTICE_ADD: (name: string | number = ':name') => `/clan/${name}/notice/add`,
   NOTICE_VIEW: (name: string | number = ':name', id: string | number = ':id') =>
     `/clan/${name}/notice/view/${id}`,
+  NOTICE_EDIT: (name: string | number = ':name', id: string | number = ':id') =>
+    `/clan/${name}/notice/edit/${id}`,
   ENQUIRE: (name: string | number = ':name') => `/clan/${name}/enquire`,
   ENQUIRE_ADD: (name: string | number = ':name') => `/clan/${name}/enquire/add`,
   ENQUIRE_VIEW: (name: string | number = ':name', id: string | number = ':id') =>

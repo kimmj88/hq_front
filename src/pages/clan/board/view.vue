@@ -71,7 +71,7 @@
       <v-btn
         v-if="can('NOTICE', 'CLAN-SET-NOTICE-U')"
         color="primary"
-        :to="BOARD_PATH.EDIT(route.params.id)"
+        :to="CLAN_PATH.NOTICE_EDIT(account.clan.name, 68)"
         >수정</v-btn
       >
       <v-btn v-if="can('NOTICE', 'CLAN-SET-NOTICE-D')" color="error" @click="deleteNotice"
@@ -86,7 +86,6 @@ import { getBaseUrl } from '@/@core/composable/createUrl';
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '@/@core/composable/useAxios';
-import { BOARD_PATH } from '@/router/board/type';
 import { CLAN_PATH } from '@/router/clan/type';
 import { can } from '@/stores/useClanPermissionStore';
 import { useAccountStore } from '@/stores/useAccountStore';

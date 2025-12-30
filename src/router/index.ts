@@ -162,6 +162,7 @@ const router = createRouter({
         { path: CLAN_PATH.NOTICE(':name'), component: ClanBoard },
         { path: CLAN_PATH.NOTICE_ADD(':name'), component: ClanBoardAdd },
         { path: CLAN_PATH.NOTICE_VIEW(':name', ':id'), component: ClanBoardView, props: true },
+        { path: CLAN_PATH.NOTICE_EDIT(':name', ':id'), component: ClanBoardAdd, props: true },
         { path: CLAN_PATH.ENQUIRE(':name'), component: ClanEnquire },
         { path: CLAN_PATH.ENQUIRE_ADD(':name'), component: ClanEnquireAdd },
         { path: CLAN_PATH.ENQUIRE_VIEW(':name', ':id'), component: ClanEnquireView, props: true },
@@ -346,6 +347,7 @@ router.beforeEach(async (to, from, next) => {
     return next();
   }
 
+  debugger;
   if (to.path.startsWith('/clan/')) {
     await ensureSession();
     const account = useAccountStore();

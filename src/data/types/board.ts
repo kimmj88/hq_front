@@ -9,4 +9,5 @@ export interface Board {
   created_at: string;
   updated_at: string;
   attachments: File[];
+  is_pin: boolean;
 }

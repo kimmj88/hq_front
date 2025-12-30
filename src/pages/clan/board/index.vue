@@ -26,11 +26,25 @@
       hide-default-footer
       @update:options="loadItems"
     >
-      <!-- 제목 컬럼 (상세 이동) -->
+      <!-- 번호 컬럼: 고정이면 📌 -->
+      <template #item.id="{ item }">
+        <div class="d-flex align-center justify-center" style="gap: 6px">
+          <v-icon v-if="item.is_pin" size="16" class="pin-icon">mdi-pin</v-icon>
+          <span>{{ item.id }}</span>
+        </div>
+      </template>
+
+      <!-- 제목 컬럼: 고정 표시 -->
       <template #item.title="{ item }">
-        <span class="text-primary" style="cursor: pointer" @click="onClickRow(item)">
-          {{ item.title }}
-        </span>
+        <div class="d-flex align-center" style="gap: 8px">
+          <v-chip v-if="item.is_pin" size="x-small" color="warning" variant="tonal" label>
+            고정
+          </v-chip>
+
+          <span :class="['title-link', { 'title-pin': item.is_pin }]" @click="onClickRow(item)">
+            {{ item.title }}
+          </span>
+        </div>
       </template>
 
       <!-- 날짜 포맷 -->
@@ -38,7 +52,7 @@
         {{ item.created_at.slice(0, 10) }}
       </template>
 
-      <!-- 🔻 커스텀 footer (v-data-table 느낌으로) -->
+      <!-- footer는 기존 그대로 -->
       <template #bottom>
         <div class="d-flex justify-space-between align-center px-4 py-2">
           <div class="text-caption">{{ pageStart }} - {{ pageEnd }} of {{ totalItems }}</div>
@@ -186,3 +200,22 @@ onMounted(() => {
   handleSearch();
 });
 </script>
+
+<style>
+.title-link {
+  cursor: pointer;
+  color: #1976d2;
+}
+
+.title-link:hover {
+  text-decoration: underline;
+}
+
+.title-pin {
+  font-weight: 700;
+}
+
+.pin-icon {
+  opacity: 0.9;
+}
+</style>
