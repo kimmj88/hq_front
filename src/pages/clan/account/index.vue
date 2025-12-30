@@ -98,6 +98,12 @@
             >
               <v-list-item-title>{{ $t('form_control.button.edit') }}</v-list-item-title>
             </v-list-item>
+            <v-list-item
+              v-if="can('ACCOUNT', 'CLAN-SET-ACC-U')"
+              :to="CLAN_PATH.ACCOUNT_VIEW(account.clan.name, item.id)"
+            >
+              <v-list-item-title @click="leaveClan">{{ '추방' }}</v-list-item-title>
+            </v-list-item>
           </v-list>
         </v-menu>
       </template>
@@ -263,6 +269,15 @@ function handleSearch() {
     itemsPerPage: itemsPerPage.value,
     sortBy: [],
   });
+}
+
+async function leaveClan() {
+  await api.post(`${getBaseUrl('DATA')}/account/leave_clan`, {
+    id: account.id,
+    clan_id: null,
+    player_id: null,
+  });
+  handleSearch();
 }
 
 function handleClear() {

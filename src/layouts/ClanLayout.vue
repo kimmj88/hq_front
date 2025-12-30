@@ -19,7 +19,7 @@
             </div>
 
             <div class="mt-3 d-flex gap-2">
-              <v-btn
+              <!-- <v-btn
                 block
                 color="primary"
                 variant="tonal"
@@ -27,7 +27,7 @@
                 @click="copyInvite"
               >
                 초대코드
-              </v-btn>
+              </v-btn> -->
             </div>
           </v-card-text>
         </v-card>

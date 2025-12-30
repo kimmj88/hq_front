@@ -347,12 +347,16 @@ router.beforeEach(async (to, from, next) => {
     return next();
   }
 
-  if (to.path.startsWith('/clan/')) {
+  const account = useAccountStore();
+  if (to.path.startsWith('/clan/') && account.isClaned == false) {
     await ensureSession();
-    const account = useAccountStore();
+
     const targetClan = String(to.params.name ?? '');
 
-    if (account.clan.name && targetClan && account.clan.name !== targetClan) {
+    if (account.clan == null) {
+      return next('/forbidden');
+    }
+    if (account.clan.name != targetClan) {
       return next('/forbidden');
     }
   }
@@ -364,7 +368,6 @@ router.beforeEach(async (to, from, next) => {
   }
 
   const auth = useAuthStore();
-  const account = useAccountStore();
   const permission = usePermissionStore();
   const ok = await ensureSession();
 

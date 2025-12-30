@@ -19,8 +19,8 @@ export const useAccountStore = defineStore('account', {
   getters: {
     /** ✅ 로그인 여부 */
     isLoggedIn: (state) => state.id > 0,
-
     isPlayerLinked: (state) => (!!state.player?.id ? true : false),
+    isClaned: (state) => (!!state.clan?.id ? true : false),
 
     /** ✅ 스토어가 초기화/로딩 완료됐는지 */
     isReady: (state) => state.loaded,
@@ -31,6 +31,7 @@ export const useAccountStore = defineStore('account', {
   },
   isLoggedIn: (s) => s.id > 0 && !!s.email, // ✅ 핵심
   isPlayerLinked: (s) => s.player.id > 0 && !!s.player.nickname,
+  isClaned: (s) => s.clan.id > 0,
 
   actions: {
     setAccount(account: Account) {
