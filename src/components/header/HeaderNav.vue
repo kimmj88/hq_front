@@ -78,41 +78,23 @@ const menuItems = computed(() => {
     to: '/home',
   });
 
-  // if (can('MATCH', 'SYS-SET-MATCH-R')) {
-  //   items.push({
-  //     key: 'match',
-  //     title: 'Match',
-  //     icon: 'mdi-sword-cross',
-  //     to: '/match',
-  //   });
-  // }
-
-  // if (can('CUP', 'SYS-SET-CUP-R')) {
-  //   items.push({
-  //     key: 'cup',
-  //     title: 'CUP',
-  //     icon: 'mdi-trophy-outline',
-  //     to: '/cup',
-  //   });
-  // }
-
   items.push({
     key: 'board',
-    title: 'Board',
+    title: '공지사항',
     icon: 'mdi-view-dashboard-outline',
     to: '/board',
   });
 
   items.push({
     key: 'forum',
-    title: 'Forum',
+    title: '자유게시판',
     icon: 'mdi-forum-outline',
     to: '/forum',
   });
 
   items.push({
     key: 'enquire',
-    title: 'Enquire',
+    title: '문의게시판',
     icon: 'mdi-help-circle-outline',
     to: '/enquire',
   });
@@ -120,15 +102,15 @@ const menuItems = computed(() => {
   if (account.clan != null) {
     items.push({
       key: 'clan',
-      title: 'Clan',
-      icon: 'mdi-help-circle-outline',
+      title: '클랜',
+      icon: 'mdi-account-group-outline',
       to: `${CLAN_PATH.VIEW(account.clan.name)}`,
     });
   } else {
     items.push({
       key: 'clan',
-      title: 'Clan',
-      icon: 'mdi-help-circle-outline',
+      title: '클랜',
+      icon: 'mdi-account-group-outline',
       to: `/clan`,
     });
   }
