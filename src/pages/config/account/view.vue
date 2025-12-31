@@ -82,13 +82,21 @@
 
       <!-- 플레이어 정보 -->
       <v-col cols="12" md="6">
-        <div class="section-title mb-2">플레이어 정보</div>
+        <div class="d-flex align-center justify-space-between mb-2">
+          <div class="section-title">플레이어 정보</div>
+
+          <!-- ✅ 플레이어 변경/연동 버튼 -->
+          <AccountPlayerMemberDialog
+            v-if="props.id === String(accountStore.id)"
+            v-model="playerDialog"
+            @added="handleAdd"
+          />
+        </div>
 
         <div v-if="!player">
           <v-alert type="info" variant="tonal" density="compact" class="mb-2">
             아직 등록된 플레이어 정보가 없습니다.
           </v-alert>
-          <AccountPlayerMemberDialog @added="handleAdd"></AccountPlayerMemberDialog>
         </div>
 
         <template v-else>
