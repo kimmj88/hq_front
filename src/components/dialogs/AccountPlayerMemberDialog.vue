@@ -245,16 +245,16 @@ async function handleAdd() {
     }
   }
 
-  const response = await api.post(`${getBaseUrl('DATA')}/player/create`, {
+  const response = await api.post(`${getBaseUrl('DATA')}/account/link_player`, {
+    id: account.id,
     nickname: searchId.value,
     tagname: searchTag.value,
     tier: {
       id: findID,
     },
-    account: { id: account.id },
   });
 
-  if (response.status == 409) {
+  if (!response.data.datas) {
     toast('이미 다른 클랜에 추가되어 있습니다.');
     return;
   }
