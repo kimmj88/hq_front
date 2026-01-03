@@ -123,6 +123,10 @@ import type { SystemRole } from '@/data/types/systemrole';
 import { BOARD_PATH } from './board/type';
 import type { ClanRole } from '@/data/types/clanrole';
 
+import Step1 from '@/pages/sample/step1.vue';
+import Step2 from '@/pages/sample/step2.vue';
+import Step3 from '@/pages/sample/step3.vue';
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -130,6 +134,9 @@ const router = createRouter({
     { path: '/exception', component: Exception },
     { path: '/pendingapproval', component: PendingApproval },
     { path: '/register', component: KakaoLolRegister },
+    { path: '/step1', component: Step1 },
+    { path: '/step2', component: Step2 },
+    { path: '/step3', component: Step3 },
     {
       path: '/login',
       component: Login,

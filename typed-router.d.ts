@@ -70,5 +70,8 @@ declare module 'vue-router/auto-routes' {
     '/match/add': RouteRecordInfo<'/match/add', '/match/add', Record<never, never>, Record<never, never>>,
     '/match/view': RouteRecordInfo<'/match/view', '/match/view', Record<never, never>, Record<never, never>>,
     '/record/': RouteRecordInfo<'/record/', '/record', Record<never, never>, Record<never, never>>,
+    '/sample/step1': RouteRecordInfo<'/sample/step1', '/sample/step1', Record<never, never>, Record<never, never>>,
+    '/sample/step2': RouteRecordInfo<'/sample/step2', '/sample/step2', Record<never, never>, Record<never, never>>,
+    '/sample/step3': RouteRecordInfo<'/sample/step3', '/sample/step3', Record<never, never>, Record<never, never>>,
   }
 }
