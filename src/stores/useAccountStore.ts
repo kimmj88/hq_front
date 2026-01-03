@@ -18,20 +18,24 @@ export const useAccountStore = defineStore('account', {
 
   getters: {
     /** ✅ 로그인 여부 */
-    isLoggedIn: (state) => state.id > 0,
-    isPlayerLinked: (state) => (!!state.player?.id ? true : false),
-    isClaned: (state) => (!!state.clan?.id ? true : false),
+    isLoggedIn: (state) => state.id > 0 && !!state.email,
 
-    /** ✅ 스토어가 초기화/로딩 완료됐는지 */
+    /** ✅ 플레이어 연동 여부 */
+    isPlayerLinked: (state) => !!state.player?.id,
+
+    /** ✅ 클랜 가입 여부 */
+    isClaned: (state) => !!state.clan?.id,
+
+    /** ✅ 클랜 마스터 여부 */
+    isClanMaster: (state) => state.clanrole?.name === 'master',
+
+    /** ✅ 스토어 초기화 완료 여부 */
     isReady: (state) => state.loaded,
 
-    /** 🔹 자주 쓰는 값들 */
+    /** 🔹 자주 쓰는 값 */
     clanRoleName: (state) => state.clanrole?.name ?? '',
     clanId: (state) => state.clan?.id ?? null,
   },
-  isLoggedIn: (s) => s.id > 0 && !!s.email, // ✅ 핵심
-  isPlayerLinked: (s) => s.player.id > 0 && !!s.player.nickname,
-  isClaned: (s) => s.clan.id > 0,
 
   actions: {
     setAccount(account: Account) {

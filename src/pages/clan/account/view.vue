@@ -160,7 +160,7 @@
 
       <v-col cols="12" md="6" class="d-flex justify-end" style="gap: 8px">
         <v-btn
-          v-if="accountStore.clan.account.id == accountStore.id"
+          v-if="isClanMaster"
           color="warning"
           variant="outlined"
           prepend-icon="mdi-crown-outline"
@@ -275,6 +275,8 @@ const route = useRoute();
 const router = useRouter();
 
 const accountStore = useAccountStore();
+
+const isClanMaster = computed(() => accountStore.isClanMaster);
 
 const snack = ref({ show: false, msg: '' });
 function toast(msg: string) {

@@ -301,7 +301,6 @@ import PlayerMemberDialog from '@/components/dialogs/PlayerMemberDialog.vue';
 import type { Player } from '@/data/types/player';
 import type { Tier } from '@/data/types/tier';
 import { can } from '@/stores/useClanPermissionStore';
-import type { Codedict } from '@/data/types/codedict';
 import type { Position } from '@/data/types/position';
 import { useAccountStore } from '@/stores/useAccountStore';
 

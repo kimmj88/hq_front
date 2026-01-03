@@ -219,7 +219,7 @@
                         <!-- <v-btn variant="text" @click="openClanDetail(clan)">자세히</v-btn> -->
 
                         <v-btn
-                          v-if="!account.clan"
+                          v-if="!isClaned"
                           color="primary"
                           :disabled="clan.members >= clan.capacity"
                           @click="openJoinDialog(clan)"
@@ -385,7 +385,7 @@ const router = useRouter();
 const account = useAccountStore();
 
 const isLoggedIn = computed(() => account.isLoggedIn);
-
+const isClaned = computed(() => account.isClaned);
 const isPlayerLink = computed(() => account.isPlayerLinked);
 
 function goLogin() {
