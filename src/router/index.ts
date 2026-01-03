@@ -349,6 +349,7 @@ async function ensureSession(): Promise<boolean> {
   }
 }
 
+//router
 router.beforeEach(async (to, from, next) => {
   if (to.path === '/exception') {
     return next();
