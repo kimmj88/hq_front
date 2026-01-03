@@ -109,7 +109,7 @@
                 </v-list-item-title>
 
                 <v-list-item-subtitle class="text-medium-emphasis">
-                  참여 {{ p.matchCount }}회 · Point {{ p.point }}
+                  매치참여 {{ p.matchCount }}회 · 컵참여 {{ p.cupCount }}회 · Point {{ p.point }}
                   <span class="mx-1">·</span>
                   {{ p.tierName ?? 'Unranked' }}
                 </v-list-item-subtitle>
@@ -190,6 +190,7 @@ type TopPlayer = {
   tagname?: string;
 
   matchCount: number; // match_enter_count
+  cupCount: number;
   cupWins: number; // cup_count (멸망전 우승)
   subCupWins: number; // sub_cup_count (컵 우승)
 
@@ -269,6 +270,7 @@ function mapRow(row: any): TopPlayer {
   let nickname = row.nickname ?? '';
   let tagname = row.tagname ?? '';
 
+  debugger;
   if (nickname && !tagname && nickname.includes('#')) {
     const sp = splitNickTag(nickname);
     nickname = sp.nick;
@@ -281,6 +283,7 @@ function mapRow(row: any): TopPlayer {
     tagname,
 
     matchCount: Number(row.match_enter_count ?? row.matchCount ?? 0),
+    cupCount: Number(row.cup_enter_count ?? row.cupCount ?? 0),
     cupWins: Number(row.cup_count ?? row.cupWins ?? 0),
     subCupWins: Number(row.sub_cup_count ?? row.subCupWins ?? 0),
 
@@ -312,6 +315,8 @@ async function fetchDashboard2() {
   const res = await api.get(`${getBaseUrl('DATA')}/Clan/dashboard_2`, {
     params: { clan_id: clanId },
   });
+
+  debugger;
 
   const rows = res.data?.datas ?? [];
   topRankList.value = rows.map(mapRow);
