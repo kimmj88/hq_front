@@ -355,7 +355,7 @@ const headers: VDataTableServer['headers'] = [
   { title: 'NAME', key: 'name', sortable: false, width: 280 },
   { title: 'TIER', key: 'tier', sortable: false },
   { title: 'CUSTOM', key: 'custom_tier', sortable: false },
-  { title: 'CLAN', key: 'clan_tier', sortable: false },
+  { title: 'CLAN', key: 'clan_tier', sortable: true },
   { title: 'MAIN', key: 'cup_count', sortable: false },
   { title: 'SUB', key: 'sub_cup_count', sortable: true },
   { title: 'POINT', key: 'point', sortable: true },
