@@ -1,30 +1,70 @@
 <template>
   <v-container>
-    <v-row class="mb-2" align="center">
-      <v-col cols="12" sm="1" md="2">
-        <v-text-field
-          v-model="search"
-          label="Search"
-          density="compact"
-          hide-details
-          clearable
-          append-inner-icon="mdi-magnify"
-          @keyup.enter="handleSearch"
-          @click:clear="handleClear"
-        />
-      </v-col>
-      <v-col cols="auto">
-        <v-btn color="primary" @click="handleSearch">
-          {{ 'Search' }}
-        </v-btn>
-      </v-col>
-      <v-spacer />
-      <v-col cols="auto">
-        <PlayerMemberDialog v-if="can('PLAYER', 'CLAN-SET-PLAYER-C')" @added="handleAdd" />
-      </v-col>
-    </v-row>
-  </v-container>
-  <v-container>
+    <!-- ✅ 상단 툴바(정리) -->
+    <v-container>
+      <v-card class="pa-3 mb-3" rounded="lg" variant="tonal">
+        <div class="toolbar">
+          <!-- Search -->
+          <v-text-field
+            v-model="search"
+            class="toolbar__search"
+            label="플레이어 검색 (닉네임)"
+            density="compact"
+            variant="outlined"
+            hide-details
+            clearable
+            prepend-inner-icon="mdi-magnify"
+            @keyup.enter="handleSearch"
+            @click:clear="handleClear"
+          />
+
+          <!-- Tier Filter -->
+          <v-select
+            v-model="selectedClanTierGroups"
+            class="toolbar__select"
+            :items="clanTierGroupOptions"
+            item-title="title"
+            item-value="value"
+            label="클랜 티어"
+            density="compact"
+            variant="outlined"
+            hide-details
+            clearable
+            multiple
+            chips
+            closable-chips
+            prepend-inner-icon="mdi-filter-variant"
+            @update:modelValue="handleSearch"
+          />
+
+          <!-- Buttons -->
+          <div class="toolbar__actions">
+            <v-btn
+              color="primary"
+              variant="flat"
+              density="comfortable"
+              prepend-icon="mdi-magnify"
+              @click="handleSearch"
+            >
+              검색
+            </v-btn>
+
+            <v-btn
+              variant="tonal"
+              density="comfortable"
+              prepend-icon="mdi-refresh"
+              @click="handleResetFilters"
+            >
+              초기화
+            </v-btn>
+
+            <PlayerMemberDialog v-if="can('PLAYER', 'CLAN-SET-PLAYER-C')" @added="handleAdd" />
+          </div>
+        </div>
+      </v-card>
+    </v-container>
+
+    <!-- ✅ 테이블 -->
     <server-data-table
       :headers="headers"
       :items="serverItems"
@@ -34,77 +74,70 @@
       :search="search"
       @update:options="loadItems"
     >
-      <!-- 유저 프로필/이메일 -->
+      <!-- ✅ NAME: 아바타 + 닉#태그 + 서브 -->
       <template #item.name="{ item }">
         <div
           class="d-flex align-center opgg-link"
           role="button"
           tabindex="0"
+          style="gap: 12px; cursor: pointer"
           @click="openOpgg(item)"
           @keyup.enter="openOpgg(item)"
-          style="cursor: pointer"
         >
-          <div class="text-caption font-weight-bold">
-            {{ item.nickname + '#' }}
-          </div>
+          <v-avatar size="32" color="deep-purple-darken-2">
+            <span class="text-caption text-white">
+              {{ (item.nickname ?? '?').slice(0, 2).toUpperCase() }}
+            </span>
+          </v-avatar>
 
-          <div class="text-caption text-grey">
-            {{ item.tagname }}
-          </div>
-
-          <!-- <div class="ml-2">
-            <div class="text-caption text-grey">
-              {{  }}
+          <div style="line-height: 1.2">
+            <div class="text-body-2 font-weight-bold">
+              {{ item.nickname }}
+              <span class="text-medium-emphasis">#{{ item.tagname }}</span>
             </div>
-          </div> -->
+            <div class="text-caption text-medium-emphasis">
+              Point {{ item.point ?? 0 }} · {{ item.clan_tier?.name ?? '-' }}
+            </div>
+          </div>
         </div>
       </template>
 
+      <!-- ✅ TIER: 칩 통일 -->
       <template #item.tier="{ item }">
-        <div class="d-flex align-center">
-          <span :style="{ color: getTierColor(item.tier.name), fontWeight: 'bold' }">
-            {{ item.tier.name }}
+        <v-chip size="small" variant="tonal" class="tier-chip">
+          <span :style="{ color: getTierColor(item.tier?.name), fontWeight: '700' }">
+            {{ item.tier?.name ?? '-' }}
           </span>
-          <div></div>
-        </div>
+        </v-chip>
       </template>
 
       <template #item.custom_tier="{ item }">
-        <div class="d-flex align-center">
-          <span :style="{ color: getTierColor(item.custom_tier?.name), fontWeight: 'bold' }">
-            {{ item.custom_tier?.name }}
+        <v-chip size="small" variant="tonal" class="tier-chip">
+          <span :style="{ color: getTierColor(item.custom_tier?.name), fontWeight: '700' }">
+            {{ item.custom_tier?.name ?? '-' }}
           </span>
-          <div></div>
-        </div>
+        </v-chip>
       </template>
 
       <template #item.clan_tier="{ item }">
-        <div class="d-flex align-center">
-          <span :style="{ color: getTierColor(item.clan_tier?.name), fontWeight: 'bold' }">
-            {{ item.clan_tier?.name }}
+        <v-chip size="small" variant="tonal" class="tier-chip">
+          <span :style="{ color: getTierColor(item.clan_tier?.name), fontWeight: '700' }">
+            {{ item.clan_tier?.name ?? '-' }}
           </span>
-          <div></div>
-        </div>
+        </v-chip>
       </template>
 
+      <!-- ✅ CUP: 별 반복 → 숫자 뱃지 -->
       <template #item.cup_count="{ item }">
-        <div class="d-flex align-center">
-          <font-awesome-icon
-            v-for="index in item?.cup_count"
-            :icon="['fas', 'star']"
-            class="star-full"
-          />
-        </div>
+        <v-chip size="small" color="amber" variant="tonal" prepend-icon="mdi-star">
+          {{ item?.cup_count ?? 0 }}
+        </v-chip>
       </template>
 
       <template #item.sub_cup_count="{ item }">
-        <div class="d-flex align-center">
-          <font-awesome-icon
-            v-for="index in item?.sub_cup_count"
-            :icon="['far', 'star']"
-            class="star-full"
-          />
-        </div>
+        <v-chip size="small" color="grey" variant="tonal" prepend-icon="mdi-star-outline">
+          {{ item?.sub_cup_count ?? 0 }}
+        </v-chip>
       </template>
 
       <template #item.is_active="{ item }">
@@ -115,10 +148,11 @@
         {{ item.created_at.slice(0, 10) }}
       </template>
 
+      <!-- ✅ Position: 최대 2개 +N -->
       <template #item.positions="{ item }">
         <div class="d-flex flex-wrap" style="gap: 6px">
           <v-chip
-            v-for="(pos, i) in normalizePositions(item.positions)"
+            v-for="(pos, i) in normalizePositions(item.positions).slice(0, 2)"
             :key="i"
             size="x-small"
             color="primary"
@@ -126,6 +160,15 @@
             variant="tonal"
           >
             {{ pos.label }}
+          </v-chip>
+
+          <v-chip
+            v-if="normalizePositions(item.positions).length > 2"
+            size="x-small"
+            variant="tonal"
+            color="secondary"
+          >
+            +{{ normalizePositions(item.positions).length - 2 }}
           </v-chip>
         </div>
       </template>
@@ -139,7 +182,6 @@
           </template>
 
           <v-list density="compact">
-            <!-- 수정: 기존 라우팅 유지 -->
             <v-list-item v-if="can('PLAYER', 'CLAN-SET-PLAYER-U')" @click="openEdit(item)">
               <v-list-item-title>
                 <v-icon size="16" class="mr-2">mdi-pencil</v-icon> 수정
@@ -151,18 +193,16 @@
     </server-data-table>
   </v-container>
 
+  <!-- ✅ 기존 수정 다이얼로그 그대로 -->
   <v-dialog v-model="edit.open" max-width="420">
     <v-card>
-      <!-- 제목 + 버튼 -->
       <v-card-title>
         <span class="text-h6">티어 수정</span>
       </v-card-title>
 
-      <!-- 본문 -->
       <v-card-text>
         <v-row align="center" no-gutters>
           <v-col cols="9" class="pr-2">
-            <!-- 약 70% 정도 -->
             <v-text-field
               label="Name"
               v-model="edit.form.name"
@@ -173,7 +213,6 @@
           </v-col>
 
           <v-col cols="3" class="text-right">
-            <!-- 약 30% 정도 -->
             <v-btn variant="text" @click="refreshTier" style="min-width: 80px"> 갱신 </v-btn>
           </v-col>
         </v-row>
@@ -281,7 +320,6 @@
         />
       </v-card-text>
 
-      <!-- 하단 버튼 -->
       <v-card-actions class="justify-end">
         <v-btn variant="text" @click="handleCancel">취소</v-btn>
         <v-btn color="primary" :loading="edit.loading" @click="handleEditSave">저장</v-btn>
@@ -291,7 +329,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import api from '@/@core/composable/useAxios';
 import type { Account } from '@/data/types/account';
@@ -314,17 +352,17 @@ const loading = ref<boolean>(true);
 const totalItems = ref<number>(0);
 
 const headers: VDataTableServer['headers'] = [
-  { title: 'NAME', key: 'name', sortable: false },
+  { title: 'NAME', key: 'name', sortable: false, width: 280 },
   { title: 'TIER', key: 'tier', sortable: false },
-  { title: 'CUSTOM_TIER', key: 'custom_tier', sortable: false },
-  { title: 'CLAN_TIER', key: 'clan_tier', sortable: false },
-  { title: 'MAIN_CUP', key: 'cup_count', sortable: false },
-  { title: 'SUB_CUP', key: 'sub_cup_count', sortable: true },
+  { title: 'CUSTOM', key: 'custom_tier', sortable: false },
+  { title: 'CLAN', key: 'clan_tier', sortable: false },
+  { title: 'MAIN', key: 'cup_count', sortable: false },
+  { title: 'SUB', key: 'sub_cup_count', sortable: true },
   { title: 'POINT', key: 'point', sortable: true },
-  { title: 'Position', key: 'positions', sortable: false, width: 240 }, // ⬅️ 추가
+  { title: 'POSITION', key: 'positions', sortable: false, width: 220 },
   { title: 'ACTIVE', key: 'is_active', sortable: false },
-  { title: 'Created', key: 'created_at', sortable: true },
-  { title: 'ACTIONS', key: 'actions', sortable: false, align: 'center', width: '1px' },
+  { title: 'CREATED', key: 'created_at', sortable: true },
+  { title: '', key: 'actions', sortable: false, align: 'center', width: '1px' },
 ] as const;
 
 interface FetchParams {
@@ -354,22 +392,16 @@ const edit = ref<{
 });
 
 function openOpgg(item: any) {
-  if (!item.nickname || !item.tagname) {
-    console.warn('닉네임 또는 태그가 없습니다.');
-    return;
-  }
+  if (!item.nickname || !item.tagname) return;
 
-  const region = 'kr'; // 고정이면 OK, 나중에 확장 가능
+  const region = 'kr';
   const riotId = `${item.nickname}-${item.tagname}`;
   const encoded = encodeURIComponent(riotId);
-
   const url = `https://www.op.gg/summoners/${region}/${encoded}`;
-
   window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 function openEdit(item: any) {
-  // 참조 끊기: 깊은 복사
   const clone = (v: any) => JSON.parse(JSON.stringify(v));
 
   edit.value.open = true;
@@ -383,10 +415,8 @@ function openEdit(item: any) {
   edit.value.form.id = item.id;
   edit.value.form.name = `${item.nickname}#${item.tagname}`;
   edit.value.form.point = item.point;
-
   edit.value.form.cup_count = item.cup_count;
   edit.value.form.sub_cup_count = item.sub_cup_count;
-
   edit.value.form.is_active = item.is_active;
 }
 
@@ -395,17 +425,11 @@ function normalizePositions(positions: any[] | undefined | null) {
   return positions
     .map((p) => {
       if (typeof p === 'string') return { label: p };
-
-      // common shapes
       if (p.value) return { label: p.value };
       if (p.title) return { label: p.title };
       if (p.name) return { label: p.name };
-
-      // codedict relation
       if (p.codedict?.title) return { label: p.codedict.title };
       if (p.codedict?.code_value) return { label: p.codedict.code_value };
-
-      // last resort
       return { label: String(p.id ?? '') };
     })
     .filter((x) => x.label);
@@ -426,30 +450,37 @@ function getTierColor(tier: string): string {
   if (key.includes('challenger')) return '#007BFF';
   return 'black';
 }
-
 async function loadItems(options: FetchParams) {
   try {
     const sortKey = options.sortBy[0]?.key || 'point';
     const sortOrder = options.sortBy[0]?.order || 'desc';
 
-    const response = await api.get(
-      `${getBaseUrl('DATA')}/player/search?keyword=${search.value}&page=${
-        options.page
-      }&itemsPerPage=${options.itemsPerPage}&sortBy=${sortKey}&orderBy=${sortOrder}&clan=${
-        account.clan.name
-      }`
-    );
     loading.value = true;
+
+    const response = await api.get(`${getBaseUrl('DATA')}/player/search`, {
+      params: {
+        keyword: search.value || undefined,
+        page: options.page,
+        itemsPerPage: options.itemsPerPage,
+        sortBy: sortKey,
+        orderBy: sortOrder,
+        clan: account.clan.name,
+
+        // ✅ 배열로 전송: tier=GOLD&tier=EMERALD...
+        tier: selectedClanTierGroups.value.length ? selectedClanTierGroups.value : undefined,
+      },
+    });
 
     serverItems.value = response.data.datas;
     totalItems.value = response.data.totalCount;
-    loading.value = false;
   } catch (error) {
-    console.error('기업 목록 불러오기 실패:', error);
+    console.error('플레이어 목록 불러오기 실패:', error);
+  } finally {
+    loading.value = false;
   }
 }
+
 function handleSearch() {
-  //player
   loadItems({
     keyword: search.value,
     page: 1,
@@ -463,7 +494,7 @@ function handleClear() {
   handleSearch();
 }
 
-function handleAdd(param: any) {
+function handleAdd() {
   handleSearch();
 }
 
@@ -477,19 +508,17 @@ const selectedPositions = ref<Position[] | null>([]);
 async function fetch() {
   try {
     const response = await api.get(`${getBaseUrl('DATA')}/tier/all`);
-
     tierList.value = response.data.datas;
-    const position_codedict = await api.get(`${getBaseUrl('DATA')}/position/all`);
 
+    const position_codedict = await api.get(`${getBaseUrl('DATA')}/position/all`);
     positions.value = position_codedict.data.datas;
   } catch (error) {
-    console.error('매치 정보 불러오기 실패:', error);
+    console.error('기초 데이터 불러오기 실패:', error);
   }
 }
 
 async function handleCancel() {
   edit.value.open = false;
-
   edit.value.target = null;
   edit.value.form.id = 0;
   edit.value.form.name = '';
@@ -521,14 +550,38 @@ async function handleEditSave() {
     });
 
     edit.value.open = false;
-
-    // 목록 리로드
     handleSearch();
   } catch (e) {
     console.error(e);
   } finally {
     edit.value.loading = false;
   }
+}
+
+const selectedClanTierGroups = ref<string[]>([]);
+
+// GOLD IV -> GOLD, PLATINUM I -> PLATINUM, UNRANK -> UNRANK
+function toTierGroupName(name?: string) {
+  if (!name) return '';
+  const upper = name.toUpperCase().trim();
+  // 앞 단어만 그룹으로 (GOLD IV -> GOLD)
+  return upper.split(' ')[0];
+}
+
+// v-select items (중복 제거)
+const clanTierGroupOptions = computed(() => {
+  const groups = new Set<string>();
+  for (const t of tierList.value) {
+    const g = toTierGroupName(t.name);
+    if (g) groups.add(g);
+  }
+  return Array.from(groups).map((g) => ({ title: g, value: g }));
+});
+
+function handleResetFilters() {
+  search.value = '';
+  selectedClanTierGroups.value = [];
+  handleSearch();
 }
 
 async function refreshTier() {
@@ -540,6 +593,7 @@ async function refreshTier() {
       nickname: nick,
       tagname: tag,
     });
+
     const clone = (v: any) => JSON.parse(JSON.stringify(v));
     selectedTier.value = clone(res.data.datas.tier ?? null);
   } catch (e) {
@@ -548,22 +602,39 @@ async function refreshTier() {
     edit.value.loading = false;
   }
 }
+
 onMounted(fetch);
 </script>
 
 <style scoped>
-.account-link {
-  color: inherit;
-  text-decoration: none;
-  font-weight: 500;
-  transition: color 0.2s ease;
-}
-
-.account-link:hover {
-  color: #2196f3; /* Vuetify 기본 primary 색상 */
-}
-
 .opgg-link:hover {
   text-decoration: underline;
+}
+
+.tier-chip {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.toolbar {
+  display: grid;
+  grid-template-columns: 320px 220px 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.toolbar__actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+}
+
+@media (max-width: 960px) {
+  .toolbar {
+    grid-template-columns: 1fr;
+  }
+  .toolbar__actions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
 }
 </style>

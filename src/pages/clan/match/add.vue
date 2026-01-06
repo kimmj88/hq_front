@@ -116,6 +116,16 @@ async function createMatch() {
     return;
   }
 
+  if (!project_type.value.trim()) {
+    alert('Type을 선택해주세요');
+    return;
+  }
+
+  if (selectedUsers.value.length != 10) {
+    alert('10명을 선택 해야합니다.');
+    return;
+  }
+
   try {
     const response = await api.post(`${getBaseUrl('DATA')}/match/create`, {
       name: match_name.value,
