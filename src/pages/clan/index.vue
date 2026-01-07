@@ -663,7 +663,7 @@ onMounted(async () => {
 const serverItems = ref<Clan[]>([]);
 const totalItems = ref<number>(0);
 
-const itemsPerPage = ref<number>(10);
+const itemsPerPage = ref<number>(20);
 const page = ref<number>(1);
 
 type DataTableOptions = {
