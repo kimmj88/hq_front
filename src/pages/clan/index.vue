@@ -380,6 +380,7 @@ import gamosa from '@/assets/gamosa.png';
 import combat from '@/assets/combat.png';
 import maybe from '@/assets/maybe.png';
 import pop from '@/assets/pop.png';
+import lolbly from '@/assets/lolbly.png';
 
 const router = useRouter();
 const account = useAccountStore();
@@ -581,6 +582,8 @@ function cardBgStyle(clan: any) {
     source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75)), url(${maybe})`;
   } else if (clan.name == 'POP') {
     source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75)), url(${pop})`;
+  } else if (clan.name == '롤블리') {
+    source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75)), url(${lolbly})`;
   } else {
     source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75))`;
   }
