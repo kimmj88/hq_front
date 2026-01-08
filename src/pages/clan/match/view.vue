@@ -286,10 +286,25 @@
                 <template #title>
                   {{ item.raw.player.nickname }}#{{ item.raw.player.tagname }}
                 </template>
+
                 <template #subtitle>
                   Point {{ item.raw.player.point }} • {{ item.raw.player.tier.name }} ({{
                     item.raw.player.tier.point
                   }})
+                </template>
+
+                <template #append>
+                  <div class="d-flex flex-wrap" style="gap: 4px">
+                    <v-chip
+                      v-for="pos in item.raw.player.positions ?? []"
+                      :key="pos.id"
+                      size="x-small"
+                      color="primary"
+                      variant="tonal"
+                    >
+                      {{ pos.name }}
+                    </v-chip>
+                  </div>
                 </template>
               </v-list-item>
             </template>
