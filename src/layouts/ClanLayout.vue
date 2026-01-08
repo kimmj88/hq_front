@@ -1,6 +1,10 @@
 <template>
   <v-app>
-    <HeaderBar @toggle-drawer="drawerOpen = !drawerOpen" />
+    <HeaderBar
+      :drawer-open="drawerOpen"
+      :is-mobile="isMobile"
+      @toggle-drawer="drawerOpen = !drawerOpen"
+    />
 
     <v-layout>
       <v-navigation-drawer
@@ -163,12 +167,11 @@ const drawerOpen = ref(true);
 const drawerRail = ref(false);
 
 function toggleRail() {
-  // 모바일은 rail보다 그냥 닫는 게 UX 좋음
   if (isMobile.value) {
-    drawerOpen.value = false;
+    drawerOpen.value = false; // ✅ 모바일은 닫기
     return;
   }
-  drawerRail.value = !drawerRail.value;
+  drawerRail.value = !drawerRail.value; // ✅ 데스크탑은 rail 토글
 }
 
 async function leaveClan() {
