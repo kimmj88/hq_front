@@ -117,7 +117,7 @@
                 prepend-icon="mdi-map-marker"
                 @click="openPositionDialog"
               >
-                포지션 변경
+                희망 포지션 선택
               </v-btn>
             </div>
           </div>

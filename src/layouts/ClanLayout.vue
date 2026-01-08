@@ -1,38 +1,40 @@
 <template>
   <v-app>
-    <HeaderBar />
+    <HeaderBar @toggle-drawer="drawerOpen = !drawerOpen" />
+
     <v-layout>
-      <v-navigation-drawer width="280" permanent class="pa-2">
-        <v-card rounded="lg" variant="outlined" class="mb-2">
+      <v-navigation-drawer
+        v-model="drawerOpen"
+        :rail="drawerRail"
+        :rail-width="72"
+        width="280"
+        :permanent="!isMobile"
+        :temporary="isMobile"
+        class="pa-2"
+      >
+        <!-- ✅ drawer 상단에 토글 버튼 하나 추가 -->
+        <div class="d-flex justify-end mb-2">
+          <v-btn icon variant="text" density="comfortable" @click="toggleRail">
+            <v-icon>{{ drawerRail ? 'mdi-chevron-right' : 'mdi-chevron-left' }}</v-icon>
+          </v-btn>
+        </div>
+
+        <v-card rounded="lg" variant="outlined" class="mb-2" v-show="!drawerRail">
           <v-card-text>
             <div class="d-flex align-center justify-space-between">
               <div>
                 <div class="text-subtitle-1 font-weight-bold">
                   {{ account.clan.name }}
                 </div>
-                <!-- <div class="text-caption text-medium-emphasis">
-                  멤버 {{ clan.members }}/{{ clan.capacity }} · Lv. {{ clan.level }}
-                </div> -->
               </div>
 
               <v-chip size="small" label>{{ account.clanrole.name }}</v-chip>
-            </div>
-
-            <div class="mt-3 d-flex gap-2">
-              <!-- <v-btn
-                block
-                color="primary"
-                variant="tonal"
-                prepend-icon="mdi-share-variant"
-                @click="copyInvite"
-              >
-                초대코드
-              </v-btn> -->
             </div>
           </v-card-text>
         </v-card>
 
         <v-divider class="my-2" />
+
         <v-list nav density="comfortable">
           <v-list-item
             :active="section === 'notice'"
@@ -115,9 +117,11 @@
       </v-navigation-drawer>
 
       <v-main>
+        <!-- ✅ 모바일에서 본문 클릭 시 drawer 닫히게 하고 싶으면 옵션 -->
         <router-view />
       </v-main>
 
+      <!-- 기존 dialog 그대로 -->
       <v-dialog v-model="leaveDialog" max-width="460">
         <v-card rounded="xl">
           <v-card-title class="text-h6 font-weight-bold">클랜 탈퇴</v-card-title>
@@ -134,8 +138,9 @@
   </v-app>
 </template>
 
-<script lang="ts" setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue';
+import { useDisplay } from 'vuetify'; // ✅ 추가
 import HeaderBar from '@/components/header/Header.vue';
 import { can } from '@/stores/useClanPermissionStore';
 import { useAccountStore } from '@/stores/useAccountStore';
@@ -145,59 +150,26 @@ import { useRouter } from 'vue-router';
 import { CLAN_PATH } from '@/router/clan/type';
 
 const router = useRouter();
-
 const account = useAccountStore();
 
 const leaveDialog = ref(false);
 
-const menuItems = computed(() => {
-  const items = [];
+// ✅ Vuetify breakpoint
+const { smAndDown } = useDisplay();
+const isMobile = computed(() => smAndDown.value);
 
-  if (can('ACCOUNT', 'SYS-SET-ACC-R')) {
-    items.push({
-      title: 'Account',
-      icon: 'mdi-account-supervisor-circle',
-      to: '/config/account',
-    });
+// ✅ drawer open/close + rail(축소)
+const drawerOpen = ref(true);
+const drawerRail = ref(false);
+
+function toggleRail() {
+  // 모바일은 rail보다 그냥 닫는 게 UX 좋음
+  if (isMobile.value) {
+    drawerOpen.value = false;
+    return;
   }
-
-  if (can('PLAYER', 'SYS-SET-PLAYER-R')) {
-    items.push({
-      title: 'Player',
-      icon: 'mdi-gamepad-variant',
-      to: '/config/player',
-    });
-  }
-
-  if (can('TIER', 'SYS-SET-TIER-R')) {
-    items.push({
-      title: 'Tier',
-      icon: 'mdi-trophy-outline',
-      to: '/config/tier',
-    });
-  }
-
-  if (can('PROFILE', 'SYS-SET-PROFILE-R')) {
-    items.push({
-      title: 'Profile',
-      icon: 'mdi-id-card',
-      to: '/config/profile',
-    });
-  }
-
-  if (can('PERMISSION', 'SYS-SET-PMS-R')) {
-    items.push({
-      title: 'Permission',
-      icon: 'mdi-shield-lock-outline',
-      children: [
-        { title: 'System', icon: 'mdi-server-cog', to: '/config/permission/system' },
-        { title: 'Clan', icon: 'mdi-server-cog', to: '/config/permission/clan' },
-      ],
-    });
-  }
-
-  return items;
-});
+  drawerRail.value = !drawerRail.value;
+}
 
 async function leaveClan() {
   await api.post(`${getBaseUrl('DATA')}/account/leave_clan`, {
