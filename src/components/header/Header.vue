@@ -1,7 +1,9 @@
 <template>
   <v-container style="background-color: #1e1e2f; min-height: 60px" fluid>
     <v-btn v-if="isMobile" icon variant="text" @click="$emit('toggle-drawer')">
-      <v-icon>{{ drawerOpen ? 'mdi-close' : 'mdi-menu' }}</v-icon>
+      <v-icon>
+        {{ drawerOpen ? 'mdi-chevron-left' : 'mdi-chevron-right' }}
+      </v-icon>
     </v-btn>
     <v-row align="center" justify="center" style="position: relative">
       <!-- 로고 -->

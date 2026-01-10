@@ -115,6 +115,13 @@ const menuItems = computed(() => {
     });
   }
 
+  items.push({
+    key: 'clanmatch',
+    title: '클랜전',
+    icon: 'mdi-sword-cross',
+    to: '/clanmatch',
+  });
+
   return items;
 });
 </script>

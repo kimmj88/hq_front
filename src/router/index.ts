@@ -43,6 +43,14 @@ import Match from '@/pages/match/index.vue';
 import MatchAdd from '@/pages/match/add.vue';
 import MatchView from '@/pages/match/view.vue';
 
+//Clan Match
+import { CLAN_MATCH_PATH } from '@/router/clanmatch/index';
+import ExternalClanMatch from '@/pages/clanmatch/index.vue';
+import ExternalClanMatchAdd from '@/pages/clanmatch/add.vue';
+import ExternalClanMatchView from '@/pages/clanmatch/view.vue';
+//import MatchAdd from '@/pages/match/add.vue';
+//import MatchView from '@/pages/match/view.vue';
+
 //cup
 import { CUP_PATH } from '@/router/cup/type';
 import Cup from '@/pages/cup/index.vue';
@@ -196,6 +204,18 @@ const router = createRouter({
         { path: '', component: Match },
         { path: 'add', component: MatchAdd },
         { path: MATCH_PATH.VIEW(':id'), component: MatchView, props: true },
+      ],
+    },
+
+    {
+      path: '/clanmatch',
+      component: DefaultLayout,
+      children: [
+        { path: '/home', component: Home },
+        { path: '', component: ExternalClanMatch },
+        { path: 'add', component: ExternalClanMatchAdd },
+        { path: CLAN_MATCH_PATH.ACCEPT(':id'), component: ExternalClanMatchAdd },
+        { path: CLAN_MATCH_PATH.VIEW(':id'), component: ExternalClanMatchView },
       ],
     },
 

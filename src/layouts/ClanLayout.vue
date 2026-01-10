@@ -19,7 +19,9 @@
         <!-- ✅ drawer 상단에 토글 버튼 하나 추가 -->
         <div class="d-flex justify-end mb-2">
           <v-btn icon variant="text" density="comfortable" @click="toggleRail">
-            <v-icon>{{ drawerRail ? 'mdi-chevron-right' : 'mdi-chevron-left' }}</v-icon>
+            <v-icon>
+              {{ drawerOpen ? 'mdi-chevron-left' : 'mdi-chevron-right' }}
+            </v-icon>
           </v-btn>
         </div>
 
