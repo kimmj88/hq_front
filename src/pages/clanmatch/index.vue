@@ -211,6 +211,7 @@ const tierOptions = [
 ] as const;
 
 const statusOptions = [
+  { title: '전체', value: null },
   { title: '대기중', value: 'WAITING' },
   { title: '매칭됨', value: 'MATCHED' },
   { title: '완료', value: 'DONE' },
@@ -222,7 +223,7 @@ const statusOptions = [
 const items = ref<ClanMatch[]>([]);
 
 const filters = ref({
-  status: 'WAITING' as MatchStatus,
+  status: null as MatchStatus | null, // ✅ 전체 기본값이면 null
   tier: null as number | null,
   keyword: '',
 });
@@ -246,6 +247,13 @@ function statusColor(s: MatchStatus) {
   return 'warning';
 }
 
+const statusRank: Record<MatchStatus, number> = {
+  WAITING: 0,
+  MATCHED: 1,
+  DONE: 2,
+  CANCELLED: 3,
+};
+
 const filtered = computed(() => {
   return items.value
     .filter((m) => (filters.value.status ? m.status === filters.value.status : true))
@@ -255,7 +263,15 @@ const filtered = computed(() => {
       if (!k) return true;
       return (m.host_clan?.name ?? '').toLowerCase().includes(k);
     })
-    .sort((a, b) => a.match_at.localeCompare(b.match_at));
+    .sort((a, b) => {
+      // 1) 상태 우선 (WAITING 먼저)
+      const sa = statusRank[a.status] ?? 99;
+      const sb = statusRank[b.status] ?? 99;
+      if (sa !== sb) return sa - sb;
+
+      // 2) 같은 상태면 match_at 빠른 순
+      return a.match_at.localeCompare(b.match_at);
+    });
 });
 
 function canAccept(m: ClanMatch) {
@@ -326,6 +342,8 @@ async function loadItems(options: FetchParams) {
         options.page
       }&itemsPerPage=${options.itemsPerPage}&sortBy=${sortKey}&orderBy=${sortOrder}`
     );
+
+    debugger;
 
     loading.value = true;
     items.value = response.data.datas;
