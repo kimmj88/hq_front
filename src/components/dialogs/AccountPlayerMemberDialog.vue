@@ -142,6 +142,7 @@ const selectedUsers = ref<number[]>([]);
 
 const searchId = ref('');
 const searchTag = ref('');
+const puuid = ref<string>('');
 
 const tier = ref('');
 const rank = ref('');
@@ -181,10 +182,13 @@ async function searchPlayer() {
       { headers: { 'X-Riot-Token': 'RGAPI-ee1558af-f139-456c-aaf5-0e7b82135e35' } } // 브라우저에 키 노출됨(권장 X)
     );
 
-    const puuid = a.data.puuid;
+    const find_puuid = a.data.puuid;
 
+    debugger;
     const b = await axios.get(
-      `https://kr.api.riotgames.com/lol/league/v4/entries/by-puuid/${encodeURIComponent(puuid)}`,
+      `https://kr.api.riotgames.com/lol/league/v4/entries/by-puuid/${encodeURIComponent(
+        find_puuid
+      )}`,
       { headers: { 'X-Riot-Token': 'RGAPI-ee1558af-f139-456c-aaf5-0e7b82135e35' } }
     );
 
@@ -199,6 +203,7 @@ async function searchPlayer() {
 
           searched.value = true;
           lastKey.value = currentKey.value;
+          puuid.value = find_puuid;
           return;
         }
       }
@@ -207,6 +212,7 @@ async function searchPlayer() {
 
       searched.value = true;
       lastKey.value = currentKey.value;
+      puuid.value = find_puuid;
     }
   } catch (e) {
     console.error('라이엇 조회 실패', e);
@@ -249,6 +255,7 @@ async function handleAdd() {
     id: account.id,
     nickname: searchId.value,
     tagname: searchTag.value,
+    puuid: puuid.value,
     tier: {
       id: findID,
     },
