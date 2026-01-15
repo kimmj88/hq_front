@@ -55,7 +55,16 @@
               prepend-icon="mdi-refresh"
               @click="handleResetFilters"
             >
-              초기화
+              필터 초기화
+            </v-btn>
+
+            <v-btn
+              variant="tonal"
+              density="comfortable"
+              prepend-icon="mdi-refresh"
+              @click="handleResetFilters"
+            >
+              티어 갱신
             </v-btn>
 
             <PlayerMemberDialog v-if="can('PLAYER', 'CLAN-SET-PLAYER-C')" @added="handleAdd" />
@@ -372,6 +381,13 @@ interface FetchParams {
   sortBy: { key: keyof Account; order: 'asc' | 'desc' }[];
 }
 
+const lastOptions = ref<FetchParams>({
+  keyword: '',
+  page: 1,
+  itemsPerPage: itemsPerPage.value,
+  sortBy: [],
+});
+
 const edit = ref<{
   open: boolean;
   loading: boolean;
@@ -450,8 +466,17 @@ function getTierColor(tier: string): string {
   if (key.includes('challenger')) return '#007BFF';
   return 'black';
 }
+
 async function loadItems(options: FetchParams) {
   try {
+    // ✅ 마지막 호출 옵션 저장 (현재 page 유지 핵심)
+    lastOptions.value = {
+      ...options,
+      keyword: search.value, // keyword는 search를 기준으로 고정해도 됨
+      itemsPerPage: options.itemsPerPage ?? itemsPerPage.value,
+      sortBy: options.sortBy ?? [],
+    };
+
     const sortKey = options.sortBy[0]?.key || 'point';
     const sortOrder = options.sortBy[0]?.order || 'desc';
 
@@ -465,8 +490,6 @@ async function loadItems(options: FetchParams) {
         sortBy: sortKey,
         orderBy: sortOrder,
         clan: account.clan.name,
-
-        // ✅ 배열로 전송: tier=GOLD&tier=EMERALD...
         tier: selectedClanTierGroups.value.length ? selectedClanTierGroups.value : undefined,
       },
     });
@@ -482,10 +505,10 @@ async function loadItems(options: FetchParams) {
 
 function handleSearch() {
   loadItems({
+    ...lastOptions.value,
     keyword: search.value,
-    page: 1,
-    itemsPerPage: itemsPerPage.value,
-    sortBy: [],
+    // ✅ page는 lastOptions.value.page 유지
+    // page를 1로 보내고 싶은 경우만 별도 함수로 분리 추천
   });
 }
 
@@ -578,9 +601,10 @@ const clanTierGroupOptions = computed(() => {
   return Array.from(groups).map((g) => ({ title: g, value: g }));
 });
 
-function handleResetFilters() {
-  search.value = '';
-  selectedClanTierGroups.value = [];
+async function handleResetFilters() {
+  await api.post(`${getBaseUrl('DATA')}/player/all_refresh`, {
+    clan_id: account.clan.id,
+  });
   handleSearch();
 }
 
