@@ -199,15 +199,16 @@ const slots: { key: SlotKey; label: string; short: string; icon: string }[] = [
 ];
 
 const tierOptions = [
-  { title: '1티어', value: 1, desc: '그랜드마스터 · 챌린저' },
-  { title: '2티어', value: 2, desc: '마스터 · 챌린저' },
-  { title: '3티어', value: 3, desc: '다이아몬드 · 마스터' },
-  { title: '4티어', value: 4, desc: '에메랄드 · 다이아몬드' },
-  { title: '5티어', value: 5, desc: '플래티넘 · 에메랄드' },
-  { title: '6티어', value: 6, desc: '골드 · 플래티넘' },
-  { title: '7티어', value: 7, desc: '실버 · 골드' },
-  { title: '8티어', value: 8, desc: '브론즈 · 실버' },
+  { title: '무제한티어', value: 10, desc: '티어제한 없음' },
   { title: '9티어', value: 9, desc: '아이언 · 브론즈' },
+  { title: '8티어', value: 8, desc: '브론즈 · 실버' },
+  { title: '7티어', value: 7, desc: '실버 · 골드' },
+  { title: '6티어', value: 6, desc: '골드 · 플래티넘' },
+  { title: '5티어', value: 5, desc: '플래티넘 · 에메랄드' },
+  { title: '4티어', value: 4, desc: '에메랄드 · 다이아몬드' },
+  { title: '3티어', value: 3, desc: '다이아몬드 · 마스터' },
+  { title: '2티어', value: 2, desc: '마스터 · 챌린저' },
+  { title: '1티어', value: 1, desc: '그랜드마스터 · 챌린저' },
 ] as const;
 
 const statusOptions = [

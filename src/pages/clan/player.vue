@@ -614,8 +614,6 @@ async function refreshTier() {
 
     const res = await api.post(`${getBaseUrl('DATA')}/player/refresh`, {
       id: edit.value.form.id,
-      nickname: nick,
-      tagname: tag,
     });
 
     const clone = (v: any) => JSON.parse(JSON.stringify(v));

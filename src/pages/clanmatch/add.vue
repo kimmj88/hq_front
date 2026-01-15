@@ -62,6 +62,27 @@
         </v-col>
       </v-row>
 
+      <!-- 티어/시간 아래, v-divider 위쪽쯤 -->
+      <v-row dense class="mb-2">
+        <v-col cols="12">
+          <v-textarea
+            v-model="form.description"
+            label="설명 (선택)"
+            placeholder="예) 즐겜 / 노매너 금지 / 디코 필수 / 라인업 교체 가능 여부 등"
+            variant="outlined"
+            density="comfortable"
+            auto-grow
+            rows="3"
+            prepend-inner-icon="mdi-text-box-outline"
+            :disabled="false"
+            :counter="200"
+          />
+          <div class="text-caption text-medium-emphasis mt-1">
+            상대 클랜에게 보여줄 안내 문구를 작성하세요. (최대 200자)
+          </div>
+        </v-col>
+      </v-row>
+
       <v-divider class="my-4" />
 
       <!-- ===================== -->
@@ -227,15 +248,16 @@ const isCreate = computed(() => !matchId.value);
 type SlotKey = 'TOP' | 'JUG' | 'MID' | 'ADC' | 'SUP';
 
 const tierOptions = [
-  { title: '1티어 - 그랜드마스터 · 챌린저', value: 1, desc: '그랜드마스터 · 챌린저' },
-  { title: '2티어 - 마스터 · 챌린저', value: 2, desc: '마스터 · 챌린저' },
-  { title: '3티어 - 다이아몬드 · 마스터', value: 3, desc: '다이아몬드 · 마스터' },
-  { title: '4티어 - 에메랄드 · 다이아몬드', value: 4, desc: '에메랄드 · 다이아몬드' },
-  { title: '5티어 - 플래티넘 · 에메랄드', value: 5, desc: '플래티넘 · 에메랄드' },
-  { title: '6티어 - 골드 · 플래티넘', value: 6, desc: '골드 · 플래티넘' },
-  { title: '7티어 - 실버 · 골드', value: 7, desc: '실버 · 골드' },
-  { title: '8티어 - 브론즈 · 실버', value: 8, desc: '브론즈 · 실버' },
+  { title: '무제한티어', value: 10, desc: '티어제한 없음' },
   { title: '9티어 - 아이언 · 브론즈', value: 9, desc: '아이언 · 브론즈' },
+  { title: '8티어 - 브론즈 · 실버', value: 8, desc: '브론즈 · 실버' },
+  { title: '7티어 - 실버 · 골드', value: 7, desc: '실버 · 골드' },
+  { title: '6티어 - 골드 · 플래티넘', value: 6, desc: '골드 · 플래티넘' },
+  { title: '5티어 - 플래티넘 · 에메랄드', value: 5, desc: '플래티넘 · 에메랄드' },
+  { title: '4티어 - 에메랄드 · 다이아몬드', value: 4, desc: '에메랄드 · 다이아몬드' },
+  { title: '3티어 - 다이아몬드 · 마스터', value: 3, desc: '다이아몬드 · 마스터' },
+  { title: '2티어 - 마스터 · 챌린저', value: 2, desc: '마스터 · 챌린저' },
+  { title: '1티어 - 그랜드마스터 · 챌린저', value: 1, desc: '그랜드마스터 · 챌린저' },
 ];
 
 const slots: { key: SlotKey; label: string; short: string; icon: string }[] = [
@@ -252,6 +274,7 @@ const clanMatch = ref<ClanMatch>();
 const form = ref({
   tier: null as number | null,
   matchAt: '' as string,
+  description: '' as string, // ✅ 추가
   hostLineup: { TOP: null, JUG: null, MID: null, ADC: null, SUP: null } as Record<
     SlotKey,
     number | null
@@ -323,9 +346,10 @@ async function submitCreate() {
     const matchAt = new Date(form.value.matchAt).toISOString();
 
     const payload = {
-      host_clan_id: account.clan.id, // 또는 myClanId.value
+      host_clan_id: account.clan.id,
       match_at: matchAt,
       tier: form.value.tier,
+      description: form.value.description?.trim() || null, // ✅ 추가
       match_members: [
         { position: 'TOP', player_id: form.value.hostLineup.TOP },
         { position: 'JUG', player_id: form.value.hostLineup.JUG },

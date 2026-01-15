@@ -23,6 +23,17 @@
       </div>
     </v-card>
 
+    <v-card class="pa-4 mb-4" rounded="xl" elevation="2">
+      <div class="d-flex align-center mb-2" style="gap: 8px">
+        <v-icon size="18">mdi-text-box-outline</v-icon>
+        <div class="text-subtitle-2 font-weight-bold">설명</div>
+      </div>
+
+      <div class="text-body-2 text-medium-emphasis preserve">
+        {{ match.description }}
+      </div>
+    </v-card>
+
     <!-- 팀 카드 2개 -->
     <v-row dense>
       <!-- 우리팀 -->
@@ -333,6 +344,7 @@ type ApiClanMatchFind = {
   match_at: string;
   winner_team: number | null;
   tier: number;
+  description?: string | null; // ✅ 추가
   host_clan: ClanMini;
   guest_clan: ClanMini | null;
   host_member: Partial<Record<SlotKey, ApiMember>>;
@@ -356,6 +368,7 @@ const match = ref({
   tier: 0,
   is_confirm: false,
   match_at: '',
+  description: '',
   host_clan: { id: 0, name: '' },
   guest_clan: { id: 0, name: '' },
   host_member: {
@@ -389,8 +402,7 @@ onMounted(async () => {
     tier: cm.tier,
     match_at: cm.match_at,
     is_confirm: cm.is_confirm,
-    // ✅ 화면에서 home/away로 보여주고 싶으면 여기서 결정
-    // 지금은 "HOME=host, AWAY=guest"로 고정
+    description: cm.description ?? '', // ✅ 추가
     host_clan: cm.host_clan,
     guest_clan: cm.guest_clan ?? { id: 0, name: '상대 미정' },
 
@@ -461,5 +473,10 @@ onMounted(async () => {
 
 .clickable:hover {
   opacity: 0.9;
+}
+
+.preserve {
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 </style>
