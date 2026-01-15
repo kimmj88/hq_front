@@ -57,7 +57,7 @@
             >
               필터 초기화
             </v-btn>
-
+            <!-- 
             <v-btn
               variant="tonal"
               density="comfortable"
@@ -65,7 +65,7 @@
               @click="handleResetFilters"
             >
               티어 갱신
-            </v-btn>
+            </v-btn> -->
 
             <PlayerMemberDialog v-if="can('PLAYER', 'CLAN-SET-PLAYER-C')" @added="handleAdd" />
           </div>

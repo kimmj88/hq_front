@@ -13,6 +13,11 @@ const messages = {
         delete: '삭제',
       },
     },
+    profile: {
+      config: '설정',
+      account: '마이페이지',
+      logout: '로그아웃',
+    },
     validation: {
       field: {
         required: 'This field is required.',

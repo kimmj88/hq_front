@@ -38,7 +38,7 @@
               <template #prepend>
                 <v-icon>mdi-cog</v-icon>
               </template>
-              <v-list-item-title>Config</v-list-item-title>
+              <v-list-item-title>{{ $t('profile.config') }}</v-list-item-title>
             </v-list-item>
 
             <v-list-item
@@ -49,14 +49,14 @@
               <template #prepend>
                 <v-icon>mdi-account-circle-outline</v-icon>
               </template>
-              <v-list-item-title>My Account</v-list-item-title>
+              <v-list-item-title>{{ $t('profile.account') }}</v-list-item-title>
             </v-list-item>
 
             <v-list-item v-if="account.isLoggedIn" @click="logout">
               <template #prepend>
                 <v-icon>mdi-logout</v-icon>
               </template>
-              <v-list-item-title>Logout</v-list-item-title>
+              <v-list-item-title>{{ $t('profile.logout') }}</v-list-item-title>
             </v-list-item>
             <v-list-item v-else :to="'/login'">
               <template #prepend>
