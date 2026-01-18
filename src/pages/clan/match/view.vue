@@ -132,7 +132,7 @@
       <v-simple-table class="text-center full-width-table" style="max-width: 1000px">
         <thead>
           <tr>
-            <th v-if="match?.type === 'POSITION'">Position</th>
+            <th>Position</th>
             <th>1팀</th>
             <th>Point</th>
             <th>Tier Point</th>
@@ -141,12 +141,12 @@
             <th>Tier Point</th>
             <th>Point</th>
             <th>2팀</th>
-            <th v-if="match?.type === 'POSITION'">Position</th>
+            <th>Position</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="i in team1.length" :key="i">
-            <td v-if="match?.type === 'POSITION'">
+            <td>
               <div class="pos-icon-wrapper">
                 <v-img :src="getPositionIcon(team1[i - 1].position)" width="26" height="26" cover />
               </div>
@@ -180,7 +180,7 @@
               />
             </td>
             <td>{{ team1[i - 1]?.player.point }}</td>
-            <td>{{ team1[i - 1]?.player.tier.point }}</td>
+            <td>{{ team1[i - 1]?.player.tier.point + team1[i - 1]?.player.point }}</td>
             <td>
               <span
                 :style="{
@@ -201,7 +201,7 @@
                 {{ team2[i - 1]?.player.tier.name }}
               </span>
             </td>
-            <td>{{ team2[i - 1]?.player?.tier.point }}</td>
+            <td>{{ team2[i - 1]?.player?.tier.point + team2[i - 1]?.player?.point }}</td>
             <td>{{ team2[i - 1]?.player?.point }}</td>
             <td>
               <v-btn
@@ -232,7 +232,7 @@
               />
             </td>
 
-            <td v-if="match?.type === 'POSITION'">
+            <td>
               <div class="pos-icon-wrapper">
                 <v-img :src="getPositionIcon(team2[i - 1].position)" width="26" height="26" cover />
               </div>
@@ -467,25 +467,44 @@ function getTierColor(tier: string): string {
 }
 
 // 기존 셔플
+const ROW_POSITIONS = ['TOP', 'JUG', 'MID', 'ADC', 'SUP'] as const;
+
 function shuffleTeams() {
-  // POSITION 모드가 아닐 땐 기존 로직 그대로
+  // ✅ 랜덤모드 (POSITION 아님)
   if (match.value?.type !== 'POSITION') {
-    const combined = [...team1.value, ...team2.value];
-    for (let i = combined.length - 1; i > 0; i--) {
+    // 1) 현재 배치된 player만 10명 모음
+    const players = [...team1.value, ...team2.value]
+      .map((m) => m.player)
+      .filter((p) => p?.id && p.id !== 0); // empty 제거
+
+    // 2) fisher-yates shuffle
+    for (let i = players.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [combined[i], combined[j]] = [combined[j], combined[i]];
+      [players[i], players[j]] = [players[j], players[i]];
     }
-    team1.value = combined.slice(0, 5);
-    team2.value = combined.slice(5, 10);
+
+    // 3) position은 고정, player만 재배치
+    team1.value = ROW_POSITIONS.map((pos, idx) => ({
+      ...team1.value[idx], // 기존 슬롯 유지
+      position: pos as any, // ✅ 아이콘 고정
+      player: players[idx] ?? emptyMember().player,
+    }));
+
+    team2.value = ROW_POSITIONS.map((pos, idx) => ({
+      ...team2.value[idx],
+      position: pos as any, // ✅ 아이콘 고정
+      player: players[idx + 5] ?? emptyMember().player,
+    }));
+
+    updateTotals();
     return;
   }
 
-  // POSITION 모드면 포지션별로 50% 확률로 팀만 교체
+  // ✅ POSITION 모드 로직은 기존 그대로
   for (const pos of POSITIONS) {
     const idx1 = team1.value.findIndex((m) => m.position === pos);
     const idx2 = team2.value.findIndex((m) => m.position === pos);
 
-    // 두 팀에 해당 포지션이 존재해야만 교체 시도
     if (idx1 !== -1 && idx2 !== -1) {
       const swap = Math.random() < 0.5;
       if (swap) {
@@ -506,13 +525,12 @@ function onShot() {
 }
 
 async function fetch() {
+  // POSITIONS 로딩(기존 그대로)
+  POSITIONS.length = 0; // ✅ 중복 방지(페이지 재진입 대비)
   const positionData = await api.post(`${getBaseUrl('DATA')}/codedict/list`, {
     group: 'LOL_POSITION',
   });
-
-  for (const item of positionData.data.datas) {
-    POSITIONS.push(item.value);
-  }
+  for (const item of positionData.data.datas) POSITIONS.push(item.value);
 
   const { data } = await api.get(`${getBaseUrl('DATA')}/match/find?id=${route.params.id}`);
   match.value = data.datas as Match;
@@ -520,21 +538,33 @@ async function fetch() {
   isConfirmed.value = truthy(match.value?.is_confirm);
   winnerTeam.value = (match.value?.winner_team ?? null) as number | null;
 
-  if (match.value.type === 'POSITION') {
-    // 후보 풀
-    allPositionMembers.value = data.datas.match_members;
+  const members: MatchMember[] = data.datas.match_members ?? [];
 
-    if (match.value.is_confirm) {
-      for (let i = 0; i < 5; i++) team1.value[i] = data.datas.match_members[i] ?? null;
-      for (let i = 0; i < 5; i++) team2.value[i] = data.datas.match_members[i + 5] ?? null;
+  // ✅ POSITION 모드
+  if (match.value?.type === 'POSITION') {
+    allPositionMembers.value = members;
+
+    if (truthy(match.value?.is_confirm)) {
+      // 서버가 확정된 10명을 내려주는 케이스
+      team1.value = members.slice(0, 5);
+      team2.value = members.slice(5, 10);
     } else {
-      // 팀 슬롯을 포지션 순서대로 비워서 생성
+      // 확정 전: 포지션 슬롯만 만들고 비워둠
       team1.value = POSITIONS.map((p) => emptyMemberWithPos(p));
       team2.value = POSITIONS.map((p) => emptyMemberWithPos(p));
     }
-  } else {
-    for (let i = 0; i < 5; i++) team1.value[i] = data.datas.match_members[i] ?? null;
-    for (let i = 0; i < 5; i++) team2.value[i] = data.datas.match_members[i + 5] ?? null;
+  }
+  // ✅ 랜덤(기본) 모드
+  else {
+    team1.value = ROW_POSITIONS.map((pos, idx) => {
+      const m = members[idx] ?? emptyMember();
+      return { ...m, position: pos as any }; // ✅ 아이콘용 포지션 강제
+    });
+
+    team2.value = ROW_POSITIONS.map((pos, idx) => {
+      const m = members[idx + 5] ?? emptyMember();
+      return { ...m, position: pos as any };
+    });
   }
 
   updateTotals();
