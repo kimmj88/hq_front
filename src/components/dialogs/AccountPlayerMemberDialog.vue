@@ -184,7 +184,6 @@ async function searchPlayer() {
 
     const find_puuid = a.data.puuid;
 
-    debugger;
     const b = await axios.get(
       `https://kr.api.riotgames.com/lol/league/v4/entries/by-puuid/${encodeURIComponent(
         find_puuid

@@ -422,6 +422,21 @@ const positionIconMap: Record<string, string> = {
   SUP: supIcon,
 };
 
+function orderKey(m: MatchMember): number {
+  const raw: any = (m as any).order;
+
+  // 숫자면 바로
+  const n = Number(raw);
+  if (!Number.isNaN(n)) return n;
+
+  // 문자열에서 숫자만 추출 (ex: "ORDER_3" -> 3)
+  const digits = String(raw ?? '').match(/\d+/)?.[0];
+  if (digits) return Number(digits);
+
+  // 없으면 맨 뒤로
+  return 9999;
+}
+
 function getPositionIcon(pos?: string) {
   if (!pos) return '';
   return positionIconMap[pos] ?? '';
@@ -556,13 +571,15 @@ async function fetch() {
   }
   // ✅ 랜덤(기본) 모드
   else {
+    const membersSorted = [...members].sort((a, b) => orderKey(a) - orderKey(b));
+
     team1.value = ROW_POSITIONS.map((pos, idx) => {
-      const m = members[idx] ?? emptyMember();
-      return { ...m, position: pos as any }; // ✅ 아이콘용 포지션 강제
+      const m = membersSorted[idx] ?? emptyMember();
+      return { ...m, position: pos as any };
     });
 
     team2.value = ROW_POSITIONS.map((pos, idx) => {
-      const m = members[idx + 5] ?? emptyMember();
+      const m = membersSorted[idx + 5] ?? emptyMember();
       return { ...m, position: pos as any };
     });
   }
@@ -615,6 +632,7 @@ async function handleConfirm() {
     await api.post(`${getBaseUrl('DATA')}/match/update`, {
       id: +route.params.id,
       is_confirm: true,
+      type: match.value?.type,
       match_members,
     });
 

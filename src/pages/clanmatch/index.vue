@@ -344,8 +344,6 @@ async function loadItems(options: FetchParams) {
       }&itemsPerPage=${options.itemsPerPage}&sortBy=${sortKey}&orderBy=${sortOrder}`
     );
 
-    debugger;
-
     loading.value = true;
     items.value = response.data.datas;
     totalItems.value = response.data.totalCount;

@@ -270,7 +270,6 @@ function mapRow(row: any): TopPlayer {
   let nickname = row.nickname ?? '';
   let tagname = row.tagname ?? '';
 
-  debugger;
   if (nickname && !tagname && nickname.includes('#')) {
     const sp = splitNickTag(nickname);
     nickname = sp.nick;
@@ -315,8 +314,6 @@ async function fetchDashboard2() {
   const res = await api.get(`${getBaseUrl('DATA')}/Clan/dashboard_2`, {
     params: { clan_id: clanId },
   });
-
-  debugger;
 
   const rows = res.data?.datas ?? [];
   topRankList.value = rows.map(mapRow);

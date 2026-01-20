@@ -269,7 +269,6 @@ function handleSearch() {
 }
 
 async function leaveClan(item: any) {
-  debugger;
   await api.post(`${getBaseUrl('DATA')}/account/leave_clan`, {
     id: item.id,
     clan_id: null,

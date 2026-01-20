@@ -401,7 +401,6 @@ function toDatetimeLocal(iso: string) {
 }
 
 onMounted(async () => {
-  debugger;
   if (isEdit.value == true) {
     const { data } = await api.get(`${getBaseUrl('DATA')}/clanmatch/find?id=${route.params.id}`);
     clanMatch.value = data.datas;

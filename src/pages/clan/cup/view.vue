@@ -448,7 +448,6 @@ async function onEdited(position: string, oldPlayer: any, newPlayer: Player) {
 
 /* 선택 콜백 */
 async function onAdded(payload: { users: Player[]; label: string }) {
-  debugger;
   const pos = payload.label;
   const prev = selectedByPosition[pos] ?? [];
 
