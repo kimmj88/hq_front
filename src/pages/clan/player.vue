@@ -617,7 +617,7 @@ async function refreshTier() {
     });
 
     const clone = (v: any) => JSON.parse(JSON.stringify(v));
-    selectedTier.value = clone(res.data.datas.tier ?? null);
+    selectedTier.value = clone(res.data.datas ?? null);
   } catch (e) {
     console.error(e);
   } finally {
