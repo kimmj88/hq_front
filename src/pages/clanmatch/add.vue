@@ -274,7 +274,9 @@ const clanMatch = ref<ClanMatch>();
 const form = ref({
   tier: null as number | null,
   matchAt: '' as string,
-  description: '' as string, // ✅ 추가
+  description: `- 티어 기준: 2024년부터~현재까지 최대 탑레이팅 
+- 세트 방식 : 3판2선 or 5판3선 ---> (택 1) 
+- 경기 규칙 : 하드피어리스 or 소프트피어리스 ---> (택 1) ` as string, // ✅ 추가
   hostLineup: { TOP: null, JUG: null, MID: null, ADC: null, SUP: null } as Record<
     SlotKey,
     number | null
