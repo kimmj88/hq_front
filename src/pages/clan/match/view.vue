@@ -157,7 +157,7 @@
                 small
                 block
                 class="text-wrap"
-                :disabled="isConfirmed || match?.type !== 'POSITION'"
+                :disabled="isConfirmed"
                 @click="openPlayerPicker('t1', i - 1)"
               >
                 {{
@@ -209,7 +209,7 @@
                 small
                 block
                 class="text-wrap"
-                :disabled="isConfirmed || match?.type !== 'POSITION'"
+                :disabled="isConfirmed"
                 @click="openPlayerPicker('t2', i - 1)"
               >
                 {{
@@ -554,6 +554,7 @@ async function fetch() {
   winnerTeam.value = (match.value?.winner_team ?? null) as number | null;
 
   const members: MatchMember[] = data.datas.match_members ?? [];
+  allPositionMembers.value = members;
 
   // ✅ POSITION 모드
   if (match.value?.type === 'POSITION') {
