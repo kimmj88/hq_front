@@ -127,6 +127,20 @@
         <template #no-data>
           <div class="pa-6 text-center text-medium-emphasis">표시할 전적 데이터가 없습니다.</div>
         </template>
+
+        <template #item.cup_count="{ item }">
+          <div class="award-stat award-stat--major">
+            <v-icon class="award-icon trophy-float">mdi-trophy</v-icon>
+            <span>{{ item.cup_count }}</span>
+          </div>
+        </template>
+
+        <template #item.sub_cup_count="{ item }">
+          <div class="award-stat award-stat--minor">
+            <v-icon class="award-icon medal-pulse">mdi-medal</v-icon>
+            <span>{{ item.sub_cup_count }}</span>
+          </div>
+        </template>
       </v-data-table>
     </v-card>
   </v-container>
@@ -148,13 +162,15 @@ type PlayerRecord = {
   winRate: number;
   point: number;
   tierName?: string;
+  cup_count: number;
+  sub_cup_count: number;
 };
 
 const account = useAccountStore();
 const loading = ref(false);
 
 const search = ref('');
-const sortKey = ref('winRate');
+const sortKey = ref('totalMatchCount');
 
 const sortOptions = [
   { label: '승률순', value: 'winRate' },
@@ -171,6 +187,8 @@ const headers = [
   { title: '승', key: 'winCount', align: 'center' as const },
   { title: '패', key: 'loseCount', align: 'center' as const },
   { title: '승률', key: 'winRate', align: 'center' as const },
+  { title: '난전 우승', key: 'cup_count', align: 'center' as const },
+  { title: '경매내전 우승', key: 'sub_cup_count', align: 'center' as const },
 ];
 
 const recordList = ref<PlayerRecord[]>([]);
@@ -261,7 +279,59 @@ onMounted(fetchPlayerRecords);
   background: rgba(255, 255, 255, 0.03);
 }
 
-.record-table :deep(tbody tr) {
-  cursor: default;
+.award-stat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-weight: 700;
+}
+
+.award-stat--major .award-icon {
+  color: #ffca28;
+  filter: drop-shadow(0 0 6px rgba(255, 202, 40, 0.35));
+}
+
+.award-stat--minor .award-icon {
+  color: #90caf9;
+  filter: drop-shadow(0 0 6px rgba(144, 202, 249, 0.25));
+}
+
+.trophy-float {
+  animation: trophyFloat 1.8s ease-in-out infinite;
+}
+
+.medal-pulse {
+  animation: medalPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes trophyFloat {
+  0% {
+    transform: translateY(0);
+    opacity: 0.9;
+  }
+  50% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 0.9;
+  }
+}
+
+@keyframes medalPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
 }
 </style>

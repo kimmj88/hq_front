@@ -43,6 +43,13 @@
 
         <v-list nav density="comfortable">
           <v-list-item
+            :active="section === 'home'"
+            prepend-icon="mdi-home"
+            title="홈"
+            :to="CLAN_PATH.VIEW(account.clan.name)"
+            @click="section = 'home'"
+          />
+          <v-list-item
             :active="section === 'notice'"
             prepend-icon="mdi-bullhorn-outline"
             title="공지 사항"
