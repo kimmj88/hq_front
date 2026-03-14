@@ -129,15 +129,27 @@
         </template>
 
         <template #item.cup_count="{ item }">
-          <div class="award-stat award-stat--major">
-            <v-icon class="award-icon trophy-float">mdi-trophy</v-icon>
+          <div class="award-stat">
+            <v-icon
+              size="40"
+              class="award-icon"
+              :class="item.cup_count > 0 ? 'trophy-float trophy-on' : 'award-off'"
+            >
+              mdi-trophy
+            </v-icon>
             <span>{{ item.cup_count }}</span>
           </div>
         </template>
 
         <template #item.sub_cup_count="{ item }">
           <div class="award-stat award-stat--minor">
-            <v-icon class="award-icon medal-pulse">mdi-medal</v-icon>
+            <v-icon
+              size="25"
+              class="award-icon"
+              :class="item.sub_cup_count > 0 ? 'medal-pulse medal-on' : 'award-off'"
+            >
+              mdi-medal
+            </v-icon>
             <span>{{ item.sub_cup_count }}</span>
           </div>
         </template>
@@ -303,6 +315,25 @@ onMounted(fetchPlayerRecords);
 
 .medal-pulse {
   animation: medalPulse 1.8s ease-in-out infinite;
+}
+
+.trophy-on {
+  color: #ffca28;
+  filter: drop-shadow(0 0 6px rgba(255, 202, 40, 0.35));
+}
+.award-off {
+  color: #666;
+  opacity: 0.5;
+}
+
+.medal-on {
+  color: #90caf9;
+  filter: drop-shadow(0 0 6px rgba(144, 202, 249, 0.25));
+}
+
+.award-off {
+  color: #666;
+  opacity: 0.4;
 }
 
 @keyframes trophyFloat {
