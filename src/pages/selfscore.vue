@@ -381,9 +381,9 @@ function getTierScore(tier: string, rank: string, lp: number, position: Position
 
 function getGamePenalty(totalGames: number): number {
   let score = 0;
-  if (totalGames >= 300) score += 0.8;
-  if (totalGames >= 200) score += 0.6;
-  if (totalGames >= 100) score += 0.3;
+  if (totalGames >= 300) score += -0.8;
+  if (totalGames >= 200) score += -0.6;
+  if (totalGames >= 100) score += -0.3;
 
   return score;
 }
@@ -452,6 +452,7 @@ async function searchPlayer() {
     }
 
     const penalty = soloPanalty + maincupPanalty + subcupPanalty + soloCountPanalty;
+    debugger;
 
     const finalScore = Number((tierScore + penalty).toFixed(1));
 
