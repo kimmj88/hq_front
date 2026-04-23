@@ -144,15 +144,19 @@
             </div> -->
             <div class="info-row">
               <span class="label">솔로랭크 판수 어드벤티지</span>
-              <span class="value">{{ result.soloPanalty }}</span>
+              <span class="value">- {{ result.soloPanalty }}</span>
             </div>
             <div class="info-row">
               <span class="label">난전 우승 패널티</span>
-              <span class="value">{{ result.maincupPanalty }}</span>
+              <span class="value">+ {{ result.maincupPanalty }}</span>
             </div>
             <div class="info-row">
               <span class="label">경매 우승 패널티</span>
-              <span class="value">{{ result.subcupPanalty }}</span>
+              <span class="value">+ {{ result.subcupPanalty }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">솔로랭크 100판이하 패널티</span>
+              <span class="value">+ {{ result.soloCountPanalty }}</span>
             </div>
           </v-col>
 
@@ -187,11 +191,15 @@
         </v-list-item>
         <v-list-item>
           <template #prepend><v-icon icon="mdi-circle-small" /></template>
-          <v-list-item-title>난전우승 1회당 +2.5</v-list-item-title>
+          <v-list-item-title>난전우승 패널티 1회당 +2.5</v-list-item-title>
         </v-list-item>
         <v-list-item>
           <template #prepend><v-icon icon="mdi-circle-small" /></template>
-          <v-list-item-title>경매내전 1회당 1.1</v-list-item-title>
+          <v-list-item-title>경매내전 패널티 1회당 1.1 최대3회 까지만</v-list-item-title>
+        </v-list-item>
+        <v-list-item>
+          <template #prepend><v-icon icon="mdi-circle-small" /></template>
+          <v-list-item-title>솔로랭크 패널티 100판이하 + 2</v-list-item-title>
         </v-list-item>
       </v-list>
     </v-card>
@@ -221,6 +229,7 @@ type ScoreResult = {
   updatedAt: string;
 
   soloPanalty: number;
+  soloCountPanalty: number;
   maincupPanalty: number;
   subcupPanalty: number;
 };
@@ -278,28 +287,28 @@ const tierScoreTable: Record<string, Record<PositionKey, number>> = {
   '마/그/챌 100 ~ 199': { TOP: 39.1, JUNGLE: 39.4, MID: 41.3, ADC: 38.3, SUP: 34 },
   '마/그/챌 0 ~ 99': { TOP: 37.4, JUNGLE: 38.2, MID: 39.8, ADC: 36.1, SUP: 33.1 },
 
-  다이아1: { TOP: 35.7, JUNGLE: 36.8, MID: 38.7, ADC: 34, SUP: 32.2 },
-  다이아2: { TOP: 33.8, JUNGLE: 34.8, MID: 38, ADC: 32.1, SUP: 31.3 },
-  다이아3: { TOP: 31.6, JUNGLE: 32.5, MID: 37.1, ADC: 29.7, SUP: 30.3 },
-  다이아4: { TOP: 30.3, JUNGLE: 30.7, MID: 35.4, ADC: 27.6, SUP: 29.3 },
+  다이아1: { TOP: 35.7, JUNGLE: 36.8, MID: 36.7, ADC: 34, SUP: 32.2 },
+  다이아2: { TOP: 33.8, JUNGLE: 34.8, MID: 36, ADC: 32.1, SUP: 31.3 },
+  다이아3: { TOP: 31.6, JUNGLE: 32.5, MID: 35.1, ADC: 29.7, SUP: 30.3 },
+  다이아4: { TOP: 30.3, JUNGLE: 30.7, MID: 33.4, ADC: 27.6, SUP: 29.3 },
 
-  에메랄드1: { TOP: 28.6, JUNGLE: 28.8, MID: 34.6, ADC: 25.7, SUP: 28.2 },
-  에메랄드2: { TOP: 27.3, JUNGLE: 26.6, MID: 33, ADC: 24.3, SUP: 27 },
-  에메랄드3: { TOP: 26.5, JUNGLE: 24.8, MID: 31.8, ADC: 22.8, SUP: 26 },
-  에메랄드4: { TOP: 26, JUNGLE: 23.4, MID: 29.6, ADC: 21.6, SUP: 25.1 },
+  에메랄드1: { TOP: 28.6, JUNGLE: 28.8, MID: 32.6, ADC: 25.7, SUP: 28.2 },
+  에메랄드2: { TOP: 27.3, JUNGLE: 26.6, MID: 31, ADC: 24.3, SUP: 27 },
+  에메랄드3: { TOP: 26.5, JUNGLE: 24.8, MID: 29.8, ADC: 22.8, SUP: 26 },
+  에메랄드4: { TOP: 26, JUNGLE: 23.4, MID: 27.6, ADC: 21.6, SUP: 25.1 },
 
-  플래티넘1: { TOP: 25.2, JUNGLE: 21.9, MID: 27.1, ADC: 20.3, SUP: 24.2 },
-  플래티넘2: { TOP: 24.7, JUNGLE: 20.5, MID: 24.3, ADC: 18.7, SUP: 22.8 },
-  플래티넘3: { TOP: 24, JUNGLE: 19.3, MID: 22.7, ADC: 17.5, SUP: 22 },
-  플래티넘4: { TOP: 21.2, JUNGLE: 18.1, MID: 21.1, ADC: 16.4, SUP: 21.2 },
+  플래티넘1: { TOP: 25.2, JUNGLE: 21.9, MID: 25.1, ADC: 20.3, SUP: 24.2 },
+  플래티넘2: { TOP: 24.7, JUNGLE: 20.5, MID: 22.3, ADC: 18.7, SUP: 22.8 },
+  플래티넘3: { TOP: 24, JUNGLE: 19.3, MID: 20.7, ADC: 17.5, SUP: 22 },
+  플래티넘4: { TOP: 21.2, JUNGLE: 18.1, MID: 20.1, ADC: 16.4, SUP: 21.2 },
 
-  골드1: { TOP: 19, JUNGLE: 16.7, MID: 19.7, ADC: 15.1, SUP: 20.5 },
-  골드2: { TOP: 17.7, JUNGLE: 14.7, MID: 17.8, ADC: 13.4, SUP: 19.1 },
-  골드3: { TOP: 15.9, JUNGLE: 13.8, MID: 16.8, ADC: 12.6, SUP: 18.3 },
-  골드4: { TOP: 14.6, JUNGLE: 12.8, MID: 15.9, ADC: 11.9, SUP: 17.6 },
+  골드1: { TOP: 19, JUNGLE: 16.7, MID: 18.7, ADC: 15.1, SUP: 20.5 },
+  골드2: { TOP: 17.7, JUNGLE: 14.7, MID: 15.8, ADC: 13.4, SUP: 19.1 },
+  골드3: { TOP: 15.9, JUNGLE: 13.8, MID: 14.8, ADC: 12.6, SUP: 18.3 },
+  골드4: { TOP: 14.6, JUNGLE: 12.8, MID: 13.9, ADC: 11.9, SUP: 17.6 },
 
-  실버1: { TOP: 13, JUNGLE: 11.9, MID: 14.8, ADC: 11.3, SUP: 16.7 },
-  실버2: { TOP: 12, JUNGLE: 11, MID: 13.9, ADC: 10.6, SUP: 15.9 },
+  실버1: { TOP: 13, JUNGLE: 11.9, MID: 12.8, ADC: 11.3, SUP: 16.7 },
+  실버2: { TOP: 12, JUNGLE: 11, MID: 11.9, ADC: 10.6, SUP: 15.9 },
   '실버3 이하': { TOP: 11, JUNGLE: 10, MID: 13, ADC: 10, SUP: 15 },
 };
 
@@ -375,6 +384,7 @@ function getGamePenalty(totalGames: number): number {
   if (totalGames >= 300) score += 0.8;
   if (totalGames >= 200) score += 0.6;
   if (totalGames >= 100) score += 0.3;
+
   return score;
 }
 
@@ -432,9 +442,16 @@ async function searchPlayer() {
 
     const soloPanalty = getGamePenalty(totalGames);
     const maincupPanalty = res.data.datas[0].cup_count * 2.5;
-    const subcupPanalty = res.data.datas[0].sub_cup_count * 1.1;
+    let subcupPanalty = 0;
+    const soloCountPanalty = totalGames < 100 ? 2 : 0;
 
-    const penalty = soloPanalty + maincupPanalty + subcupPanalty;
+    if (res.data.datas[0].sub_cup_count >= 3) {
+      subcupPanalty = 3 * 1.1;
+    } else {
+      subcupPanalty = res.data.datas[0].sub_cup_count * 1.1;
+    }
+
+    const penalty = soloPanalty + maincupPanalty + subcupPanalty + soloCountPanalty;
 
     const finalScore = Number((tierScore + penalty).toFixed(1));
 
@@ -451,6 +468,7 @@ async function searchPlayer() {
       peakRank: solo.rank,
       peakLp: Number(solo.leaguePoints),
       soloPanalty: soloPanalty,
+      soloCountPanalty: totalGames < 100 ? 2 : 0,
       maincupPanalty: maincupPanalty,
       subcupPanalty: subcupPanalty,
       peakScore: finalScore,
