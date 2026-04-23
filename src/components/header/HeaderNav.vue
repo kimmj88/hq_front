@@ -122,6 +122,13 @@ const menuItems = computed(() => {
     to: '/clanmatch',
   });
 
+  items.push({
+    key: 'selfscore',
+    title: '멸망전',
+    icon: 'mdi-sword-cross',
+    to: '/selfscore',
+  });
+
   return items;
 });
 </script>

@@ -61,6 +61,9 @@ import Bracket from '@/pages/cup/bracket.vue';
 //Login
 import Login from '@/pages/login/index.vue';
 
+//SelfScore
+import SelfScore from '@/pages/selfscore.vue';
+
 //Exception
 import Exception from '@/pages/exception/Exception.vue';
 
@@ -283,6 +286,15 @@ const router = createRouter({
         { path: '/home', component: Home },
         { path: '', component: Clan },
         { path: 'myclan', component: MyClan, props: true },
+      ],
+    },
+
+    {
+      path: '/selfscore',
+      component: DefaultLayout,
+      children: [
+        { path: '/home', component: Home },
+        { path: '', component: SelfScore },
       ],
     },
 
