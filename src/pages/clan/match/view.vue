@@ -380,6 +380,54 @@
 </template>
 
 <script lang="ts" setup>
+const TIER_SCORE_MASTER = [
+  { tier: 'CHALLENGER', top: 1800, jungle: 1850, mid: 1820, adc: 1830, support: 1720 },
+  { tier: 'GRANDMASTER', top: 1300, jungle: 1350, mid: 1320, adc: 1330, support: 1220 },
+
+  // MASTER는 기존 LP 구간 점수를 그대로 사용
+  { tier: 'MASTER', top: 1250, jungle: 1300, mid: 1270, adc: 1280, support: 1180 },
+  { tier: 'MASTER', top: 1175, jungle: 1225, mid: 1195, adc: 1205, support: 1110 },
+  { tier: 'MASTER', top: 1100, jungle: 1150, mid: 1120, adc: 1130, support: 1040 },
+  { tier: 'MASTER', top: 1000, jungle: 1050, mid: 1020, adc: 1030, support: 960 },
+
+  { tier: 'DIAMOND I', top: 930, jungle: 970, mid: 945, adc: 955, support: 900 },
+  { tier: 'DIAMOND II', top: 890, jungle: 930, mid: 905, adc: 915, support: 865 },
+  { tier: 'DIAMOND III', top: 850, jungle: 890, mid: 865, adc: 875, support: 830 },
+  { tier: 'DIAMOND IV', top: 810, jungle: 850, mid: 825, adc: 835, support: 795 },
+
+  { tier: 'EMERALD I', top: 760, jungle: 795, mid: 775, adc: 785, support: 745 },
+  { tier: 'EMERALD II', top: 730, jungle: 765, mid: 745, adc: 755, support: 715 },
+  { tier: 'EMERALD III', top: 700, jungle: 735, mid: 715, adc: 725, support: 685 },
+  { tier: 'EMERALD IV', top: 670, jungle: 705, mid: 685, adc: 695, support: 655 },
+
+  { tier: 'PLATINUM I', top: 630, jungle: 660, mid: 645, adc: 650, support: 615 },
+  { tier: 'PLATINUM II', top: 605, jungle: 635, mid: 620, adc: 625, support: 590 },
+  { tier: 'PLATINUM III', top: 580, jungle: 610, mid: 595, adc: 600, support: 565 },
+  { tier: 'PLATINUM IV', top: 555, jungle: 585, mid: 570, adc: 575, support: 540 },
+
+  { tier: 'GOLD I', top: 525, jungle: 550, mid: 535, adc: 540, support: 515 },
+  { tier: 'GOLD II', top: 505, jungle: 530, mid: 515, adc: 520, support: 495 },
+  { tier: 'GOLD III', top: 485, jungle: 510, mid: 495, adc: 500, support: 475 },
+  { tier: 'GOLD IV', top: 465, jungle: 490, mid: 475, adc: 480, support: 455 },
+
+  { tier: 'SILVER I', top: 440, jungle: 460, mid: 450, adc: 455, support: 435 },
+  { tier: 'SILVER II', top: 420, jungle: 440, mid: 430, adc: 435, support: 415 },
+  { tier: 'SILVER III', top: 400, jungle: 420, mid: 410, adc: 415, support: 395 },
+  { tier: 'SILVER IV', top: 380, jungle: 400, mid: 390, adc: 395, support: 375 },
+
+  { tier: 'BRONZE I', top: 360, jungle: 380, mid: 370, adc: 375, support: 355 },
+  { tier: 'BRONZE II', top: 345, jungle: 365, mid: 355, adc: 360, support: 340 },
+  { tier: 'BRONZE III', top: 330, jungle: 350, mid: 340, adc: 345, support: 325 },
+  { tier: 'BRONZE IV', top: 315, jungle: 335, mid: 325, adc: 330, support: 310 },
+
+  // 점수표에 없는 티어
+  { tier: 'IRON I', top: 0, jungle: 0, mid: 0, adc: 0, support: 0 },
+  { tier: 'IRON II', top: 0, jungle: 0, mid: 0, adc: 0, support: 0 },
+  { tier: 'IRON III', top: 0, jungle: 0, mid: 0, adc: 0, support: 0 },
+  { tier: 'IRON IV', top: 0, jungle: 0, mid: 0, adc: 0, support: 0 },
+  { tier: 'UNRANK', top: 0, jungle: 0, mid: 0, adc: 0, support: 0 },
+];
+
 import topIcon from '@/assets/positions/top.svg';
 import jugIcon from '@/assets/positions/jug.svg';
 import midIcon from '@/assets/positions/mid.svg';
@@ -623,10 +671,19 @@ async function fetch() {
   const members: MatchMember[] = data.datas.match_members ?? [];
   allPositionMembers.value = members;
 
+  //
   if (match.value?.type === 'POSITION') {
     if (truthy(match.value?.is_confirm)) {
       team1.value = members.slice(0, 5);
       team2.value = members.slice(5, 10);
+
+      for (const item of team1.value) {
+        item.player.tier.point = getTierPositionPoint(item.player.tier.name, item.position);
+      }
+
+      for (const item of team2.value) {
+        item.player.tier.point = getTierPositionPoint(item.player.tier.name, item.position);
+      }
     } else {
       team1.value = POSITIONS.map((p) => emptyMemberWithPos(p));
       team2.value = POSITIONS.map((p) => emptyMemberWithPos(p));
@@ -752,6 +809,26 @@ function openPlayerPicker(team: TeamKey, id: number) {
   picker.value = { open: true, team, id, selected: null };
 }
 
+const POSITION_SCORE_KEY = {
+  TOP: 'top',
+  JUG: 'jungle',
+  MID: 'mid',
+  ADC: 'adc',
+  SUP: 'support',
+};
+
+function getTierPositionPoint(tierName, position) {
+  const row = TIER_SCORE_MASTER.find((v) => v.tier === tierName);
+
+  if (!row) {
+    return 0;
+  }
+
+  const key = POSITION_SCORE_KEY[position];
+
+  return row[key] ?? 0;
+}
+
 function applyPickedPlayer() {
   if (!picker.value.team || picker.value.id < 0 || !picker.value.selected) return;
 
@@ -759,8 +836,10 @@ function applyPickedPlayer() {
   const oldSlot = slotArr[picker.value.id];
   if (!oldSlot) return;
 
-  const keepPos = oldSlot.position ?? null;
+  const keepPos = oldSlot.position;
   const chosen = picker.value.selected;
+
+  chosen.player.tier.point = getTierPositionPoint(chosen.player.tier.name, keepPos);
 
   slotArr[picker.value.id] = {
     ...chosen,
