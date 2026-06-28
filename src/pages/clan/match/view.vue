@@ -157,7 +157,7 @@
 
         <div class="line-center">
           <div class="line-icon">
-            <v-img :src="getPositionIcon(team1[i - 1].position)" width="34" height="34" />
+            <v-img :src="getPositionIcon(team1[i - 1].position)" width="70" height="70" />
           </div>
           <div class="line-name">{{ team1[i - 1].position }}</div>
         </div>
@@ -404,13 +404,13 @@ let POSITIONS: any[] = [];
 const ROW_POSITIONS = ['TOP', 'JUG', 'MID', 'ADC', 'SUP'] as const;
 
 function getPlayerButtonClass(player?: any) {
-  const major = Number(player?.cup_count ?? 0);
-  const minor = Number(player?.sub_cup_count ?? 0);
+  // const major = Number(player?.cup_count ?? 0);
+  // const minor = Number(player?.sub_cup_count ?? 0);
 
-  if (major >= 3) return 'player-legend';
-  if (major >= 1) return 'player-major';
-  if (minor >= 3) return 'player-minor-elite';
-  if (minor >= 1) return 'player-minor';
+  // if (major >= 3) return 'player-legend';
+  // if (major >= 1) return 'player-major';
+  // if (minor >= 3) return 'player-minor-elite';
+  // if (minor >= 1) return 'player-minor';
   return 'player-default';
 }
 
@@ -953,8 +953,8 @@ onMounted(fetch);
 }
 
 .line-icon {
-  width: 58px;
-  height: 58px;
+  width: 100px;
+  height: 100px;
   border-radius: 20px;
   display: grid;
   place-items: center;
@@ -1011,7 +1011,7 @@ onMounted(fetch);
 }
 
 .tier-text {
-  font-size: 14px;
+  font-size: 20px;
   font-weight: 950;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
 }
