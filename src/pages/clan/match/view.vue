@@ -35,10 +35,10 @@
     </section>
 
     <section class="score-board">
-      <div class="team-score team-blue">
+      <div class="team-score team-blue team-score-left">
         <div class="team-title">1팀</div>
         <div class="team-total">{{ t1Total }}</div>
-        <div class="team-detail">Point {{ t1Point }} · Tier {{ t1Tier }}</div>
+        <div class="team-detail">Tier {{ t1Tier }} · Point {{ t1Point }}</div>
       </div>
 
       <div class="versus-box">
@@ -98,7 +98,7 @@
     <section class="line-board">
       <div v-for="i in team1.length" :key="i" class="line-row">
         <div
-          class="player-card player-card-blue"
+          class="player-card player-card-blue player-card-left"
           :class="getPlayerButtonClass(team1[i - 1]?.player)"
           @click="openPlayerPicker('t1', i - 1)"
         >
@@ -122,12 +122,12 @@
             }}
           </div>
 
-          <div class="player-score">
-            <span>Point {{ team1[i - 1]?.player?.point ?? 0 }}</span>
+          <div class="player-score player-score-left">
             <span>
               Total
               {{ (team1[i - 1]?.player?.tier?.point ?? 0) + (team1[i - 1]?.player?.point ?? 0) }}
             </span>
+            <span>Point {{ team1[i - 1]?.player?.point ?? 0 }}</span>
           </div>
 
           <div
@@ -135,7 +135,7 @@
               (team1[i - 1]?.player?.cup_count ?? 0) > 0 ||
               (team1[i - 1]?.player?.sub_cup_count ?? 0) > 0
             "
-            class="player-awards"
+            class="player-awards player-awards-left"
           >
             <div
               v-if="(team1[i - 1]?.player?.cup_count ?? 0) > 0"
@@ -1030,7 +1030,7 @@ onMounted(fetch);
   justify-content: space-between;
   gap: 10px;
   margin-top: 12px;
-  font-size: 13px;
+  font-size: 18px;
   font-weight: 800;
   opacity: 0.86;
 }
@@ -1051,6 +1051,33 @@ onMounted(fetch);
   border-radius: 999px;
   font-size: 13px;
   font-weight: 900;
+}
+
+.player-card-left .player-name {
+  text-align: right;
+}
+
+.player-score-left {
+  flex-direction: row;
+}
+
+.player-awards-left {
+  justify-content: flex-end;
+}
+
+.team-blue {
+  border-left: none;
+  border-right: 7px solid #3b82f6;
+}
+
+.team-score-left {
+  text-align: right;
+}
+
+.team-score-left .team-title,
+.team-score-left .team-total,
+.team-score-left .team-detail {
+  text-align: right;
 }
 
 .award-chip--major {
