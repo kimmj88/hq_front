@@ -315,9 +315,6 @@
 const TIER_SCORE_MASTER = [
   { tier: 'CHALLENGER', top: 1800, jungle: 1850, mid: 1820, adc: 1830, support: 1720 },
   { tier: 'GRANDMASTER', top: 1300, jungle: 1350, mid: 1320, adc: 1330, support: 1220 },
-  { tier: 'MASTER', top: 1250, jungle: 1300, mid: 1270, adc: 1280, support: 1180 },
-  { tier: 'MASTER', top: 1175, jungle: 1225, mid: 1195, adc: 1205, support: 1110 },
-  { tier: 'MASTER', top: 1100, jungle: 1150, mid: 1120, adc: 1130, support: 1040 },
   { tier: 'MASTER', top: 1000, jungle: 1050, mid: 1020, adc: 1030, support: 960 },
   { tier: 'DIAMOND I', top: 930, jungle: 970, mid: 945, adc: 955, support: 900 },
   { tier: 'DIAMOND II', top: 890, jungle: 930, mid: 905, adc: 915, support: 865 },
