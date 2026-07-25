@@ -832,6 +832,17 @@ function connectLiveAuction() {
         if (team && payload.data.amount > 0) applyBid(team, payload.data.amount);
       } else if (payload.event === 'timer-toggled') {
         applyTimerToggle(payload.data.paused, payload.data.seconds);
+      } else if (payload.event === 'player-awarded') {
+        const team = teams.value.find(
+          (item) => item.captainAccountId === payload.data.captainAccountId
+        );
+        const player =
+          (currentPlayer.value?.accountId === payload.data.playerAccountId
+            ? currentPlayer.value
+            : null) ||
+          players.value.find((item) => item.accountId === payload.data.playerAccountId) ||
+          unsoldPlayers.value.find((item) => item.accountId === payload.data.playerAccountId);
+        if (team && player) applyAward(team, player, payload.data.winningBid);
       }
     } catch {
       showSnack('실시간 경매 메시지를 처리하지 못했습니다.', 'error');
@@ -880,11 +891,28 @@ async function finishAuction() {
     showSnack('낙찰 정보를 저장하지 못했습니다.', 'error');
     return;
   }
-  team.points -= currentBid.value;
-  team.members.push({ player, price: currentBid.value });
+  if (liveConnected.value) {
+    sendLive('award-complete', {
+      auctionId: props.auctionId,
+      ownerId: props.currentAccountId,
+      playerAccountId: player.accountId,
+      captainAccountId: team.captainAccountId,
+      winningBid: currentBid.value,
+    });
+    return;
+  }
+  applyAward(team, player, currentBid.value);
+}
+
+function applyAward(team: AuctionTeam, player: AuctionPlayer, winningBid: number) {
+  clearTimer();
+  team.points -= winningBid;
+  team.members.push({ player, price: winningBid });
   soldPlayerIds.value.push(player.id);
-  lastResult.value = { player, team, price: currentBid.value };
-  addLog(`${player.nickname} → ${team.name}, ${currentBid.value}P 낙찰`);
+  players.value = players.value.filter((item) => item.id !== player.id);
+  unsoldPlayers.value = unsoldPlayers.value.filter((item) => item.id !== player.id);
+  lastResult.value = { player, team, price: winningBid };
+  addLog(`${player.nickname} → ${team.name}, ${winningBid}P 낙찰`);
   resultDialog.value = true;
 }
 
@@ -895,7 +923,9 @@ function closeResultAndContinue() {
   currentBid.value = startBid;
   seconds.value = configuredSeconds.value;
   bidError.value = '';
-  if (availablePlayers.value.length) nominateNext();
+  if (props.isOwner && (availablePlayers.value.length || unsoldPlayers.value.length)) {
+    nominateNext();
+  }
 }
 
 function resetLocalState() {
