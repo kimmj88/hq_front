@@ -69,7 +69,7 @@ interface MenuItem {
 }
 
 const menuItems = computed(() => {
-  const items = [];
+  const items: MenuItem[] = [];
 
   items.push({
     key: 'home',

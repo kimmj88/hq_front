@@ -27,4 +27,8 @@ export const CLAN_PATH = {
     `/clan/${name}/cup/view/${id}`,
   CUP_BRACKET: (name: string | number = ':name', id: string | number = ':id') =>
     `/clan/${name}/cup/bracket/${id}`,
+  AUCTION: (name: string | number = ':name') => `/clan/${name}/auction`,
+  AUCTION_ADD: (name: string | number = ':name') => `/clan/${name}/auction/add`,
+  AUCTION_VIEW: (name: string | number = ':name', id: string | number = ':id') =>
+    `/clan/${name}/auction/view/${id}`,
 };

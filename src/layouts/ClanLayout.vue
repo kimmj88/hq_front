@@ -102,6 +102,14 @@
           />
 
           <v-list-item
+            :active="section === 'auction'"
+            prepend-icon="mdi-gavel"
+            title="경매 내전"
+            :to="CLAN_PATH.AUCTION(account.clan.name)"
+            @click="section = 'auction'"
+          />
+
+          <v-list-item
             v-if="account.clanrole.name == 'master'"
             :active="section === 'setting'"
             prepend-icon="mdi-cog-outline"

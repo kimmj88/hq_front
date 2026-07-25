@@ -116,6 +116,9 @@ import ClanCup from '@/pages/clan/cup/index.vue';
 import ClanCupAdd from '@/pages/clan/cup/add.vue';
 import ClanCupView from '@/pages/clan/cup/view.vue';
 import ClanCupBracket from '@/pages/clan/cup/bracket.vue';
+import ClanAuction from '@/pages/clan/auction/index.vue';
+import ClanAuctionAdd from '@/pages/clan/auction/add.vue';
+import ClanAuctionView from '@/pages/clan/auction/view.vue';
 
 import MyClan from '@/pages/clan/myclan.vue';
 
@@ -196,6 +199,9 @@ const router = createRouter({
         { path: CLAN_PATH.CUP_ADD(':name'), component: ClanCupAdd },
         { path: CLAN_PATH.CUP_VIEW(':name', ':id'), component: ClanCupView, props: true },
         { path: CLAN_PATH.CUP_BRACKET(':name', ':id'), component: ClanCupBracket, props: true },
+        { path: CLAN_PATH.AUCTION(':name'), component: ClanAuction },
+        { path: CLAN_PATH.AUCTION_ADD(':name'), component: ClanAuctionAdd },
+        { path: CLAN_PATH.AUCTION_VIEW(':name', ':id'), component: ClanAuctionView, props: true },
       ],
     },
 
