@@ -720,7 +720,13 @@ function applyTimerStart(duration: number) {
 function runTimer() {
   timerId = setInterval(() => {
     seconds.value -= 1;
-    if (seconds.value <= 0) finishAuction();
+    if (seconds.value <= 0) {
+      if (props.isOwner) {
+        finishAuction();
+      } else {
+        clearTimer();
+      }
+    }
   }, 1000);
 }
 
