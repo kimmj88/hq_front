@@ -862,6 +862,14 @@ function connectLiveAuction() {
           players.value.find((item) => item.accountId === payload.data.playerAccountId) ||
           unsoldPlayers.value.find((item) => item.accountId === payload.data.playerAccountId);
         if (team && player) applyAward(team, player, payload.data.winningBid);
+      } else if (payload.event === 'player-unsold') {
+        const player =
+          (currentPlayer.value?.accountId === payload.data.playerAccountId
+            ? currentPlayer.value
+            : null) ||
+          players.value.find((item) => item.accountId === payload.data.playerAccountId) ||
+          unsoldPlayers.value.find((item) => item.accountId === payload.data.playerAccountId);
+        if (player) applyUnsold(player);
       }
     } catch {
       showSnack('실시간 경매 메시지를 처리하지 못했습니다.', 'error');
@@ -878,24 +886,17 @@ async function finishAuction() {
 
   if (!currentPlayer.value) return;
   if (!highestTeam.value) {
-    if (!currentPlayer.value.accountId) {
+    const player = currentPlayer.value;
+    if (!player.accountId) {
       showSnack('유찰 대상 정보를 확인할 수 없습니다.', 'error');
       return;
     }
-    const saved = await props.markUnsold(currentPlayer.value.accountId);
+    const saved = await props.markUnsold(player.accountId);
     if (!saved) {
       showSnack('유찰 정보를 저장하지 못했습니다.', 'error');
       return;
     }
-    addLog(`${currentPlayer.value.nickname} 선수가 유찰되었습니다.`);
-    players.value = players.value.filter((player) => player.id !== currentPlayer.value?.id);
-    if (!unsoldPlayers.value.some((player) => player.id === currentPlayer.value?.id)) {
-      unsoldPlayers.value.push(currentPlayer.value);
-    }
-    showSnack('입찰 팀이 없어 유찰되었습니다.', 'warning');
-    currentPlayer.value = null;
-    currentBid.value = startBid;
-    seconds.value = configuredSeconds.value;
+    applyUnsold(player);
     if (availablePlayers.value.length || unsoldPlayers.value.length) nominateNext();
     return;
   }
@@ -933,6 +934,22 @@ function applyAward(team: AuctionTeam, player: AuctionPlayer, winningBid: number
   lastResult.value = { player, team, price: winningBid };
   addLog(`${player.nickname} → ${team.name}, ${winningBid}P 낙찰`);
   resultDialog.value = true;
+}
+
+function applyUnsold(player: AuctionPlayer) {
+  if (unsoldPlayers.value.some((item) => item.id === player.id)) return;
+
+  clearTimer();
+  addLog(`${player.nickname} 선수가 유찰되었습니다.`);
+  players.value = players.value.filter((item) => item.id !== player.id);
+  unsoldPlayers.value.push(player);
+  if (currentPlayer.value?.id === player.id) {
+    currentPlayer.value = null;
+    highestTeamId.value = null;
+    currentBid.value = startBid;
+    seconds.value = configuredSeconds.value;
+  }
+  showSnack('입찰 팀이 없어 유찰되었습니다.', 'warning');
 }
 
 function closeResultAndContinue() {
