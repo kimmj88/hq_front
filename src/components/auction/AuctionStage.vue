@@ -41,7 +41,7 @@
               <div>
                 <div class="text-caption text-medium-emphasis">현재 경매</div>
                 <div class="text-subtitle-1 font-weight-bold">
-                  {{ currentPlayer ? `${currentPlayer.nickname} 선수` : '대기 중' }}
+                  {{ currentPlayer ? `${playerDisplayName(currentPlayer)} 선수` : '대기 중' }}
                 </div>
               </div>
               <v-progress-circular
@@ -68,9 +68,11 @@
                   @keydown.enter="openFowProfile(currentPlayer)"
                 >
                   <v-avatar size="96" :color="positionColor(currentPlayer.position)">
-                    <span class="text-h4 font-weight-black">{{ initials(currentPlayer.nickname) }}</span>
+                    <span class="text-h4 font-weight-black">{{ initials(playerDisplayName(currentPlayer)) }}</span>
                   </v-avatar>
-                  <div class="text-h5 font-weight-black mt-4">{{ currentPlayer.nickname }}</div>
+                  <div class="text-h5 font-weight-black mt-4">
+                    {{ playerDisplayName(currentPlayer) }}
+                  </div>
                   <div class="text-body-2 text-medium-emphasis">#{{ currentPlayer.tag }}</div>
                   <div class="d-flex justify-center ga-2 mt-3">
                     <v-chip size="small" :color="positionColor(currentPlayer.position)" variant="flat">
@@ -230,10 +232,10 @@
                   {{ positionLabel(player.position) }} · {{ player.tier }}
                 </v-tooltip>
                 <v-avatar size="38" :color="positionColor(player.position)">
-                  {{ initials(player.nickname) }}
+                  {{ initials(playerDisplayName(player)) }}
                 </v-avatar>
                 <span class="text-left flex-grow-1">
-                  <strong class="d-block">{{ player.nickname }}</strong>
+                  <strong class="d-block">{{ playerDisplayName(player) }}</strong>
                   <small class="text-medium-emphasis">
                     {{ positionLabel(player.position) }} · {{ player.tier }}
                   </small>
@@ -277,9 +279,11 @@
                 <v-tooltip activator="parent" location="top">
                   {{ positionLabel(player.position) }} · {{ player.tier }}
                 </v-tooltip>
-                <v-avatar size="38" color="warning">{{ initials(player.nickname) }}</v-avatar>
+                <v-avatar size="38" color="warning">
+                  {{ initials(playerDisplayName(player)) }}
+                </v-avatar>
                 <span class="text-left flex-grow-1">
-                  <strong class="d-block">{{ player.nickname }}</strong>
+                  <strong class="d-block">{{ playerDisplayName(player) }}</strong>
                   <small class="text-medium-emphasis">{{ positionLabel(player.position) }} · {{ player.tier }}</small>
                 </span>
                 <v-chip size="x-small" color="warning">유찰</v-chip>
@@ -333,7 +337,9 @@
                 <v-chip size="x-small" :color="positionColor(member.player.position)">
                   {{ member.player.position }}
                 </v-chip>
-                <span class="text-body-2 flex-grow-1">{{ member.player.nickname }}</span>
+                <span class="text-body-2 flex-grow-1">
+                  {{ playerDisplayName(member.player) }}
+                </span>
                 <strong class="text-caption">{{ member.price }}P</strong>
               </div>
             </div>
@@ -367,7 +373,7 @@
           <v-avatar size="72" color="amber-darken-2"><v-icon size="38">mdi-trophy</v-icon></v-avatar>
           <div class="text-h5 font-weight-black mt-4">낙찰!</div>
           <div class="text-body-1 mt-2">
-            <strong>{{ lastResult?.player.nickname }}</strong> 선수를
+            <strong>{{ lastResult ? playerDisplayName(lastResult.player) : '' }}</strong> 선수를
             <strong :style="{ color: lastResult?.team.color }">{{ lastResult?.team.name }}</strong>
             팀이 영입했습니다.
           </div>
@@ -628,6 +634,10 @@ function initials(nickname: string) {
   return nickname.slice(0, 2);
 }
 
+function playerDisplayName(player: AuctionPlayer) {
+  return player.tag ? `${player.nickname}#${player.tag}` : player.nickname;
+}
+
 function openFowProfile(player: AuctionPlayer) {
   let nickname = player.nickname.trim();
   let tag = player.tag?.trim() ?? '';
@@ -683,7 +693,7 @@ function applyNomination(player: AuctionPlayer) {
   highestTeamId.value = null;
   seconds.value = configuredSeconds.value;
   bidError.value = '';
-  addLog(`${player.nickname} 선수가 경매에 지명되었습니다.`);
+  addLog(`${playerDisplayName(player)} 선수가 경매에 지명되었습니다.`);
 }
 
 function nominateNext() {
@@ -724,7 +734,7 @@ function applyTimerStart(duration: number) {
   isPaused.value = false;
   configuredSeconds.value = Math.min(300, Math.max(5, Number(duration) || 20));
   seconds.value = configuredSeconds.value;
-  addLog(`${currentPlayer.value.nickname} 선수 경매가 시작되었습니다.`);
+  addLog(`${playerDisplayName(currentPlayer.value)} 선수 경매가 시작되었습니다.`);
   runTimer();
 }
 
@@ -932,7 +942,7 @@ function applyAward(team: AuctionTeam, player: AuctionPlayer, winningBid: number
   players.value = players.value.filter((item) => item.id !== player.id);
   unsoldPlayers.value = unsoldPlayers.value.filter((item) => item.id !== player.id);
   lastResult.value = { player, team, price: winningBid };
-  addLog(`${player.nickname} → ${team.name}, ${winningBid}P 낙찰`);
+  addLog(`${playerDisplayName(player)} → ${team.name}, ${winningBid}P 낙찰`);
   resultDialog.value = true;
 }
 
@@ -940,7 +950,7 @@ function applyUnsold(player: AuctionPlayer) {
   if (unsoldPlayers.value.some((item) => item.id === player.id)) return;
 
   clearTimer();
-  addLog(`${player.nickname} 선수가 유찰되었습니다.`);
+  addLog(`${playerDisplayName(player)} 선수가 유찰되었습니다.`);
   players.value = players.value.filter((item) => item.id !== player.id);
   unsoldPlayers.value.push(player);
   if (currentPlayer.value?.id === player.id) {

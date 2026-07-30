@@ -388,7 +388,10 @@ function initials(value: string) {
 }
 
 function participantName(participant: AuctionRoom['participants'][number]) {
-  return participant.player?.nickname || participant.nickname;
+  if (!participant.player?.nickname) return participant.nickname;
+  return participant.player.tagname
+    ? `${participant.player.nickname}#${participant.player.tagname}`
+    : participant.player.nickname;
 }
 
 function goToList() {
