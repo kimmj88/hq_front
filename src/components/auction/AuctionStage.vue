@@ -709,6 +709,8 @@ function startAuction() {
 }
 
 function applyTimerStart(duration: number) {
+  if (!currentPlayer.value) return;
+
   isRunning.value = true;
   isPaused.value = false;
   configuredSeconds.value = Math.min(300, Math.max(5, Number(duration) || 20));
@@ -858,6 +860,11 @@ function connectLiveAuction() {
 
 async function finishAuction() {
   clearTimer();
+
+  // 낙찰/유찰 저장은 경매 생성자의 브라우저에서만 수행한다.
+  // 참가자는 WebSocket으로 전달되는 player-awarded 이벤트를 통해 결과만 반영한다.
+  if (!props.isOwner) return;
+
   if (!currentPlayer.value) return;
   if (!highestTeam.value) {
     if (!currentPlayer.value.accountId) {
@@ -897,20 +904,15 @@ async function finishAuction() {
     showSnack('낙찰 정보를 저장하지 못했습니다.', 'error');
     return;
   }
-  if (liveConnected.value) {
-    sendLive('award-complete', {
-      auctionId: props.auctionId,
-      ownerId: props.currentAccountId,
-      playerAccountId: player.accountId,
-      captainAccountId: team.captainAccountId,
-      winningBid: currentBid.value,
-    });
-    return;
-  }
+
+  // 저장 응답을 받은 진행자 화면에는 즉시 반영한다.
+  // 다른 참가자 화면은 서버의 player-awarded 방송으로 갱신된다.
   applyAward(team, player, currentBid.value);
 }
 
 function applyAward(team: AuctionTeam, player: AuctionPlayer, winningBid: number) {
+  if (soldPlayerIds.value.includes(player.id)) return;
+
   clearTimer();
   team.points -= winningBid;
   team.members.push({ player, price: winningBid });
