@@ -376,8 +376,16 @@
           </v-chip>
         </v-card-text>
         <v-card-actions>
-          <v-btn block color="deep-purple-accent-2" @click="closeResultAndContinue">
+          <v-btn
+            v-if="isOwner"
+            block
+            color="deep-purple-accent-2"
+            @click="closeResultAndContinue"
+          >
             다음 선수 지명
+          </v-btn>
+          <v-btn v-else block variant="tonal" @click="dismissResultDialog">
+            확인
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -668,6 +676,7 @@ function nominate(player: AuctionPlayer) {
 }
 
 function applyNomination(player: AuctionPlayer) {
+  resultDialog.value = false;
   unsoldPlayers.value = unsoldPlayers.value.filter((item) => item.id !== player.id);
   currentPlayer.value = player;
   currentBid.value = startBid;
@@ -830,7 +839,9 @@ function connectLiveAuction() {
         const player = players.value.find(
           (item) => item.accountId === payload.data.playerAccountId
         );
-        if (player) applyNomination(player);
+        if (player && currentPlayer.value?.accountId !== player.accountId) {
+          applyNomination(player);
+        }
       } else if (payload.event === 'timer-started') {
         applyTimerStart(payload.data.seconds);
       } else if (payload.event === 'bid-updated') {
@@ -925,6 +936,8 @@ function applyAward(team: AuctionTeam, player: AuctionPlayer, winningBid: number
 }
 
 function closeResultAndContinue() {
+  if (!props.isOwner) return;
+
   resultDialog.value = false;
   currentPlayer.value = null;
   highestTeamId.value = null;
@@ -934,6 +947,10 @@ function closeResultAndContinue() {
   if (props.isOwner && (availablePlayers.value.length || unsoldPlayers.value.length)) {
     nominateNext();
   }
+}
+
+function dismissResultDialog() {
+  resultDialog.value = false;
 }
 
 function resetLocalState() {
