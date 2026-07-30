@@ -112,10 +112,10 @@
           >
             <div class="participant-card">
               <v-avatar size="38" color="deep-purple-darken-1">
-                {{ initials(participant.nickname) }}
+                {{ initials(participantName(participant)) }}
               </v-avatar>
               <div>
-                <div class="text-body-2 font-weight-bold">{{ participant.nickname }}</div>
+                <div class="text-body-2 font-weight-bold">{{ participantName(participant) }}</div>
                 <div class="text-caption text-medium-emphasis">
                   {{ participant.isCaptain ? '팀장' : '참가 완료' }}
                 </div>
@@ -229,7 +229,7 @@
               v-model.number="captainPoints[captain.accountId]"
               type="number"
               min="1"
-              :label="`${captain.nickname} 팀장`"
+              :label="`${participantName(captain)} 팀장`"
               suffix="P"
               variant="outlined"
               prepend-inner-icon="mdi-crown"
@@ -268,7 +268,7 @@
       :captains="
         room.participants
           .filter((participant) => participant.isCaptain)
-          .map((participant) => participant.nickname)
+          .map((participant) => participantName(participant))
       "
       :captain-points="
         room.participants
@@ -286,7 +286,7 @@
           .map((participant) => ({
             accountId: participant.accountId,
             id: participant.player?.id ?? participant.accountId,
-            nickname: participant.player?.nickname || participant.nickname,
+            nickname: participant.player?.nickname || '플레이어 미연결',
             tag: participant.player?.tagname || '',
             tier: participant.player?.tierName || '티어 미정',
             position: participant.player?.position || '',
@@ -385,6 +385,10 @@ const canBeginAuction = computed(
 
 function initials(value: string) {
   return value.slice(0, 2);
+}
+
+function participantName(participant: AuctionRoom['participants'][number]) {
+  return participant.player?.nickname || participant.nickname;
 }
 
 function goToList() {
