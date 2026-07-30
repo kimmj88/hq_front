@@ -836,9 +836,9 @@ function connectLiveAuction() {
     try {
       const payload = JSON.parse(String(message.data));
       if (payload.event === 'player-selected') {
-        const player = players.value.find(
-          (item) => item.accountId === payload.data.playerAccountId
-        );
+        const player =
+          players.value.find((item) => item.accountId === payload.data.playerAccountId) ||
+          unsoldPlayers.value.find((item) => item.accountId === payload.data.playerAccountId);
         if (player && currentPlayer.value?.accountId !== player.accountId) {
           applyNomination(player);
         }
