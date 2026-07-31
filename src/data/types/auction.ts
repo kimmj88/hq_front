@@ -6,6 +6,7 @@ export interface AuctionParticipant {
   joinedAt: string;
   isCaptain: boolean;
   auctionPoints: number | null;
+  attendedAt: string | null;
   player: {
     id: number;
     nickname: string;
@@ -13,6 +14,8 @@ export interface AuctionParticipant {
     tierName: string;
     position: string;
     positions: string[];
+    cupCount: number;
+    subCupCount: number;
   } | null;
   teamCaptainAccountId: number | null;
   winningBid: number | null;

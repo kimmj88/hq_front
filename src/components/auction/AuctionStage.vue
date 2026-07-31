@@ -41,6 +41,10 @@
               <v-col cols="12" md="5">
                 <div
                   class="player-spotlight pa-5 text-center profile-clickable"
+                  :class="{
+                    'winner-spotlight': (currentPlayer.cupCount ?? 0) > 0,
+                    'subcup-veteran': (currentPlayer.subCupCount ?? 0) >= 5,
+                  }"
                   role="button"
                   tabindex="0"
                   @click="openFowProfile(currentPlayer)"
@@ -63,6 +67,27 @@
                       {{ positionLabel(position) }}
                     </v-chip>
                     <v-chip size="small" variant="tonal">{{ currentPlayer.tier }}</v-chip>
+                  </div>
+                  <div class="award-counts mt-4">
+                    <v-chip
+                      size="small"
+                      color="amber-darken-2"
+                      variant="tonal"
+                      :class="{ 'award-earned': (currentPlayer.cupCount ?? 0) > 0 }"
+                    >
+                      <v-icon
+                        start
+                        size="16"
+                        :class="{ 'trophy-celebrate': (currentPlayer.cupCount ?? 0) > 0 }"
+                      >
+                        mdi-trophy
+                      </v-icon>
+                      난전 우승 {{ currentPlayer.cupCount ?? 0 }}회
+                    </v-chip>
+                    <v-chip size="small" color="deep-purple-lighten-1" variant="tonal">
+                      <v-icon start size="16">mdi-medal</v-icon>
+                      경매내전 우승 {{ currentPlayer.subCupCount ?? 0 }}회
+                    </v-chip>
                   </div>
                   <div v-if="currentPlayer.winRate" class="text-caption text-medium-emphasis mt-3">
                     최근 승률 {{ currentPlayer.winRate }}% · KDA {{ currentPlayer.kda }}
@@ -254,6 +279,7 @@
                   selected: currentPlayer?.id === player.id,
                   disabled: isRunning || !isOwner,
                 }"
+                :style="tierCardStyle(player.tier)"
                 role="button"
                 tabindex="0"
                 @click="!isRunning && isOwner && nominate(player)"
@@ -267,9 +293,21 @@
                 </v-avatar>
                 <span class="text-left flex-grow-1">
                   <strong class="d-block">{{ playerDisplayName(player) }}</strong>
-                  <small class="text-medium-emphasis">
-                    {{ positionLabel(player.position) }} · {{ player.tier }}
-                  </small>
+                  <span class="pool-player-meta">
+                    <small
+                      v-for="position in playerPositions(player)"
+                      :key="position"
+                      class="position-meta"
+                    >
+                      <img
+                        :src="positionIcon(position)"
+                        :alt="positionLabel(position)"
+                        class="position-meta-icon"
+                      />
+                      {{ positionLabel(position) }}
+                    </small>
+                    <small class="tier-meta">{{ player.tier }}</small>
+                  </span>
                 </span>
                 <v-btn
                   icon
@@ -453,6 +491,11 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import topIcon from '@/assets/positions/top.svg';
+import jugIcon from '@/assets/positions/jug.svg';
+import midIcon from '@/assets/positions/mid.svg';
+import adcIcon from '@/assets/positions/adc.webp';
+import supIcon from '@/assets/positions/sup.svg';
 
 const props = withDefaults(
   defineProps<{
@@ -473,6 +516,8 @@ const props = withDefaults(
       tier: string;
       position: string;
       positions?: string[];
+      cupCount?: number;
+      subCupCount?: number;
       teamCaptainAccountId: number | null;
       winningBid: number | null;
       isUnsold: boolean;
@@ -512,6 +557,8 @@ interface AuctionPlayer {
   tag: string;
   position: Position;
   positions?: Position[];
+  cupCount?: number;
+  subCupCount?: number;
   tier: string;
   winRate: number;
   kda: number;
@@ -681,6 +728,35 @@ function positionLabel(position: Position) {
 
 function positionColor(position: Position) {
   return ({ TOP: 'orange-darken-2', JUG: 'green-darken-2', MID: 'blue-darken-2', ADC: 'red-darken-2', SUP: 'purple-darken-2' })[position];
+}
+
+function positionIcon(position: Position) {
+  return {
+    TOP: topIcon,
+    JUG: jugIcon,
+    MID: midIcon,
+    ADC: adcIcon,
+    SUP: supIcon,
+  }[position];
+}
+
+function tierCardStyle(tier: string) {
+  const tierName = tier.toUpperCase();
+  const rgb =
+    [
+      ['CHALLENGER', '244, 197, 95'],
+      ['GRANDMASTER', '211, 47, 47'],
+      ['MASTER', '156, 92, 219'],
+      ['DIAMOND', '85, 150, 230'],
+      ['EMERALD', '24, 178, 128'],
+      ['PLATINUM', '70, 182, 190'],
+      ['GOLD', '212, 160, 54'],
+      ['SILVER', '148, 164, 184'],
+      ['BRONZE', '166, 104, 62'],
+      ['IRON', '105, 105, 112'],
+    ].find(([name]) => tierName.startsWith(name))?.[1] ?? '124, 77, 255';
+
+  return { '--tier-rgb': rgb };
 }
 
 function initials(nickname: string) {
@@ -1150,9 +1226,153 @@ onBeforeUnmount(() => {
 }
 
 .player-spotlight {
+  position: relative;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.035);
+}
+
+.winner-spotlight {
+  border-color: rgba(255, 193, 7, 0.32);
+  box-shadow:
+    0 0 18px rgba(255, 193, 7, 0.08),
+    inset 0 0 18px rgba(255, 193, 7, 0.035);
+}
+
+.winner-spotlight::before {
+  position: absolute;
+  z-index: 2;
+  inset: -2px;
+  padding: 2px;
+  pointer-events: none;
+  content: '';
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--winner-border-angle),
+    transparent 0deg,
+    transparent 275deg,
+    rgba(255, 171, 0, 0.25) 300deg,
+    #ffd54f 324deg,
+    #fff8d6 337deg,
+    #ffd54f 348deg,
+    transparent 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: winner-border-turn 1.9s linear infinite;
+  filter: drop-shadow(0 0 5px rgba(255, 193, 7, 0.9));
+}
+
+.subcup-veteran::after {
+  position: absolute;
+  z-index: 3;
+  inset: -3px;
+  padding: 2px;
+  pointer-events: none;
+  content: '';
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--subcup-border-angle),
+    transparent 0deg,
+    transparent 285deg,
+    rgba(186, 104, 200, 0.2) 305deg,
+    #ce93d8 326deg,
+    #f3e5f5 339deg,
+    #b388ff 350deg,
+    transparent 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: subcup-border-turn 2.35s linear infinite reverse;
+  filter: drop-shadow(0 0 5px rgba(179, 136, 255, 0.9));
+}
+
+@property --winner-border-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@property --subcup-border-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes winner-border-turn {
+  to {
+    --winner-border-angle: 360deg;
+  }
+}
+
+@keyframes subcup-border-turn {
+  to {
+    --subcup-border-angle: 360deg;
+  }
+}
+
+.award-counts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.award-earned {
+  position: relative;
+  overflow: visible;
+  animation: award-glow 2.8s ease-in-out infinite;
+}
+
+.trophy-celebrate {
+  transform-origin: 50% 85%;
+  animation: trophy-float 2.8s ease-in-out infinite;
+}
+
+@keyframes trophy-float {
+  0%,
+  65%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  76% {
+    transform: translateY(-3px) rotate(-8deg) scale(1.12);
+  }
+  86% {
+    transform: translateY(-2px) rotate(8deg) scale(1.12);
+  }
+}
+
+@keyframes award-glow {
+  0%,
+  65%,
+  100% {
+    filter: drop-shadow(0 0 0 rgba(255, 193, 7, 0));
+  }
+  82% {
+    filter: drop-shadow(0 0 8px rgba(255, 193, 7, 0.72));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .winner-spotlight::before,
+  .subcup-veteran::after,
+  .award-earned,
+  .trophy-celebrate {
+    animation: none;
+  }
 }
 
 .bid-price {
@@ -1185,18 +1405,49 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 10px;
   color: inherit;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(var(--tier-rgb), 0.38);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.025);
+  background:
+    linear-gradient(135deg, rgba(var(--tier-rgb), 0.2), rgba(var(--tier-rgb), 0.04) 72%),
+    rgba(255, 255, 255, 0.02);
+  box-shadow: inset 3px 0 0 rgba(var(--tier-rgb), 0.68);
   cursor: pointer;
   transition: 0.18s ease;
 }
 
 .pool-player:hover,
 .pool-player.selected {
-  border-color: rgba(187, 134, 252, 0.7);
-  background: rgba(187, 134, 252, 0.1);
+  border-color: rgba(var(--tier-rgb), 0.82);
+  background:
+    linear-gradient(135deg, rgba(var(--tier-rgb), 0.3), rgba(var(--tier-rgb), 0.08) 72%),
+    rgba(255, 255, 255, 0.03);
   transform: translateY(-1px);
+}
+
+.pool-player-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px 7px;
+  margin-top: 3px;
+}
+
+.position-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.position-meta-icon {
+  width: 13px;
+  height: 13px;
+  object-fit: contain;
+}
+
+.tier-meta {
+  color: rgb(var(--tier-rgb));
+  font-weight: 700;
 }
 
 .pool-player:disabled {

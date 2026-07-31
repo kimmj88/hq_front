@@ -54,6 +54,23 @@
               {{ isParticipating ? '참가 취소' : '참가하기' }}
             </v-btn>
             <v-btn
+              v-if="isParticipating"
+              :color="hasAttended ? 'success' : 'amber'"
+              :variant="hasAttended ? 'tonal' : 'flat'"
+              :disabled="!attendanceWindowOpen || hasAttended || attendanceSubmitting"
+              :loading="attendanceSubmitting"
+              :prepend-icon="hasAttended ? 'mdi-check-circle' : 'mdi-calendar-check'"
+              @click="attendAuction"
+            >
+              {{
+                hasAttended
+                  ? '출석 완료'
+                  : attendanceWindowOpen
+                    ? '출석 체크'
+                    : '시작 10분 전 활성화'
+              }}
+            </v-btn>
+            <v-btn
               v-if="isOwner"
               color="deep-purple-accent-2"
               prepend-icon="mdi-play"
@@ -91,7 +108,8 @@
           <div>
             <div class="text-h6 font-weight-bold">참가자</div>
             <div class="text-caption text-medium-emphasis">
-              {{ room.participants.length }}/{{ room.maxParticipants }}명 · 시작 전까지 참가 가능
+              {{ room.participants.length }}/{{ room.maxParticipants }}명 · 출석
+              {{ attendedCount }}/{{ room.participants.length }}명
             </div>
           </div>
           <v-progress-circular
@@ -117,12 +135,22 @@
               <div>
                 <div class="text-body-2 font-weight-bold">{{ participantName(participant) }}</div>
                 <div class="text-caption text-medium-emphasis">
-                  {{ participant.isCaptain ? '팀장' : '참가 완료' }}
+                  {{ participant.isCaptain ? '팀장' : '참가 완료' }} ·
+                  <span :class="participant.attendedAt ? 'text-success' : 'text-warning'">
+                    {{ participant.attendedAt ? '출석 완료' : '미출석' }}
+                  </span>
                 </div>
               </div>
+              <v-chip
+                class="ml-auto"
+                size="x-small"
+                :color="participant.attendedAt ? 'success' : 'warning'"
+                variant="tonal"
+              >
+                {{ participant.attendedAt ? '출석' : '미출석' }}
+              </v-chip>
               <v-btn
                 v-if="isOwner"
-                class="ml-auto"
                 size="small"
                 :color="participant.isCaptain ? 'amber' : 'deep-purple-lighten-1'"
                 :variant="participant.isCaptain ? 'flat' : 'tonal'"
@@ -291,6 +319,8 @@
             tier: participant.player?.tierName || '티어 미정',
             position: participant.player?.position || '',
             positions: participant.player?.positions || [],
+            cupCount: participant.player?.cupCount || 0,
+            subCupCount: participant.player?.subCupCount || 0,
             teamCaptainAccountId: participant.teamCaptainAccountId,
             winningBid: participant.winningBid,
             isUnsold: participant.isUnsold,
@@ -340,7 +370,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AuctionStage from '@/components/auction/AuctionStage.vue';
 import type { AuctionRoom } from '@/data/types/auction';
@@ -355,6 +385,7 @@ const account = useAccountStore();
 const room = ref<AuctionRoom | null>(null);
 const loading = ref(true);
 const participantSubmitting = ref(false);
+const attendanceSubmitting = ref(false);
 const participantError = ref('');
 const starting = ref(false);
 const captainSubmittingId = ref<number | null>(null);
@@ -366,12 +397,25 @@ const kickDialog = ref(false);
 const kicking = ref(false);
 const kickTarget = ref<AuctionRoom['participants'][number] | null>(null);
 const snackbar = ref(false);
+const now = ref(Date.now());
 const clanName = computed(() => String(route.params.name ?? ''));
 const roomId = computed(() => Number(route.params.id));
 const isOwner = computed(() => room.value?.ownerId === account.id);
 const isParticipating = computed(
   () => room.value?.participants.some((participant) => participant.accountId === account.id) ?? false
 );
+const myParticipant = computed(
+  () =>
+    room.value?.participants.find((participant) => participant.accountId === account.id) ?? null
+);
+const hasAttended = computed(() => !!myParticipant.value?.attendedAt);
+const attendedCount = computed(
+  () => room.value?.participants.filter((participant) => participant.attendedAt).length ?? 0
+);
+const attendanceWindowOpen = computed(() => {
+  if (!room.value || room.value.status !== 'RECRUITING') return false;
+  return now.value >= new Date(room.value.scheduledAt).getTime() - 10 * 60 * 1000;
+});
 const captainCount = computed(
   () => room.value?.participants.filter((participant) => participant.isCaptain).length ?? 0
 );
@@ -428,6 +472,38 @@ async function toggleParticipation() {
       '참가 정보를 저장하지 못했습니다.';
   } finally {
     participantSubmitting.value = false;
+  }
+}
+
+async function attendAuction() {
+  if (
+    !room.value ||
+    !isParticipating.value ||
+    !attendanceWindowOpen.value ||
+    hasAttended.value ||
+    attendanceSubmitting.value
+  ) {
+    return;
+  }
+
+  attendanceSubmitting.value = true;
+  participantError.value = '';
+  try {
+    const response = await api.post(`${getBaseUrl('DATA')}/auction/participant/attend`, {
+      auction_id: room.value.id,
+      account_id: account.id,
+    });
+    if (response.status >= 400) {
+      throw new Error(response.data?.message || '출석 정보를 저장하지 못했습니다.');
+    }
+    await loadRoom();
+  } catch (error: any) {
+    participantError.value =
+      error?.response?.data?.message ||
+      error?.message ||
+      '출석 정보를 저장하지 못했습니다.';
+  } finally {
+    attendanceSubmitting.value = false;
   }
 }
 
@@ -666,7 +742,23 @@ async function loadRoom() {
   }
 }
 
-onMounted(loadRoom);
+let clockTimer: ReturnType<typeof setInterval> | null = null;
+let attendanceRefreshTimer: ReturnType<typeof setInterval> | null = null;
+
+onMounted(() => {
+  loadRoom();
+  clockTimer = setInterval(() => {
+    now.value = Date.now();
+  }, 1000);
+  attendanceRefreshTimer = setInterval(() => {
+    if (room.value?.status === 'RECRUITING') loadRoom();
+  }, 10000);
+});
+
+onBeforeUnmount(() => {
+  if (clockTimer) clearInterval(clockTimer);
+  if (attendanceRefreshTimer) clearInterval(attendanceRefreshTimer);
+});
 </script>
 
 <style scoped>
