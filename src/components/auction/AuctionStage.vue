@@ -36,27 +36,6 @@
     <v-row>
       <v-col cols="12" lg="8">
         <v-card class="auction-stage overflow-hidden" rounded="xl" elevation="4">
-          <div class="stage-top pa-5">
-            <div class="d-flex align-center justify-space-between">
-              <div>
-                <div class="text-caption text-medium-emphasis">현재 경매</div>
-                <div class="text-subtitle-1 font-weight-bold">
-                  {{ currentPlayer ? `${playerDisplayName(currentPlayer)} 선수` : '대기 중' }}
-                </div>
-              </div>
-              <v-progress-circular
-                :model-value="timerProgress"
-                :color="seconds <= 5 ? 'error' : 'deep-purple-accent-2'"
-                :size="68"
-                :width="7"
-              >
-                <span class="text-h6 font-weight-black">{{ seconds }}</span>
-              </v-progress-circular>
-            </div>
-          </div>
-
-          <v-divider />
-
           <div v-if="currentPlayer" class="pa-5">
             <v-row align="center">
               <v-col cols="12" md="5">
@@ -73,7 +52,6 @@
                   <div class="text-h5 font-weight-black mt-4">
                     {{ playerDisplayName(currentPlayer) }}
                   </div>
-                  <div class="text-body-2 text-medium-emphasis">#{{ currentPlayer.tag }}</div>
                   <div class="d-flex justify-center ga-2 mt-3">
                     <v-chip size="small" :color="positionColor(currentPlayer.position)" variant="flat">
                       {{ positionLabel(currentPlayer.position) }}
@@ -88,20 +66,47 @@
               </v-col>
 
               <v-col cols="12" md="7">
-                <div class="text-caption text-medium-emphasis">현재 최고 입찰가</div>
-                <div class="bid-price my-1">{{ currentBid.toLocaleString() }} P</div>
-                <div class="text-body-2 mb-5">
-                  <template v-if="highestTeam">
-                    <v-icon size="18" :color="highestTeam.color">mdi-crown</v-icon>
-                    <strong :style="{ color: highestTeam.color }">{{ highestTeam.name }}</strong>
-                    팀이 최고가를 제시했습니다.
-                  </template>
-                  <span v-else class="text-medium-emphasis">아직 입찰한 팀이 없습니다.</span>
+                <div class="bid-summary-row">
+                  <div class="bid-summary">
+                    <div class="text-caption text-medium-emphasis">현재 최고 입찰가</div>
+                    <div class="bid-price my-1">{{ currentBid.toLocaleString() }} P</div>
+                    <div class="text-body-2">
+                      <template v-if="highestTeam">
+                        <v-icon size="18" :color="highestTeam.color">mdi-crown</v-icon>
+                        <strong :style="{ color: highestTeam.color }">{{ highestTeam.name }}</strong>
+                        팀이 최고가를 제시했습니다.
+                      </template>
+                      <span v-else class="text-medium-emphasis">
+                        아직 입찰한 팀이 없습니다.
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="timer-area">
+                    <v-progress-circular
+                      class="auction-timer"
+                      :model-value="timerProgress"
+                      :color="seconds <= 5 ? 'error' : 'deep-purple-accent-2'"
+                      :size="150"
+                      :width="12"
+                    >
+                      <div class="timer-value">
+                        <span>{{ seconds }}</span>
+                        <small>초</small>
+                      </div>
+                    </v-progress-circular>
+                  </div>
                 </div>
 
-                <div class="text-caption text-medium-emphasis mb-2">입찰 단위</div>
+                <div class="text-caption text-medium-emphasis mt-5 mb-2">입찰 단위</div>
                 <v-btn-toggle v-model="bidStep" mandatory color="deep-purple-accent-2" class="mb-5">
-                  <v-btn v-for="step in bidSteps" :key="step" :value="step" size="small">
+                  <v-btn
+                    v-for="step in bidSteps"
+                    :key="step"
+                    :value="step"
+                    size="small"
+                    :disabled="step === 10 && currentBid >= 100"
+                  >
                     +{{ step }}P
                   </v-btn>
                 </v-btn-toggle>
@@ -421,7 +426,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 const props = withDefaults(
   defineProps<{
@@ -515,18 +520,18 @@ const initialPlayers: AuctionPlayer[] = [
 ];
 
 const teamDefinitions = [
-  { name: '레드 드래곤', color: '#ff5252' },
-  { name: '블루 피닉스', color: '#448aff' },
-  { name: '그린 타이탄', color: '#00c853' },
-  { name: '골드 그리핀', color: '#ffab00' },
-  { name: '퍼플 나이츠', color: '#aa00ff' },
-  { name: '실버 울브즈', color: '#90a4ae' },
-  { name: '핑크 폭스', color: '#ff4081' },
-  { name: '오렌지 타이거', color: '#ff6d00' },
-  { name: '민트 샤크', color: '#00bfa5' },
-  { name: '네이비 이글', color: '#536dfe' },
-  { name: '화이트 베어', color: '#bdbdbd' },
-  { name: '블랙 팬서', color: '#616161' },
+  { name: '레드', color: '#ff5252' },
+  { name: '블루', color: '#448aff' },
+  { name: '그린', color: '#00c853' },
+  { name: '골드', color: '#ffab00' },
+  { name: '퍼플', color: '#aa00ff' },
+  { name: '실버', color: '#90a4ae' },
+  { name: '핑크', color: '#ff4081' },
+  { name: '오렌지', color: '#ff6d00' },
+  { name: '민트', color: '#00bfa5' },
+  { name: '네이비', color: '#536dfe' },
+  { name: '화이트', color: '#bdbdbd' },
+  { name: '블랙', color: '#616161' },
 ];
 
 const createTeams = (): AuctionTeam[] =>
@@ -563,9 +568,9 @@ function normalizePosition(position: string): Position {
 }
 
 const configuredSeconds = ref(props.bidSeconds);
-const startBid = 50;
+const startBid = 10;
 const rosterLimit = Math.max(1, Math.ceil(props.auctionPlayers.length / props.teamCount));
-const bidSteps = [10, 20, 50];
+const bidSteps = [10, 20, 50, 100, 200, 300];
 const players = ref<AuctionPlayer[]>(
   props.auctionPlayers
     .filter((player) => !player.teamCaptainAccountId && !player.isUnsold)
@@ -621,6 +626,12 @@ const highestTeam = computed(
 );
 const timerProgress = computed(() => (seconds.value / configuredSeconds.value) * 100);
 const soldCount = computed(() => soldPlayerIds.value.length);
+
+watch(currentBid, (bid) => {
+  if (bid >= 100 && bidStep.value === 10) {
+    bidStep.value = 20;
+  }
+});
 
 function positionLabel(position: Position) {
   return ({ TOP: '탑', JUG: '정글', MID: '미드', ADC: '원딜', SUP: '서포터' })[position];
@@ -1032,10 +1043,46 @@ onBeforeUnmount(() => {
   background: linear-gradient(145deg, rgba(35, 31, 48, 0.98), rgba(25, 25, 29, 0.98));
 }
 
-.stage-top {
-  background:
-    radial-gradient(circle at 85% 0%, rgba(124, 77, 255, 0.24), transparent 38%),
-    linear-gradient(90deg, rgba(124, 77, 255, 0.08), transparent);
+.bid-summary-row {
+  min-height: 180px;
+  display: grid;
+  grid-template-columns: minmax(190px, 0.9fr) minmax(180px, 1.1fr);
+  align-items: center;
+  gap: 20px;
+}
+
+.timer-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auction-timer {
+  filter: drop-shadow(0 0 18px rgba(124, 77, 255, 0.3));
+}
+
+.timer-value {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.timer-value span {
+  font-size: 3rem;
+}
+
+.timer-value small {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+@media (max-width: 700px) {
+  .bid-summary-row {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
 }
 
 .player-spotlight {
