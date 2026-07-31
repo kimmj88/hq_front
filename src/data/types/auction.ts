@@ -12,6 +12,7 @@ export interface AuctionParticipant {
     tagname: string;
     tierName: string;
     position: string;
+    positions: string[];
   } | null;
   teamCaptainAccountId: number | null;
   winningBid: number | null;

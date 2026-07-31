@@ -52,9 +52,15 @@
                   <div class="text-h5 font-weight-black mt-4">
                     {{ playerDisplayName(currentPlayer) }}
                   </div>
-                  <div class="d-flex justify-center ga-2 mt-3">
-                    <v-chip size="small" :color="positionColor(currentPlayer.position)" variant="flat">
-                      {{ positionLabel(currentPlayer.position) }}
+                  <div class="d-flex flex-wrap justify-center ga-2 mt-3">
+                    <v-chip
+                      v-for="position in playerPositions(currentPlayer)"
+                      :key="position"
+                      size="small"
+                      :color="positionColor(position)"
+                      variant="flat"
+                    >
+                      {{ positionLabel(position) }}
                     </v-chip>
                     <v-chip size="small" variant="tonal">{{ currentPlayer.tier }}</v-chip>
                   </div>
@@ -128,6 +134,26 @@
                     </span>
                   </v-btn>
                 </div>
+
+                <template v-if="isOwner">
+                  <div class="text-caption text-medium-emphasis mt-5 mb-2">관리자 수동 배정</div>
+                  <div class="bid-team-grid">
+                    <v-btn
+                      v-for="team in teams"
+                      :key="`manual-${team.id}`"
+                      :color="team.color"
+                      variant="outlined"
+                      height="46"
+                      :loading="manualAwardingTeamId === team.id"
+                      :disabled="
+                        manualAwardingTeamId !== null || team.members.length >= rosterLimit
+                      "
+                      @click="manualAward(team)"
+                    >
+                      {{ team.name }}에 0P 배정
+                    </v-btn>
+                  </div>
+                </template>
               </v-col>
             </v-row>
 
@@ -446,6 +472,7 @@ const props = withDefaults(
       tag: string;
       tier: string;
       position: string;
+      positions?: string[];
       teamCaptainAccountId: number | null;
       winningBid: number | null;
       isUnsold: boolean;
@@ -484,6 +511,7 @@ interface AuctionPlayer {
   nickname: string;
   tag: string;
   position: Position;
+  positions?: Position[];
   tier: string;
   winRate: number;
   kda: number;
@@ -550,6 +578,7 @@ const createTeams = (): AuctionTeam[] =>
         player: {
           ...player,
           position: normalizePosition(player.position),
+          positions: player.positions?.map(normalizePosition),
           winRate: 0,
           kda: 0,
         },
@@ -577,6 +606,7 @@ const players = ref<AuctionPlayer[]>(
     .map((player) => ({
     ...player,
     position: normalizePosition(player.position),
+    positions: player.positions?.map(normalizePosition),
     winRate: 0,
     kda: 0,
     }))
@@ -587,6 +617,7 @@ const unsoldPlayers = ref<AuctionPlayer[]>(
     .map((player) => ({
       ...player,
       position: normalizePosition(player.position),
+      positions: player.positions?.map(normalizePosition),
       winRate: 0,
       kda: 0,
     }))
@@ -604,6 +635,7 @@ const bidError = ref('');
 const soldPlayerIds = ref<number[]>([]);
 const resultDialog = ref(false);
 const lastResult = ref<{ player: AuctionPlayer; team: AuctionTeam; price: number } | null>(null);
+const manualAwardingTeamId = ref<number | null>(null);
 const logs = ref<{ time: string; message: string }[]>([]);
 const snackbar = ref({ show: false, message: '', color: 'success' });
 const resetDialog = ref(false);
@@ -647,6 +679,10 @@ function initials(nickname: string) {
 
 function playerDisplayName(player: AuctionPlayer) {
   return player.tag ? `${player.nickname}#${player.tag}` : player.nickname;
+}
+
+function playerPositions(player: AuctionPlayer): Position[] {
+  return player.positions?.length ? player.positions : [player.position];
 }
 
 function openFowProfile(player: AuctionPlayer) {
@@ -712,9 +748,6 @@ function nominateNext() {
   if (!source.length) return;
   const index = Math.floor(Math.random() * source.length);
   const player = source[index];
-  if (!availablePlayers.value.length) {
-    unsoldPlayers.value = unsoldPlayers.value.filter((item) => item.id !== player.id);
-  }
   nominate(player);
 }
 
@@ -800,6 +833,27 @@ function applyBid(team: AuctionTeam, nextBid: number) {
   highestTeamId.value = team.id;
   seconds.value = Math.max(seconds.value, 8);
   addLog(`${team.name} 팀이 ${nextBid}P를 입찰했습니다.`);
+}
+
+async function manualAward(team: AuctionTeam) {
+  if (!props.isOwner || !currentPlayer.value?.accountId || manualAwardingTeamId.value !== null) {
+    return;
+  }
+
+  const player = currentPlayer.value;
+  manualAwardingTeamId.value = team.id;
+  const saved = await props.awardPlayer({
+    playerAccountId: player.accountId,
+    captainAccountId: team.captainAccountId,
+    winningBid: 0,
+  });
+  manualAwardingTeamId.value = null;
+
+  if (!saved) {
+    showSnack('선수를 수동 배정하지 못했습니다.', 'error');
+    return;
+  }
+  applyAward(team, player, 0);
 }
 
 function clearTimer() {

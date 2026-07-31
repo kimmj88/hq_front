@@ -290,6 +290,7 @@
             tag: participant.player?.tagname || '',
             tier: participant.player?.tierName || '티어 미정',
             position: participant.player?.position || '',
+            positions: participant.player?.positions || [],
             teamCaptainAccountId: participant.teamCaptainAccountId,
             winningBid: participant.winningBid,
             isUnsold: participant.isUnsold,
