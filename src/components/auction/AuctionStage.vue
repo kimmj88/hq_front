@@ -330,7 +330,7 @@
       <v-col cols="12" lg="4">
         <div class="team-stack">
           <v-card
-            v-for="team in teams"
+            v-for="team in displayedTeams"
             :key="team.id"
             class="mb-4 pa-4 team-card"
             rounded="xl"
@@ -656,6 +656,16 @@ const filteredPlayers = computed(() =>
 const highestTeam = computed(
   () => teams.value.find((team) => team.id === highestTeamId.value) ?? null
 );
+const displayedTeams = computed(() => {
+  const myTeamIndex = teams.value.findIndex(
+    (team) => team.captainAccountId === props.currentAccountId
+  );
+  if (myTeamIndex <= 0) return teams.value;
+
+  const orderedTeams = [...teams.value];
+  const myTeam = orderedTeams.splice(myTeamIndex, 1)[0]!;
+  return [myTeam, ...orderedTeams];
+});
 const timerProgress = computed(() => (seconds.value / configuredSeconds.value) * 100);
 const soldCount = computed(() => soldPlayerIds.value.length);
 
