@@ -102,6 +102,7 @@
           />
 
           <v-list-item
+            v-if="can('AUCTION', 'CLAN-SET-AUCTION-R')"
             :active="section === 'auction'"
             prepend-icon="mdi-gavel"
             title="경매 내전"

@@ -96,6 +96,10 @@ const messages = {
       'CLAN-SET-CUP-C': '컵 생성',
       'CLAN-SET-CUP-R': '컵 조회',
       'CLAN-SET-CUP-D': '컵 삭제',
+
+      'CLAN-SET-AUCTION-C': '경매 생성',
+      'CLAN-SET-AUCTION-R': '경매 조회',
+      'CLAN-SET-AUCTION-D': '경매 삭제',
     },
   },
   en: {

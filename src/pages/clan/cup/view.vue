@@ -119,7 +119,7 @@
             <div class="d-flex flex-column">
               <span class="text-body-2 font-weight-medium"> {{ p.nickname }}#{{ p.tagname }} </span>
               <span class="text-caption text-medium-emphasis">
-                {{ p.clan_tier?.name }} · {{ p.clan_tier?.point + p.point }}pt
+                {{ p.clan_tier?.name }} · {{ getPlayerPoint(p) }}pt
               </span>
             </div>
 
@@ -223,7 +223,8 @@
                 </div>
 
                 <div class="text-caption text-medium-emphasis">
-                  {{ slot.player.tier?.name }} · {{ slot.player.tier.point + slot.player.point }}pt
+                  {{ slot.player.clan_tier?.name || slot.player.tier?.name }} ·
+                  {{ getPlayerPoint(slot.player) }}pt
                 </div>
               </div>
 
@@ -414,8 +415,8 @@ function goBracketPage() {
 
 /* 유틸: 점수 계산 */
 function getPlayerPoint(p: Player): number {
-  // tier.point가 있으면 그걸 우선 사용하고, 없으면 player.point 사용
-  return (p.tier?.point ?? p.point) || 0;
+  const tierPoint = p.clan_tier?.point ?? p.tier?.point;
+  return (Number(tierPoint) || 0) + (Number(p.point) || 0);
 }
 
 function getExcludeIdsForEdit(position: string, playerId: number) {
@@ -644,7 +645,7 @@ async function fetch() {
 
     // 팀 점수 합산
     frames[i].totalPoint = frames[i].slots.reduce((sum, slot) => {
-      return sum + (slot.player?.tier?.point ?? slot.player?.point ?? 0);
+      return sum + (slot.player ? getPlayerPoint(slot.player) : 0);
     }, 0);
   }
 

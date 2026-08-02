@@ -8,6 +8,7 @@
         </p>
       </div>
       <v-btn
+        v-if="can('AUCTION', 'CLAN-SET-AUCTION-C')"
         color="deep-purple-accent-2"
         prepend-icon="mdi-plus"
         @click="router.push(CLAN_PATH.AUCTION_ADD(clanName))"
@@ -49,7 +50,7 @@
             </div>
             <div class="d-flex align-center ga-1">
               <v-btn
-                v-if="room.ownerId === account.id"
+                v-if="can('AUCTION', 'CLAN-SET-AUCTION-D')"
                 icon
                 size="small"
                 variant="text"
@@ -59,14 +60,17 @@
                 <v-icon size="19">mdi-delete-outline</v-icon>
                 <v-tooltip activator="parent" location="top">삭제</v-tooltip>
               </v-btn>
-              <v-icon color="deep-purple-lighten-1">mdi-gavel</v-icon>
             </div>
           </div>
 
           <v-divider class="my-4" />
 
           <div class="d-flex align-center ga-4 text-body-2">
-            <span><v-icon size="17">mdi-account-group</v-icon> {{ room.participants.length }}/{{ room.maxParticipants }}명</span>
+            <span
+              ><v-icon size="17">mdi-account-group</v-icon> {{ room.participants.length }}/{{
+                room.maxParticipants
+              }}명</span
+            >
             <span><v-icon size="17">mdi-shield-half-full</v-icon> {{ room.teamCount }}팀</span>
             <span><v-icon size="17">mdi-timer-outline</v-icon> {{ room.bidSeconds }}초</span>
           </div>
@@ -84,7 +88,8 @@
       <v-card rounded="xl">
         <v-card-title class="text-h6 font-weight-bold">경매 내전 삭제</v-card-title>
         <v-card-text>
-          <strong>{{ selectedRoom?.title }}</strong>을 삭제할까요?
+          <strong>{{ selectedRoom?.title }}</strong
+          >을 삭제할까요?
           <div class="text-caption text-medium-emphasis mt-2">
             삭제한 경매 내전은 복구할 수 없습니다.
           </div>
@@ -110,6 +115,7 @@ import type { AuctionRoom, AuctionRoomStatus } from '@/data/types/auction';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import api from '@/@core/composable/useAxios';
 import { useAccountStore } from '@/stores/useAccountStore';
+import { can } from '@/stores/useClanPermissionStore';
 
 const route = useRoute();
 const router = useRouter();
@@ -132,8 +138,7 @@ async function loadRooms() {
     });
     rooms.value = Array.isArray(response.data?.datas) ? response.data.datas : [];
   } catch (error: any) {
-    errorMessage.value =
-      error?.response?.data?.message || '경매 내전 목록을 불러오지 못했습니다.';
+    errorMessage.value = error?.response?.data?.message || '경매 내전 목록을 불러오지 못했습니다.';
   } finally {
     loading.value = false;
   }
@@ -178,8 +183,7 @@ async function deleteRoom() {
     await loadRooms();
   } catch (error: any) {
     deleteDialog.value = false;
-    errorMessage.value =
-      error?.response?.data?.message || '경매 내전을 삭제하지 못했습니다.';
+    errorMessage.value = error?.response?.data?.message || '경매 내전을 삭제하지 못했습니다.';
   } finally {
     deleting.value = false;
   }

@@ -5,6 +5,7 @@ export interface AuctionParticipant {
   nickname: string;
   joinedAt: string;
   isCaptain: boolean;
+  teamIndex: number | null;
   auctionPoints: number | null;
   attendedAt: string | null;
   player: {
@@ -34,6 +35,7 @@ export interface AuctionRoom {
   status: AuctionRoomStatus;
   ownerId: number;
   ownerNickname: string;
+  winnerCaptainAccountId: number | null;
   participants: AuctionParticipant[];
   createdAt: string;
 }

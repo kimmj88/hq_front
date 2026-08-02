@@ -373,16 +373,39 @@
             class="mb-4 pa-4 team-card"
             rounded="xl"
             :style="{ '--team-color': team.color }"
+            :class="{
+              'winning-team-card': winnerCaptainAccountId === team.captainAccountId,
+            }"
           >
             <div class="d-flex align-center justify-space-between">
               <div class="d-flex align-center ga-3">
                 <v-avatar :color="team.color"><v-icon>mdi-shield-crown-outline</v-icon></v-avatar>
                 <div>
-                  <div class="font-weight-bold">{{ team.name }}</div>
-                  <div class="text-caption text-medium-emphasis">팀장 {{ team.captain }}</div>
+                  <div class="text-caption font-weight-bold" :style="{ color: team.color }">
+                    {{ team.name }} 팀
+                  </div>
+                  <div class="text-subtitle-1 font-weight-black">{{ team.captain }}</div>
+                  <div v-if="team.cupCount > 0 || team.subCupCount > 0" class="d-flex ga-1 mt-1">
+                    <v-chip v-if="team.cupCount > 0" size="x-small" color="amber-darken-2" variant="tonal">
+                      난전 {{ team.cupCount }}회
+                    </v-chip>
+                    <v-chip v-if="team.subCupCount > 0" size="x-small" color="deep-purple-lighten-1" variant="tonal">
+                      경매내전 {{ team.subCupCount }}회
+                    </v-chip>
+                  </div>
                 </div>
               </div>
               <div class="text-right">
+                <v-chip
+                  v-if="winnerCaptainAccountId === team.captainAccountId"
+                  size="small"
+                  color="amber"
+                  variant="flat"
+                  prepend-icon="mdi-trophy"
+                  class="mb-1"
+                >
+                  승리 팀
+                </v-chip>
                 <div class="text-caption text-medium-emphasis">잔여 포인트</div>
                 <strong :style="{ color: team.color }">{{ team.points.toLocaleString() }}P</strong>
               </div>
@@ -415,6 +438,23 @@
             <div v-else class="empty-roster text-caption text-medium-emphasis text-center py-3">
               아직 영입한 선수가 없습니다.
             </div>
+            <v-btn
+              v-if="canSetWinner && winnerCaptainAccountId === null"
+              block
+              class="mt-3"
+              color="amber-darken-2"
+              variant="tonal"
+              prepend-icon="mdi-trophy-outline"
+              :loading="winnerSubmittingTeamId === team.id"
+              :disabled="winnerSubmittingTeamId !== null || unassignedPlayerCount > 0"
+              @click="chooseWinner(team)"
+            >
+              {{
+                unassignedPlayerCount > 0
+                  ? `미배정 선수 ${unassignedPlayerCount}명`
+                  : '이 팀을 승리 팀으로 지정'
+              }}
+            </v-btn>
           </v-card>
         </div>
 
@@ -504,10 +544,14 @@ const props = withDefaults(
     auctionId?: number;
     currentAccountId?: number;
     isOwner?: boolean;
+    canSetWinner?: boolean;
+    winnerCaptainAccountId?: number | null;
     webSocketUrl?: string;
     captains?: string[];
     captainPoints?: number[];
     captainAccountIds?: number[];
+    captainCupCounts?: number[];
+    captainSubCupCounts?: number[];
     auctionPlayers?: {
       accountId: number;
       id: number;
@@ -529,6 +573,7 @@ const props = withDefaults(
     }) => Promise<boolean>;
     markUnsold?: (playerAccountId: number) => Promise<boolean>;
     resetAuction?: () => Promise<boolean>;
+    setWinner?: (winnerCaptainAccountId: number) => Promise<boolean>;
   }>(),
   {
     teamCount: 3,
@@ -536,14 +581,19 @@ const props = withDefaults(
     auctionId: 0,
     currentAccountId: 0,
     isOwner: false,
+    canSetWinner: false,
+    winnerCaptainAccountId: null,
     webSocketUrl: '',
     captains: () => [],
     captainPoints: () => [],
     captainAccountIds: () => [],
+    captainCupCounts: () => [],
+    captainSubCupCounts: () => [],
     auctionPlayers: () => [],
     awardPlayer: async () => true,
     markUnsold: async () => true,
     resetAuction: async () => true,
+    setWinner: async () => true,
   }
 );
 const isOwner = computed(() => props.isOwner);
@@ -574,6 +624,8 @@ interface AuctionTeam {
   name: string;
   captain: string;
   captainAccountId: number;
+  cupCount: number;
+  subCupCount: number;
   color: string;
   points: number;
   members: TeamMember[];
@@ -615,6 +667,8 @@ const createTeams = (): AuctionTeam[] =>
     ...team,
     captain: props.captains[index] ?? `팀장 ${index + 1}`,
     captainAccountId: props.captainAccountIds[index] ?? 0,
+    cupCount: props.captainCupCounts[index] ?? 0,
+    subCupCount: props.captainSubCupCounts[index] ?? 0,
     points: props.captainPoints[index] ?? 0,
     members: props.auctionPlayers
       .filter(
@@ -687,6 +741,8 @@ const logs = ref<{ time: string; message: string }[]>([]);
 const snackbar = ref({ show: false, message: '', color: 'success' });
 const resetDialog = ref(false);
 const resetting = ref(false);
+const winnerCaptainAccountId = ref<number | null>(props.winnerCaptainAccountId);
+const winnerSubmittingTeamId = ref<number | null>(null);
 let timerId: ReturnType<typeof setInterval> | null = null;
 let socket: WebSocket | null = null;
 const liveConnected = ref(false);
@@ -715,12 +771,36 @@ const displayedTeams = computed(() => {
 });
 const timerProgress = computed(() => (seconds.value / configuredSeconds.value) * 100);
 const soldCount = computed(() => soldPlayerIds.value.length);
+const unassignedPlayerCount = computed(
+  () => availablePlayers.value.length + unsoldPlayers.value.length
+);
 
 watch(currentBid, (bid) => {
   if (bid >= 100 && bidStep.value === 10) {
     bidStep.value = 20;
   }
 });
+
+watch(() => props.winnerCaptainAccountId, (value) => {
+  winnerCaptainAccountId.value = value;
+});
+
+async function chooseWinner(team: AuctionTeam) {
+  if (
+    !props.canSetWinner ||
+    winnerCaptainAccountId.value !== null ||
+    unassignedPlayerCount.value > 0
+  ) return;
+  winnerSubmittingTeamId.value = team.id;
+  try {
+    if (await props.setWinner(team.captainAccountId)) {
+      winnerCaptainAccountId.value = team.captainAccountId;
+      showSnack(`${team.name} 팀을 승리 팀으로 저장했습니다.`, 'success');
+    }
+  } finally {
+    winnerSubmittingTeamId.value = null;
+  }
+}
 
 function positionLabel(position: Position) {
   return ({ TOP: '탑', JUG: '정글', MID: '미드', ADC: '원딜', SUP: '서포터' })[position];
@@ -1031,6 +1111,12 @@ function connectLiveAuction() {
           players.value.find((item) => item.accountId === payload.data.playerAccountId) ||
           unsoldPlayers.value.find((item) => item.accountId === payload.data.playerAccountId);
         if (player) applyUnsold(player);
+      } else if (payload.event === 'auction-winner') {
+        winnerCaptainAccountId.value = payload.data.winnerCaptainAccountId;
+        const team = teams.value.find(
+          (item) => item.captainAccountId === payload.data.winnerCaptainAccountId
+        );
+        if (team) showSnack(`${team.name} 팀이 승리했습니다.`, 'success');
       }
     } catch {
       showSnack('실시간 경매 메시지를 처리하지 못했습니다.', 'error');
@@ -1470,7 +1556,13 @@ onBeforeUnmount(() => {
 }
 
 .team-card {
+  position: relative;
   border-left: 4px solid var(--team-color);
+}
+
+.winning-team-card {
+  border-color: #ffb300;
+  box-shadow: 0 0 0 1px rgba(255, 179, 0, 0.55), 0 0 24px rgba(255, 179, 0, 0.22);
 }
 
 .roster-list {

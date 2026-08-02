@@ -292,22 +292,20 @@
       :auction-id="room.id"
       :current-account-id="account.id"
       :is-owner="isOwner"
+      :can-set-winner="can('AUCTION', 'CLAN-SET-AUCTION-C')"
+      :winner-captain-account-id="room.winnerCaptainAccountId"
       :web-socket-url="`${getBaseUrl('DATA').replace(/^http/, 'ws').replace(/\/$/, '')}/auction-live`"
       :captains="
-        room.participants
-          .filter((participant) => participant.isCaptain)
-          .map((participant) => participantName(participant))
+        captains.map((participant) => participantName(participant))
       "
       :captain-points="
-        room.participants
-          .filter((participant) => participant.isCaptain)
-          .map((participant) => participant.auctionPoints ?? 0)
+        captains.map((participant) => participant.auctionPoints ?? 0)
       "
       :captain-account-ids="
-        room.participants
-          .filter((participant) => participant.isCaptain)
-          .map((participant) => participant.accountId)
+        captains.map((participant) => participant.accountId)
       "
+      :captain-cup-counts="captains.map((participant) => participant.player?.cupCount ?? 0)"
+      :captain-sub-cup-counts="captains.map((participant) => participant.player?.subCupCount ?? 0)"
       :auction-players="
         room.participants
           .filter((participant) => !participant.isCaptain)
@@ -329,6 +327,7 @@
       :award-player="awardPlayer"
       :mark-unsold="markUnsold"
       :reset-auction="resetAuction"
+      :set-winner="setWinner"
     />
   </template>
 
@@ -378,6 +377,7 @@ import { CLAN_PATH } from '@/router/clan/type';
 import { useAccountStore } from '@/stores/useAccountStore';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import api from '@/@core/composable/useAxios';
+import { can } from '@/stores/useClanPermissionStore';
 
 const route = useRoute();
 const router = useRouter();
@@ -419,8 +419,16 @@ const attendanceWindowOpen = computed(() => {
 const captainCount = computed(
   () => room.value?.participants.filter((participant) => participant.isCaptain).length ?? 0
 );
-const captains = computed(
-  () => room.value?.participants.filter((participant) => participant.isCaptain) ?? []
+const captains = computed(() =>
+  (room.value?.participants.filter((participant) => participant.isCaptain) ?? [])
+    .slice()
+    .sort(
+      (a, b) =>
+        (a.teamIndex ?? Number.MAX_SAFE_INTEGER) -
+          (b.teamIndex ?? Number.MAX_SAFE_INTEGER) ||
+        a.joinedAt.localeCompare(b.joinedAt) ||
+        a.accountId - b.accountId
+    )
 );
 const canBeginAuction = computed(
   () =>
@@ -719,6 +727,24 @@ async function resetAuction() {
       error?.response?.data?.message ||
       error?.message ||
       '경매를 초기화하지 못했습니다.';
+    return false;
+  }
+}
+
+async function setWinner(winnerCaptainAccountId: number) {
+  if (!room.value || !can('AUCTION', 'CLAN-SET-AUCTION-C')) return false;
+  try {
+    const response = await api.post(`${getBaseUrl('DATA')}/auction/winner`, {
+      auction_id: room.value.id,
+      winner_captain_account_id: winnerCaptainAccountId,
+    });
+    if (response.status >= 400) throw new Error('승리 팀을 저장하지 못했습니다.');
+    room.value.winnerCaptainAccountId = winnerCaptainAccountId;
+    room.value.status = 'FINISHED';
+    return true;
+  } catch (error: any) {
+    participantError.value =
+      error?.response?.data?.message || error?.message || '승리 팀을 저장하지 못했습니다.';
     return false;
   }
 }
