@@ -5,7 +5,7 @@
         <div>
           <div class="text-h4 font-weight-bold mb-2">롤 멸망전 점수 조회</div>
           <div class="text-body-1 text-medium-emphasis">
-            등록된 플레이어를 검색하면 클랜 티어 기준 점수를 확인할 수 있습니다.
+            등록된 플레이어를 검색하면 커스텀 티어 기준 점수를 확인할 수 있습니다.
           </div>
         </div>
 
@@ -84,12 +84,12 @@
           <v-card rounded="xl" elevation="2" class="pa-5 stat-card">
             <div class="d-flex align-center justify-space-between">
               <div>
-                <div class="text-caption text-medium-emphasis">클랜 티어</div>
+                <div class="text-caption text-medium-emphasis">커스텀 티어</div>
                 <div class="text-h5 font-weight-bold mt-1">{{ result.tier }}</div>
               </div>
               <v-icon size="34" icon="mdi-shield-sword" />
             </div>
-            <div class="mt-3 text-body-2">클랜 기준 티어</div>
+            <div class="mt-3 text-body-2">관리자가 설정한 커스텀 티어</div>
           </v-card>
         </v-col>
 
@@ -143,7 +143,7 @@
               <span class="value">{{ result.lp }}</span>
             </div> -->
             <div class="info-row">
-              <span class="label">클랜 티어</span>
+              <span class="label">커스텀 티어</span>
               <span class="value">{{ result.tier }}</span>
             </div>
           </v-col>
@@ -175,11 +175,11 @@
       <v-list density="comfortable">
         <v-list-item>
           <template #prepend><v-icon icon="mdi-circle-small" /></template>
-          <v-list-item-title>Player 검색에 등록된 클랜 티어를 사용합니다.</v-list-item-title>
+          <v-list-item-title>Player 검색에 등록된 커스텀 티어를 사용합니다.</v-list-item-title>
         </v-list-item>
         <v-list-item>
           <template #prepend><v-icon icon="mdi-circle-small" /></template>
-          <v-list-item-title>클랜 티어와 선택 포지션을 기존 멸망전 점수표에 적용합니다.</v-list-item-title>
+          <v-list-item-title>커스텀 티어와 선택 포지션을 기존 멸망전 점수표에 적용합니다.</v-list-item-title>
         </v-list-item>
       </v-list>
     </v-card>
@@ -372,7 +372,7 @@ function getGamePenalty(totalGames: number): number {
   return score;
 }
 
-function parseClanTier(tierName: string): { tier: string; rank: string; lp: number } {
+function parseCustomTier(tierName: string): { tier: string; rank: string; lp: number } {
   const normalized = tierName.trim().toUpperCase().replace(/\s+/g, ' ');
   const rankMatch = normalized.match(/(IV|III|II|I|[1-4])$/);
   const rawRank = rankMatch?.[1] ?? 'IV';
@@ -416,11 +416,11 @@ async function searchPlayer() {
       errorMessage.value = '등록된 플레이어를 찾을 수 없습니다.';
       return;
     }
-    if (!player.clan_tier) {
-      errorMessage.value = '클랜 티어가 설정되지 않은 플레이어입니다.';
+    if (!player.custom_tier) {
+      errorMessage.value = '커스텀 티어가 설정되지 않은 플레이어입니다.';
       return;
     }
-    const parsedTier = parseClanTier(player.clan_tier.name);
+    const parsedTier = parseCustomTier(player.custom_tier.name);
     const tierScore = getTierScore(
       parsedTier.tier,
       parsedTier.rank,
@@ -432,13 +432,13 @@ async function searchPlayer() {
     result.value = {
       gameName: form.gameName.trim(),
       tagLine: form.tagLine.trim(),
-      tier: player.clan_tier.name,
+      tier: player.custom_tier.name,
       rank: '',
       lp: 0,
       wins: 0,
       losses: 0,
       totalGames: 0,
-      peakTier: player.clan_tier.name,
+      peakTier: player.custom_tier.name,
       peakRank: '',
       peakLp: 0,
       soloPanalty: 0,
