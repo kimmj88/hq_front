@@ -5,7 +5,7 @@
         <div>
           <div class="text-h4 font-weight-bold mb-2">롤 멸망전 점수 조회</div>
           <div class="text-body-1 text-medium-emphasis">
-            소환사 아이디를 입력하면 현재 시즌 기준 점수를 확인할 수 있습니다.
+            등록된 플레이어를 검색하면 클랜 티어 기준 점수를 확인할 수 있습니다.
           </div>
         </div>
 
@@ -84,12 +84,12 @@
           <v-card rounded="xl" elevation="2" class="pa-5 stat-card">
             <div class="d-flex align-center justify-space-between">
               <div>
-                <div class="text-caption text-medium-emphasis">현재 티어</div>
-                <div class="text-h5 font-weight-bold mt-1">{{ result.tier }} {{ result.rank }}</div>
+                <div class="text-caption text-medium-emphasis">클랜 티어</div>
+                <div class="text-h5 font-weight-bold mt-1">{{ result.tier }}</div>
               </div>
               <v-icon size="34" icon="mdi-shield-sword" />
             </div>
-            <div class="mt-3 text-body-2">LP {{ result.lp }}</div>
+            <div class="mt-3 text-body-2">클랜 기준 티어</div>
           </v-card>
         </v-col>
 
@@ -97,12 +97,12 @@
           <v-card rounded="xl" elevation="2" class="pa-5 stat-card">
             <div class="d-flex align-center justify-space-between">
               <div>
-                <div class="text-caption text-medium-emphasis">현재 시즌 판수</div>
-                <div class="text-h5 font-weight-bold mt-1">{{ result.totalGames }}</div>
+                <div class="text-caption text-medium-emphasis">기준 포지션</div>
+                <div class="text-h5 font-weight-bold mt-1">{{ result.positionLabel }}</div>
               </div>
               <v-icon size="34" icon="mdi-sword-cross" />
             </div>
-            <div class="mt-3 text-body-2">{{ result.wins }}승 {{ result.losses }}패</div>
+            <div class="mt-3 text-body-2">포지션별 멸망전 점수표</div>
           </v-card>
         </v-col>
 
@@ -115,7 +115,7 @@
               </div>
               <v-icon size="38" icon="mdi-trophy" />
             </div>
-            <div class="mt-3 text-body-2">내부 환산 점수</div>
+            <div class="mt-3 text-body-2">포지션별 멸망전 점수표</div>
           </v-card>
         </v-col>
       </v-row>
@@ -124,7 +124,7 @@
         <div class="d-flex align-center justify-space-between mb-4">
           <div>
             <div class="text-h6 font-weight-bold">{{ result.gameName }}#{{ result.tagLine }}</div>
-            <div class="text-body-2 text-medium-emphasis">현재 시즌 기준 조회 결과</div>
+            <div class="text-body-2 text-medium-emphasis">등록 플레이어 기준 조회 결과</div>
           </div>
 
           <!-- <v-chip color="success" variant="flat"> 최고점수 {{ result.peakScore }} </v-chip> -->
@@ -143,20 +143,8 @@
               <span class="value">{{ result.lp }}</span>
             </div> -->
             <div class="info-row">
-              <span class="label">솔로랭크 판수 어드벤티지</span>
-              <span class="value">- {{ result.soloPanalty }}</span>
-            </div>
-            <div class="info-row">
-              <span class="label">난전 우승 패널티</span>
-              <span class="value">+ {{ result.maincupPanalty }}</span>
-            </div>
-            <div class="info-row">
-              <span class="label">경매 우승 패널티</span>
-              <span class="value">+ {{ result.subcupPanalty }}</span>
-            </div>
-            <div class="info-row">
-              <span class="label">솔로랭크 100판이하 패널티</span>
-              <span class="value">+ {{ result.soloCountPanalty }}</span>
+              <span class="label">클랜 티어</span>
+              <span class="value">{{ result.tier }}</span>
             </div>
           </v-col>
 
@@ -183,23 +171,15 @@
     </template>
 
     <v-card rounded="xl" elevation="1" class="pa-5">
-      <div class="text-h6 font-weight-bold mb-3">점수 산정 예시</div>
+      <div class="text-h6 font-weight-bold mb-3">점수 기준</div>
       <v-list density="comfortable">
         <v-list-item>
           <template #prepend><v-icon icon="mdi-circle-small" /></template>
-          <v-list-item-title>솔로랭크 어드벤티지 100(-0.3), 200(-0.6), 300(-0.8)</v-list-item-title>
+          <v-list-item-title>Player 검색에 등록된 클랜 티어를 사용합니다.</v-list-item-title>
         </v-list-item>
         <v-list-item>
           <template #prepend><v-icon icon="mdi-circle-small" /></template>
-          <v-list-item-title>난전우승 패널티 1회당 +2.5</v-list-item-title>
-        </v-list-item>
-        <v-list-item>
-          <template #prepend><v-icon icon="mdi-circle-small" /></template>
-          <v-list-item-title>경매내전 패널티 1회당 1.1 최대3회 까지만</v-list-item-title>
-        </v-list-item>
-        <v-list-item>
-          <template #prepend><v-icon icon="mdi-circle-small" /></template>
-          <v-list-item-title>솔로랭크 패널티 100판이하 + 2</v-list-item-title>
+          <v-list-item-title>클랜 티어와 선택 포지션을 기존 멸망전 점수표에 적용합니다.</v-list-item-title>
         </v-list-item>
       </v-list>
     </v-card>
@@ -210,7 +190,6 @@
 import { computed, reactive, ref } from 'vue';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import api from '@/@core/composable/useAxios';
-import axios from 'axios';
 
 type ScoreResult = {
   gameName: string;
@@ -227,6 +206,10 @@ type ScoreResult = {
   peakScore: number;
   meltdownScore: number;
   updatedAt: string;
+  playerPoint: number;
+  cupCount: number;
+  subCupCount: number;
+  positionLabel: string;
 
   soloPanalty: number;
   soloCountPanalty: number;
@@ -255,11 +238,12 @@ const positionOptions = [
   { title: '서폿', value: 'SUP' },
 ];
 
-const canSearch = computed(() => {
-  return (
-    form.gameName.trim().length > 0 && form.tagLine.trim().length > 0 && !!selectedPosition.value
-  );
-});
+const canSearch = computed(
+  () =>
+    form.gameName.trim().length > 0 &&
+    form.tagLine.trim().length > 0 &&
+    !!selectedPosition.value
+);
 
 /**
  * 점수표 원본
@@ -388,6 +372,24 @@ function getGamePenalty(totalGames: number): number {
   return score;
 }
 
+function parseClanTier(tierName: string): { tier: string; rank: string; lp: number } {
+  const normalized = tierName.trim().toUpperCase().replace(/\s+/g, ' ');
+  const rankMatch = normalized.match(/(IV|III|II|I|[1-4])$/);
+  const rawRank = rankMatch?.[1] ?? 'IV';
+  const rankMap: Record<string, string> = { '1': 'I', '2': 'II', '3': 'III', '4': 'IV' };
+  const rank = rankMap[rawRank] ?? rawRank;
+  const tierPart = rankMatch ? normalized.slice(0, rankMatch.index).trim() : normalized;
+  const tierAliases: Record<string, string> = {
+    아이언: 'IRON', 브론즈: 'BRONZE', 실버: 'SILVER', 골드: 'GOLD',
+    플래티넘: 'PLATINUM', 에메랄드: 'EMERALD', 다이아: 'DIAMOND',
+    다이아몬드: 'DIAMOND', 마스터: 'MASTER', 그랜드마스터: 'GRANDMASTER',
+    챌린저: 'CHALLENGER',
+  };
+  const tier = tierAliases[tierPart] ?? tierPart;
+  const lpMatch = normalized.match(/(\d{2,4})\s*LP/);
+  return { tier, rank, lp: lpMatch ? Number(lpMatch[1]) : 0 };
+}
+
 async function searchPlayer() {
   if (!canSearch.value) return;
 
@@ -396,91 +398,64 @@ async function searchPlayer() {
   result.value = null;
 
   try {
-    const name = encodeURIComponent(form.gameName.trim());
-    const tag = encodeURIComponent(form.tagLine.trim());
-
-    const a = await axios.get(
-      `https://asia.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${name}/${tag}`,
-      {
-        headers: {
-          'X-Riot-Token': 'RGAPI-ee1558af-f139-456c-aaf5-0e7b82135e35',
-        },
-      }
+    const response = await api.get(`${getBaseUrl('DATA')}/player/search`, {
+      params: {
+        keyword: form.gameName.trim(),
+        page: 1,
+        itemsPerPage: 100,
+        sortBy: 'point',
+        orderBy: 'desc',
+      },
+    });
+    const player = (Array.isArray(response.data?.datas) ? response.data.datas : []).find(
+      (item: any) =>
+        item.nickname?.trim().toLowerCase() === form.gameName.trim().toLowerCase() &&
+        item.tagname?.trim().toLowerCase() === form.tagLine.trim().toLowerCase()
     );
-
-    const puuid = a.data.puuid;
-
-    const b = await axios.get(
-      `https://kr.api.riotgames.com/lol/league/v4/entries/by-puuid/${encodeURIComponent(puuid)}`,
-      {
-        headers: {
-          'X-Riot-Token': 'RGAPI-ee1558af-f139-456c-aaf5-0e7b82135e35',
-        },
-      }
-    );
-
-    const solo = b.data.find((item: any) => item.queueType === 'RANKED_SOLO_5x5');
-
-    if (!solo) {
-      errorMessage.value = '솔로랭크 정보가 없습니다.';
+    if (!player) {
+      errorMessage.value = '등록된 플레이어를 찾을 수 없습니다.';
       return;
     }
-
-    const res = await api.post(`${getBaseUrl('DATA')}/player/list`, {
-      nickname: form.gameName.trim(),
-      tagname: form.tagLine.trim(),
-    });
-
-    const totalGames = Number(solo.wins) + Number(solo.losses);
-
+    if (!player.clan_tier) {
+      errorMessage.value = '클랜 티어가 설정되지 않은 플레이어입니다.';
+      return;
+    }
+    const parsedTier = parseClanTier(player.clan_tier.name);
     const tierScore = getTierScore(
-      solo.tier,
-      solo.rank,
-      Number(solo.leaguePoints),
+      parsedTier.tier,
+      parsedTier.rank,
+      parsedTier.lp,
       selectedPosition.value
     );
-
-    const soloPanalty = getGamePenalty(totalGames);
-    const maincupPanalty = res.data.datas[0].cup_count * 2.5;
-    let subcupPanalty = 0;
-    const soloCountPanalty = totalGames < 100 ? 2 : 0;
-
-    if (res.data.datas[0].sub_cup_count >= 3) {
-      subcupPanalty = 3 * 1.1;
-    } else {
-      subcupPanalty = res.data.datas[0].sub_cup_count * 1.1;
-    }
-
-    const penalty = soloPanalty + maincupPanalty + subcupPanalty + soloCountPanalty;
-    debugger;
-
-    const finalScore = Number((tierScore + penalty).toFixed(1));
+    const finalScore = Number(tierScore.toFixed(1));
 
     result.value = {
       gameName: form.gameName.trim(),
       tagLine: form.tagLine.trim(),
-      tier: solo.tier,
-      rank: solo.rank,
-      lp: Number(solo.leaguePoints),
-      wins: Number(solo.wins),
-      losses: Number(solo.losses),
-      totalGames,
-      peakTier: solo.tier,
-      peakRank: solo.rank,
-      peakLp: Number(solo.leaguePoints),
-      soloPanalty: soloPanalty,
-      soloCountPanalty: totalGames < 100 ? 2 : 0,
-      maincupPanalty: maincupPanalty,
-      subcupPanalty: subcupPanalty,
+      tier: player.clan_tier.name,
+      rank: '',
+      lp: 0,
+      wins: 0,
+      losses: 0,
+      totalGames: 0,
+      peakTier: player.clan_tier.name,
+      peakRank: '',
+      peakLp: 0,
+      soloPanalty: 0,
+      soloCountPanalty: 0,
+      maincupPanalty: 0,
+      subcupPanalty: 0,
+      playerPoint: Number(player.point ?? 0),
+      cupCount: Number(player.cup_count ?? 0),
+      subCupCount: Number(player.sub_cup_count ?? 0),
+      positionLabel: getPositionLabel(selectedPosition.value),
       peakScore: finalScore,
       meltdownScore: finalScore,
-      updatedAt: `${new Date().toLocaleString('ko-KR')} / ${getPositionLabel(
-        selectedPosition.value
-      )}`,
+      updatedAt: `${new Date().toLocaleString('ko-KR')} / ${getPositionLabel(selectedPosition.value)}`,
     };
   } catch (e) {
-    console.error('라이엇 조회 실패', e);
-    errorMessage.value = '소환사 조회에 실패했습니다.';
+    console.error('플레이어 조회 실패', e);
+    errorMessage.value = '플레이어 조회에 실패했습니다.';
   } finally {
     loading.value = false;
   }
