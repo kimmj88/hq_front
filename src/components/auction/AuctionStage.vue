@@ -40,11 +40,13 @@
             <v-row align="center">
               <v-col cols="12" md="5">
                 <div
-                  class="player-spotlight pa-5 text-center profile-clickable"
+                  class="player-spotlight pa-5 text-center"
                   :class="{
-                    'winner-spotlight': (currentPlayer.cupCount ?? 0) > 0,
-                    'subcup-veteran': (currentPlayer.subCupCount ?? 0) >= 5,
+                    'profile-clickable': !blindActive,
+                    'winner-spotlight': !blindActive && (currentPlayer.cupCount ?? 0) > 0,
+                    'subcup-veteran': !blindActive && (currentPlayer.subCupCount ?? 0) >= 5,
                   }"
+                  :style="tierCardStyle(currentPlayer.tier)"
                   role="button"
                   tabindex="0"
                   @click="openFowProfile(currentPlayer)"
@@ -68,7 +70,7 @@
                     </v-chip>
                     <v-chip size="small" variant="tonal">{{ currentPlayer.tier }}</v-chip>
                   </div>
-                  <div class="award-counts mt-4">
+                  <div v-if="!blindActive" class="award-counts mt-4">
                     <v-chip
                       size="small"
                       color="amber-darken-2"
@@ -310,6 +312,7 @@
                   </span>
                 </span>
                 <v-btn
+                  v-if="!blindActive"
                   icon
                   size="x-small"
                   variant="text"
@@ -339,7 +342,8 @@
           <v-row v-if="unsoldPlayers.length" dense>
             <v-col v-for="player in unsoldPlayers" :key="`unsold-${player.id}`" cols="12" sm="6" md="4">
               <div
-                class="pool-player unsold-player profile-clickable"
+                class="pool-player unsold-player"
+                :class="{ 'profile-clickable': !blindActive }"
                 role="button"
                 tabindex="0"
                 @click="openFowProfile(player)"
@@ -353,7 +357,9 @@
                 </v-avatar>
                 <span class="text-left flex-grow-1">
                   <strong class="d-block">{{ playerDisplayName(player) }}</strong>
-                  <small class="text-medium-emphasis">{{ positionLabel(player.position) }} · {{ player.tier }}</small>
+                  <small class="text-medium-emphasis">
+                    {{ playerPositions(player).map(positionLabel).join(' · ') }} · {{ player.tier }}
+                  </small>
                 </span>
                 <v-chip size="x-small" color="warning">유찰</v-chip>
               </div>
@@ -423,14 +429,18 @@
               <div
                 v-for="member in team.members"
                 :key="member.player.id"
-                class="roster-item profile-clickable"
+                class="roster-item"
+                :class="{ 'profile-clickable': !blindActive }"
                 @click="openFowProfile(member.player)"
               >
                 <v-chip size="x-small" :color="positionColor(member.player.position)">
-                  {{ member.player.position }}
+                  {{ playerPositions(member.player).map(positionLabel).join(' · ') }}
                 </v-chip>
                 <span class="text-body-2 flex-grow-1">
                   {{ playerDisplayName(member.player) }}
+                  <small v-if="blindActive" class="d-block text-medium-emphasis">
+                    {{ member.player.tier }}
+                  </small>
                 </span>
                 <strong class="text-caption">{{ member.price }}P</strong>
               </div>
@@ -544,6 +554,7 @@ const props = withDefaults(
     auctionId?: number;
     currentAccountId?: number;
     isOwner?: boolean;
+    isBlind?: boolean;
     canSetWinner?: boolean;
     winnerCaptainAccountId?: number | null;
     webSocketUrl?: string;
@@ -581,6 +592,7 @@ const props = withDefaults(
     auctionId: 0,
     currentAccountId: 0,
     isOwner: false,
+    isBlind: false,
     canSetWinner: false,
     winnerCaptainAccountId: null,
     webSocketUrl: '',
@@ -742,6 +754,9 @@ const snackbar = ref({ show: false, message: '', color: 'success' });
 const resetDialog = ref(false);
 const resetting = ref(false);
 const winnerCaptainAccountId = ref<number | null>(props.winnerCaptainAccountId);
+const blindActive = computed(
+  () => props.isBlind && unassignedPlayerCount.value > 0
+);
 const winnerSubmittingTeamId = ref<number | null>(null);
 let timerId: ReturnType<typeof setInterval> | null = null;
 let socket: WebSocket | null = null;
@@ -844,14 +859,17 @@ function initials(nickname: string) {
 }
 
 function playerDisplayName(player: AuctionPlayer) {
+  if (blindActive.value) return '블라인드 선수';
   return player.tag ? `${player.nickname}#${player.tag}` : player.nickname;
 }
 
 function playerPositions(player: AuctionPlayer): Position[] {
-  return player.positions?.length ? player.positions : [player.position];
+  const positions = player.positions?.length ? player.positions : [player.position];
+  return blindActive.value ? positions.slice(0, 2) : positions;
 }
 
 function openFowProfile(player: AuctionPlayer) {
+  if (blindActive.value) return;
   let nickname = player.nickname.trim();
   let tag = player.tag?.trim() ?? '';
 
@@ -1313,9 +1331,13 @@ onBeforeUnmount(() => {
 
 .player-spotlight {
   position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(var(--tier-rgb), 0.42);
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.035);
+  background:
+    radial-gradient(circle at 50% 12%, rgba(var(--tier-rgb), 0.3), transparent 48%),
+    linear-gradient(145deg, rgba(var(--tier-rgb), 0.2), rgba(var(--tier-rgb), 0.055) 72%),
+    rgba(255, 255, 255, 0.025);
+  box-shadow: inset 0 0 30px rgba(var(--tier-rgb), 0.08);
 }
 
 .winner-spotlight {

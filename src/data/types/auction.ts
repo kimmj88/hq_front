@@ -30,6 +30,7 @@ export interface AuctionRoom {
   description: string;
   maxParticipants: number;
   bidSeconds: number;
+  isBlind: boolean;
   teamCount: number;
   scheduledAt: string;
   status: AuctionRoomStatus;

@@ -52,6 +52,16 @@
           class="mb-4"
         />
 
+        <v-switch
+          v-model="form.isBlind"
+          color="deep-purple-accent-2"
+          inset
+          label="블라인드 모드"
+          hint="경매 중 선수 닉네임과 태그를 숨기고 티어와 주 포지션 2개만 표시합니다."
+          persistent-hint
+          class="mb-5"
+        />
+
         <v-row>
           <v-col cols="12" sm="6">
             <v-select
@@ -118,6 +128,7 @@ const form = ref({
   teamCount: 3,
   maxParticipants: 15,
   bidSeconds: 20,
+  isBlind: false,
 });
 const required = (value: unknown) => !!value || '필수 입력 항목입니다.';
 
@@ -138,6 +149,7 @@ async function submit() {
       team_count: form.value.teamCount,
       max_participants: form.value.maxParticipants,
       bid_seconds: form.value.bidSeconds,
+      is_blind: form.value.isBlind,
     });
 
     if (response.status >= 400 || !response.data?.datas?.id) {

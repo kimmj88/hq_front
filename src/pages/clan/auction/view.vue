@@ -30,6 +30,10 @@
                       : '경매 진행 중'
                 }}
               </v-chip>
+              <v-chip v-if="room.isBlind" size="small" color="blue-grey" variant="tonal">
+                <v-icon start size="15">mdi-eye-off-outline</v-icon>
+                블라인드
+              </v-chip>
               <span class="text-caption text-medium-emphasis">방장 {{ room.ownerNickname }}</span>
             </div>
             <h1 class="text-h4 font-weight-black mt-3">{{ room.title }}</h1>
@@ -292,6 +296,7 @@
       :auction-id="room.id"
       :current-account-id="account.id"
       :is-owner="isOwner"
+      :is-blind="room.isBlind"
       :can-set-winner="can('AUCTION', 'CLAN-SET-AUCTION-C')"
       :winner-captain-account-id="room.winnerCaptainAccountId"
       :web-socket-url="`${getBaseUrl('DATA').replace(/^http/, 'ws').replace(/\/$/, '')}/auction-live`"
