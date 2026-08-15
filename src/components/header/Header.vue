@@ -24,8 +24,16 @@
         <v-menu>
           <template #activator="{ props }">
             <v-btn v-bind="props" color="primary" variant="text">
-              <v-avatar size="28" class="mr-2">
-                <v-icon>mdi-account</v-icon>
+              <v-avatar size="32" class="mr-2 header-avatar" color="blue-darken-2">
+                <v-img
+                  v-if="account.avatar"
+                  :key="account.avatar"
+                  :src="avatarUrl(account.avatar)"
+                  width="100%"
+                  height="100%"
+                  cover
+                />
+                <v-icon v-else>mdi-account</v-icon>
               </v-avatar>
               <span class="text-body-2 font-weight-medium">{{
                 account.isLoggedIn ? account.nickname : 'Guest'
@@ -77,6 +85,7 @@ import Cookies from 'js-cookie';
 import { useRouter } from 'vue-router';
 import { useAccountStore } from '@/stores/useAccountStore';
 import { CONFIG_ACCOUNT_PATH } from '@/router/config/type';
+import { getBaseUrl } from '@/@core/composable/createUrl';
 
 const router = useRouter();
 const account = useAccountStore();
@@ -94,6 +103,10 @@ function logout() {
   Cookies.remove('refreshToken');
   Cookies.remove('accessToken');
   window.location.href = '/home';
+}
+
+function avatarUrl(value: string) {
+  return /^https?:\/\//i.test(value) ? value : `${getBaseUrl('DATA').replace(/\/$/, '')}${value}`;
 }
 </script>
 <style scoped>
@@ -117,5 +130,11 @@ function logout() {
 .brand__gg {
   color: #ffffff;
   opacity: 0.95;
+}
+
+.header-avatar {
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.28);
 }
 </style>

@@ -10,6 +10,7 @@ export interface AuctionParticipant {
   attendedAt: string | null;
   player: {
     id: number;
+    avatar: string | null;
     nickname: string;
     tagname: string;
     tierName: string;

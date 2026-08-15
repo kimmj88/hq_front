@@ -3,6 +3,7 @@ import type { Tier } from './tier';
 
 export interface Player {
   id: number;
+  avatar?: string | null;
   nickname: string;
   tagname: string;
   point: number;

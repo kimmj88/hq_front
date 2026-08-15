@@ -53,7 +53,12 @@
                   @keydown.enter="openFowProfile(currentPlayer)"
                 >
                   <v-avatar size="96" :color="positionColor(currentPlayer.position)">
-                    <span class="text-h4 font-weight-black">{{ initials(playerDisplayName(currentPlayer)) }}</span>
+                    <v-img
+                      v-if="!blindActive && currentPlayer.avatar"
+                      :src="avatarUrl(currentPlayer.avatar)"
+                      cover
+                    />
+                    <span v-else class="text-h4 font-weight-black">{{ initials(playerDisplayName(currentPlayer)) }}</span>
                   </v-avatar>
                   <div class="text-h5 font-weight-black mt-4">
                     {{ playerDisplayName(currentPlayer) }}
@@ -291,7 +296,12 @@
                   {{ positionLabel(player.position) }} · {{ player.tier }}
                 </v-tooltip>
                 <v-avatar size="38" :color="positionColor(player.position)">
-                  {{ initials(playerDisplayName(player)) }}
+                  <v-img
+                    v-if="!blindActive && player.avatar"
+                    :src="avatarUrl(player.avatar)"
+                    cover
+                  />
+                  <template v-else>{{ initials(playerDisplayName(player)) }}</template>
                 </v-avatar>
                 <span class="text-left flex-grow-1">
                   <strong class="d-block">{{ playerDisplayName(player) }}</strong>
@@ -353,7 +363,12 @@
                   {{ positionLabel(player.position) }} · {{ player.tier }}
                 </v-tooltip>
                 <v-avatar size="38" color="warning">
-                  {{ initials(playerDisplayName(player)) }}
+                  <v-img
+                    v-if="!blindActive && player.avatar"
+                    :src="avatarUrl(player.avatar)"
+                    cover
+                  />
+                  <template v-else>{{ initials(playerDisplayName(player)) }}</template>
                 </v-avatar>
                 <span class="text-left flex-grow-1">
                   <strong class="d-block">{{ playerDisplayName(player) }}</strong>
@@ -385,7 +400,10 @@
           >
             <div class="d-flex align-center justify-space-between">
               <div class="d-flex align-center ga-3">
-                <v-avatar :color="team.color"><v-icon>mdi-shield-crown-outline</v-icon></v-avatar>
+                <v-avatar :color="team.color">
+                  <v-img v-if="team.avatar" :src="avatarUrl(team.avatar)" cover />
+                  <v-icon v-else>mdi-shield-crown-outline</v-icon>
+                </v-avatar>
                 <div>
                   <div class="text-caption font-weight-bold" :style="{ color: team.color }">
                     {{ team.name }} 팀
@@ -433,6 +451,16 @@
                 :class="{ 'profile-clickable': !blindActive }"
                 @click="openFowProfile(member.player)"
               >
+                <v-avatar size="26" :color="positionColor(member.player.position)">
+                  <v-img
+                    v-if="!blindActive && member.player.avatar"
+                    :src="avatarUrl(member.player.avatar)"
+                    cover
+                  />
+                  <span v-else class="text-caption">
+                    {{ initials(playerDisplayName(member.player)) }}
+                  </span>
+                </v-avatar>
                 <v-chip size="x-small" :color="positionColor(member.player.position)">
                   {{ playerPositions(member.player).map(positionLabel).join(' · ') }}
                 </v-chip>
@@ -546,6 +574,7 @@ import jugIcon from '@/assets/positions/jug.svg';
 import midIcon from '@/assets/positions/mid.svg';
 import adcIcon from '@/assets/positions/adc.webp';
 import supIcon from '@/assets/positions/sup.svg';
+import { getBaseUrl } from '@/@core/composable/createUrl';
 
 const props = withDefaults(
   defineProps<{
@@ -563,9 +592,11 @@ const props = withDefaults(
     captainAccountIds?: number[];
     captainCupCounts?: number[];
     captainSubCupCounts?: number[];
+    captainAvatars?: (string | null)[];
     auctionPlayers?: {
       accountId: number;
       id: number;
+      avatar: string | null;
       nickname: string;
       tag: string;
       tier: string;
@@ -601,6 +632,7 @@ const props = withDefaults(
     captainAccountIds: () => [],
     captainCupCounts: () => [],
     captainSubCupCounts: () => [],
+    captainAvatars: () => [],
     auctionPlayers: () => [],
     awardPlayer: async () => true,
     markUnsold: async () => true,
@@ -615,6 +647,7 @@ type Position = 'TOP' | 'JUG' | 'MID' | 'ADC' | 'SUP';
 interface AuctionPlayer {
   accountId?: number;
   id: number;
+  avatar?: string | null;
   nickname: string;
   tag: string;
   position: Position;
@@ -638,6 +671,7 @@ interface AuctionTeam {
   captainAccountId: number;
   cupCount: number;
   subCupCount: number;
+  avatar: string | null;
   color: string;
   points: number;
   members: TeamMember[];
@@ -681,6 +715,7 @@ const createTeams = (): AuctionTeam[] =>
     captainAccountId: props.captainAccountIds[index] ?? 0,
     cupCount: props.captainCupCounts[index] ?? 0,
     subCupCount: props.captainSubCupCounts[index] ?? 0,
+    avatar: props.captainAvatars[index] ?? null,
     points: props.captainPoints[index] ?? 0,
     members: props.auctionPlayers
       .filter(
@@ -856,6 +891,12 @@ function tierCardStyle(tier: string) {
 
 function initials(nickname: string) {
   return nickname.slice(0, 2);
+}
+
+function avatarUrl(value: string) {
+  return /^https?:\/\//i.test(value)
+    ? value
+    : `${getBaseUrl('DATA').replace(/\/$/, '')}${value}`;
 }
 
 function playerDisplayName(player: AuctionPlayer) {

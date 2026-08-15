@@ -6,7 +6,8 @@
         <!-- left: avatar + text -->
         <div class="d-flex align-center" style="gap: 16px">
           <v-avatar size="72" color="blue-darken-2">
-            <span class="text-h6 font-weight-bold text-white">
+            <v-img v-if="account.datas.avatar" :src="avatarUrl(account.datas.avatar)" cover />
+            <span v-else class="text-h6 font-weight-bold text-white">
               {{ getInitials(account.datas.nickname) }}
             </span>
           </v-avatar>
@@ -31,6 +32,14 @@
 
         <!-- right: actions -->
         <div class="d-flex flex-wrap justify-end" style="gap: 8px">
+          <v-btn
+            v-if="props.id === String(accountStore.id)"
+            variant="tonal"
+            prepend-icon="mdi-camera-outline"
+            @click="openAvatarDialog"
+          >
+            아바타 변경
+          </v-btn>
           <v-btn
             v-if="props.id === String(accountStore.id)"
             variant="tonal"
@@ -228,6 +237,41 @@
     </v-dialog>
 
     <!-- 닉네임 변경 다이얼로그 -->
+    <v-dialog v-model="avatarDialog" max-width="460">
+      <v-card rounded="xl">
+        <v-card-title class="text-h6">아바타 이미지 변경</v-card-title>
+        <v-card-text>
+          <div class="d-flex justify-center mb-4">
+            <v-avatar size="96" color="blue-darken-2">
+              <v-img v-if="avatarPreview" :src="avatarPreview" cover />
+              <span v-else class="text-h6 font-weight-bold text-white">
+                {{ getInitials(account.datas.nickname) }}
+              </span>
+            </v-avatar>
+          </div>
+          <v-file-input
+            v-model="avatarFile"
+            label="아바타 이미지"
+            accept="image/jpeg,image/png,image/webp"
+            prepend-icon="mdi-camera"
+            variant="outlined"
+            show-size
+            hint="JPG, PNG, WebP · 최대 5MB"
+            persistent-hint
+            @update:model-value="onAvatarSelected"
+          />
+          <v-alert v-if="avatarError" type="error" variant="tonal" density="compact" class="mt-3">
+            {{ avatarError }}
+          </v-alert>
+        </v-card-text>
+        <v-card-actions class="justify-end">
+          <v-btn variant="text" :disabled="avatarSubmitting" @click="avatarDialog = false">취소</v-btn>
+          <v-btn color="primary" :loading="avatarSubmitting" @click="submitAvatar">저장</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- 닉네임 변경 다이얼로그 -->
     <v-dialog v-model="nicknameDialog" max-width="420">
       <v-card rounded="xl">
         <v-card-title class="text-h6">닉네임 수정</v-card-title>
@@ -332,6 +376,11 @@ const accountStore = useAccountStore();
 
 const dialog = ref(false);
 const nicknameDialog = ref(false);
+const avatarDialog = ref(false);
+const avatarSubmitting = ref(false);
+const avatarFile = ref<File | null>(null);
+const avatarPreview = ref('');
+const avatarError = ref('');
 const positionDialog = ref(false);
 const positionLoading = ref(false);
 
@@ -350,6 +399,7 @@ const account = ref<{
     nickname: string;
     email: string;
     department: string;
+    avatar: string;
     systemrole: SystemRole | null;
     is_confirm: boolean;
     player?: Player | null;
@@ -360,6 +410,7 @@ const account = ref<{
     nickname: '',
     email: '',
     department: '',
+    avatar: '',
     systemrole: null,
     is_confirm: false,
     player: null,
@@ -397,6 +448,12 @@ function getInitials(name?: string) {
     .join('')
     .slice(0, 2)
     .toUpperCase();
+}
+
+function avatarUrl(value: string) {
+  return /^https?:\/\//i.test(value)
+    ? value
+    : `${getBaseUrl('DATA').replace(/\/$/, '')}${value}`;
 }
 
 async function fetchPositions() {
@@ -461,6 +518,49 @@ async function openNicknameDialog() {
       '닉네임 변경 가능 여부를 확인하지 못했어요. 잠시 후 다시 시도해줘.';
   } finally {
     nicknameGate.value.loading = false;
+  }
+}
+
+function openAvatarDialog() {
+  avatarFile.value = null;
+  avatarError.value = '';
+  avatarPreview.value = account.value.datas.avatar
+    ? avatarUrl(account.value.datas.avatar)
+    : '';
+  avatarDialog.value = true;
+}
+
+function onAvatarSelected(value: File | File[] | null) {
+  const file = Array.isArray(value) ? value[0] : value;
+  avatarFile.value = file ?? null;
+  if (avatarPreview.value.startsWith('blob:')) URL.revokeObjectURL(avatarPreview.value);
+  avatarPreview.value = file ? URL.createObjectURL(file) : '';
+}
+
+async function submitAvatar() {
+  if (avatarSubmitting.value) return;
+  avatarSubmitting.value = true;
+  avatarError.value = '';
+  try {
+    const file = avatarFile.value;
+    if (!file) {
+      avatarError.value = '업로드할 이미지 파일을 선택해 주세요.';
+      return;
+    }
+    const formData = new FormData();
+    formData.append('avatar', file);
+    const response = await api.post(`${getBaseUrl('DATA')}/account/avatar`, formData);
+    const avatar = String(response.data?.datas?.avatar ?? '');
+    if (!avatar) throw new Error('아바타 경로를 받지 못했습니다.');
+    account.value.datas.avatar = avatar;
+    if (Number(props.id) === accountStore.id) accountStore.avatar = avatar;
+    avatarDialog.value = false;
+  } catch (error: any) {
+    console.error('아바타 수정 실패:', error);
+    avatarError.value =
+      error?.response?.data?.message || error?.message || '아바타를 저장하지 못했습니다.';
+  } finally {
+    avatarSubmitting.value = false;
   }
 }
 

@@ -311,12 +311,14 @@
       "
       :captain-cup-counts="captains.map((participant) => participant.player?.cupCount ?? 0)"
       :captain-sub-cup-counts="captains.map((participant) => participant.player?.subCupCount ?? 0)"
+      :captain-avatars="captains.map((participant) => participant.player?.avatar ?? null)"
       :auction-players="
         room.participants
           .filter((participant) => !participant.isCaptain)
           .map((participant) => ({
             accountId: participant.accountId,
             id: participant.player?.id ?? participant.accountId,
+            avatar: participant.player?.avatar || null,
             nickname: participant.player?.nickname || '플레이어 미연결',
             tag: participant.player?.tagname || '',
             tier: participant.player?.tierName || '티어 미정',

@@ -37,7 +37,7 @@
         <div class="d-flex align-center">
           <v-avatar size="30" class="mr-3" :color="getAvatarColor(item.name)">
             <template v-if="item.avatar">
-              <v-img :src="item.avatar" />
+              <v-img :src="avatarUrl(item.avatar)" cover />
             </template>
             <template v-else>
               <span class="text-caption font-weight-bold">
@@ -184,6 +184,10 @@ function getAvatarColor(name: string): string {
   if (!name) return avatarColors[0];
   const code = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return avatarColors[code % avatarColors.length];
+}
+
+function avatarUrl(value: string) {
+  return /^https?:\/\//i.test(value) ? value : `${getBaseUrl('DATA').replace(/\/$/, '')}${value}`;
 }
 
 function getInitials(name: string) {

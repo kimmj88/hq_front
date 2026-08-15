@@ -7,6 +7,7 @@ export const useAccountStore = defineStore('account', {
     email: '' as string,
     name: '' as string,
     nickname: '' as string,
+    avatar: '' as string,
     is_confirm: false as boolean,
     player: null as any,
     clan: null as any,
@@ -43,6 +44,7 @@ export const useAccountStore = defineStore('account', {
       this.email = account.email;
       this.name = account.name;
       this.nickname = account.nickname;
+      this.avatar = account.avatar || '';
       this.is_confirm = account.is_confirm;
       this.player = account.player;
       this.clan = account.clan;
@@ -56,6 +58,7 @@ export const useAccountStore = defineStore('account', {
       this.email = '';
       this.name = '';
       this.nickname = '';
+      this.avatar = '';
       this.is_confirm = false;
       this.player = null;
       this.clan = null;

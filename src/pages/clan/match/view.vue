@@ -112,14 +112,30 @@
             </span>
           </div>
 
-          <div class="player-name">
-            {{
-              team1[i - 1]?.player?.nickname
-                ? `${team1[i - 1].player.nickname}#${team1[i - 1].player.tagname}`
-                : match?.type === 'POSITION'
-                ? '유저 선택'
-                : '—'
-            }}
+          <div class="player-identity player-identity-left">
+            <v-avatar
+              v-if="team1[i - 1]?.player?.nickname"
+              size="42"
+              color="blue-grey-darken-2"
+            >
+              <v-img
+                v-if="team1[i - 1].player.avatar"
+                :src="avatarUrl(team1[i - 1].player.avatar)"
+                cover
+              />
+              <span v-else class="text-caption font-weight-bold">
+                {{ playerInitial(team1[i - 1].player.nickname) }}
+              </span>
+            </v-avatar>
+            <div class="player-name">
+              {{
+                team1[i - 1]?.player?.nickname
+                  ? `${team1[i - 1].player.nickname}#${team1[i - 1].player.tagname}`
+                  : match?.type === 'POSITION'
+                  ? '유저 선택'
+                  : '—'
+              }}
+            </div>
           </div>
 
           <div class="player-score player-score-left">
@@ -177,14 +193,30 @@
             <span class="team-badge">2팀</span>
           </div>
 
-          <div class="player-name">
-            {{
-              team2[i - 1]?.player?.nickname
-                ? `${team2[i - 1].player.nickname}#${team2[i - 1].player.tagname}`
-                : match?.type === 'POSITION'
-                ? '유저 선택'
-                : '—'
-            }}
+          <div class="player-identity">
+            <v-avatar
+              v-if="team2[i - 1]?.player?.nickname"
+              size="42"
+              color="blue-grey-darken-2"
+            >
+              <v-img
+                v-if="team2[i - 1].player.avatar"
+                :src="avatarUrl(team2[i - 1].player.avatar)"
+                cover
+              />
+              <span v-else class="text-caption font-weight-bold">
+                {{ playerInitial(team2[i - 1].player.nickname) }}
+              </span>
+            </v-avatar>
+            <div class="player-name">
+              {{
+                team2[i - 1]?.player?.nickname
+                  ? `${team2[i - 1].player.nickname}#${team2[i - 1].player.tagname}`
+                  : match?.type === 'POSITION'
+                  ? '유저 선택'
+                  : '—'
+              }}
+            </div>
           </div>
 
           <div class="player-score">
@@ -448,6 +480,16 @@ const positionIconMap: Record<string, string> = {
 function getPositionIcon(pos?: string) {
   if (!pos) return '';
   return positionIconMap[pos] ?? '';
+}
+
+function avatarUrl(value: string) {
+  return /^https?:\/\//i.test(value)
+    ? value
+    : `${getBaseUrl('DATA').replace(/\/$/, '')}${value}`;
+}
+
+function playerInitial(nickname?: string) {
+  return nickname?.trim().slice(0, 2) || '?';
 }
 
 function orderKey(m: MatchMember): number {
@@ -1014,12 +1056,27 @@ onMounted(fetch);
 }
 
 .player-name {
-  margin-top: 14px;
   font-size: 19px;
   font-weight: 950;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.player-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  min-width: 0;
+}
+
+.player-identity-left {
+  flex-direction: row-reverse;
+}
+
+.player-identity .player-name {
+  min-width: 0;
 }
 
 .player-score {
