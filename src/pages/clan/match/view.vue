@@ -131,9 +131,7 @@
               {{
                 team1[i - 1]?.player?.nickname
                   ? `${team1[i - 1].player.nickname}#${team1[i - 1].player.tagname}`
-                  : match?.type === 'POSITION'
-                  ? '유저 선택'
-                  : '—'
+                  : '플레이어 선택'
               }}
             </div>
           </div>
@@ -212,9 +210,7 @@
               {{
                 team2[i - 1]?.player?.nickname
                   ? `${team2[i - 1].player.nickname}#${team2[i - 1].player.tagname}`
-                  : match?.type === 'POSITION'
-                  ? '유저 선택'
-                  : '—'
+                  : '플레이어 선택'
               }}
             </div>
           </div>
@@ -635,7 +631,30 @@ async function fetch() {
   winnerTeam.value = (match.value?.winner_team ?? null) as number | null;
 
   const members: MatchMember[] = data.datas.match_members ?? [];
-  allPositionMembers.value = members;
+
+  const playerResponse = await api.get(`${getBaseUrl('DATA')}/player/search`, {
+    params: {
+      page: 1,
+      itemsPerPage: 1000,
+      sortBy: 'nickname',
+      orderBy: 'asc',
+      clan: account.clan.name,
+    },
+  });
+
+  const existingMemberByPlayerId = new Map(members.map((member) => [member.player.id, member]));
+  allPositionMembers.value = (playerResponse.data.datas ?? []).map((player: any) => {
+    const existing = existingMemberByPlayerId.get(player.id);
+    if (existing) return existing;
+
+    return {
+      ...emptyMember(),
+      player: {
+        ...player,
+        tier: player.clan_tier ?? player.custom_tier ?? player.tier,
+      },
+    } as MatchMember;
+  });
 
   if (match.value?.type === 'POSITION') {
     if (truthy(match.value?.is_confirm)) {
@@ -691,7 +710,15 @@ const isFinished = computed<boolean>(() => {
   );
 });
 
-const canShot = computed<boolean>(() => !isConfirmed.value);
+const hasCompleteLineup = computed(
+  () =>
+    team1.value.length === 5 &&
+    team2.value.length === 5 &&
+    team1.value.every((m) => m.player?.id) &&
+    team2.value.every((m) => m.player?.id)
+);
+
+const canShot = computed<boolean>(() => !isConfirmed.value && hasCompleteLineup.value);
 
 const pickedIds = computed(() => {
   const s = new Set<number>();

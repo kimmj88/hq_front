@@ -15,26 +15,9 @@
         :rules="[rules.required]"
       ></v-select>
 
-      <!-- 유저 추가 다이얼로그 -->
-      <ProjectMemberDialog @added="handleAdd" />
-
-      <!-- 선택된 유저 표시 -->
-      <div class="mt-4 d-flex flex-wrap gap-2">
-        <v-chip
-          v-for="user in selectedUsers"
-          :key="user.id"
-          color="primary"
-          variant="elevated"
-          closable
-          class="ma-1"
-          @click:close="removeUser(user)"
-        >
-          <v-avatar left>
-            <v-icon>mdi-account</v-icon>
-          </v-avatar>
-          {{ user.nickname }}
-        </v-chip>
-      </div>
+      <v-alert type="info" variant="tonal" class="mt-2">
+        매치를 만든 뒤 상세 화면에서 양 팀의 플레이어를 선택할 수 있습니다.
+      </v-alert>
 
       <!-- 버튼 영역 -->
       <div class="mt-6 text-right">
@@ -52,9 +35,7 @@
 </template>
 
 <script setup lang="ts">
-import { can } from '@/stores/usePermissionStore';
-import { onMounted, ref } from 'vue';
-import ProjectMemberDialog from '@/components/dialogs/ProjectMemberDialog.vue';
+import { ref } from 'vue';
 import api from '@/@core/composable/useAxios';
 import { useRouter } from 'vue-router';
 import { CLAN_PATH } from '@/router/clan/type';
@@ -88,28 +69,6 @@ const projectTypeOptions: ProjectTypeOption[] = [
 
 const project_type = ref<ProjectType | ''>('');
 
-// 유저 선택 관련 상태
-interface UserOption {
-  id: number;
-  nickname: string;
-  tagname: string;
-  point: number;
-}
-
-const selectedUsers = ref<UserOption[]>([]);
-
-function handleAdd(users: UserOption[]) {
-  // 중복 제거 후 추가
-
-  const newIds = new Set(selectedUsers.value.map((u) => u.id));
-  const filtered = users.filter((u) => !newIds.has(u.id));
-  selectedUsers.value.push(...filtered);
-}
-
-function removeUser(user: UserOption) {
-  selectedUsers.value = selectedUsers.value.filter((u) => u.id !== user.id);
-}
-
 async function createMatch() {
   if (!match_name.value.trim()) {
     alert('Match 이름을 입력해주세요!');
@@ -121,19 +80,14 @@ async function createMatch() {
     return;
   }
 
-  if (selectedUsers.value.length != 10) {
-    alert('10명을 선택 해야합니다.');
-    return;
-  }
-
   try {
     const response = await api.post(`${getBaseUrl('DATA')}/match/create`, {
       name: match_name.value,
       type: project_type.value,
-      match_members: selectedUsers.value.map((u) => u.id),
+      match_members: [],
       clan: account.clan,
     });
-    router.push(CLAN_PATH.MATCH(account.clan.name));
+    router.push(CLAN_PATH.MATCH_VIEW(account.clan.name, response.data.datas.id));
   } catch (error: any) {
     errorMessage.value = error?.response?.data?.message ?? '알 수 없는 오류 발생';
     errorSnackbar.value = true;
