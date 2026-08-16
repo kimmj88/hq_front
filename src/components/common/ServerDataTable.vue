@@ -6,6 +6,9 @@
     :items-length="itemsLength"
     :loading="loading"
     :search="search"
+    :page="page"
+    :sort-by="sortBy"
+    @update:page="(newPage) => emits('update:page', newPage)"
     @update:items-per-page="
       (newItemsPerPage) => emits('update:itemsPerPage', newItemsPerPage)
     "
@@ -28,9 +31,11 @@ defineProps<{
   itemsPerPage: VDataTableServer["itemsPerPage"];
   loading: VDataTableServer["loading"];
   search: VDataTableServer["search"];
+  page?: number;
+  sortBy?: any[];
 }>();
 
-const emits = defineEmits(["update:options", "update:itemsPerPage"]);
+const emits = defineEmits(["update:options", "update:itemsPerPage", "update:page"]);
 
 const slots = useSlots();
 </script>

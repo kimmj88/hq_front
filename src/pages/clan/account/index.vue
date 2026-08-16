@@ -28,8 +28,12 @@
       :items="serverItems"
       :items-length="totalItems"
       :items-per-page="itemsPerPage"
+      :page="page"
+      :sort-by="lastOptions.sortBy"
       :loading="loading"
       :search="search"
+      @update:page="handlePageChange"
+      @update:items-per-page="itemsPerPage = $event"
       @update:options="loadItems"
     >
       <!-- 유저 프로필/이메일 -->
@@ -110,6 +114,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { CLAN_PATH } from '@/router/clan/type';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import api from '@/@core/composable/useAxios';
@@ -120,10 +125,18 @@ import { can } from '@/stores/useClanPermissionStore';
 import { useAccountStore } from '@/stores/useAccountStore';
 
 const account = useAccountStore();
+const route = useRoute();
+const router = useRouter();
 
-const itemsPerPage = ref<number>(10);
+const queryNumber = (value: unknown, fallback: number) => {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+};
 
-const search = ref<string>('');
+const page = ref<number>(queryNumber(route.query.memberPage, 1));
+const itemsPerPage = ref<number>(queryNumber(route.query.memberSize, 10));
+
+const search = ref<string>(String(route.query.memberSearch ?? ''));
 const serverItems = ref<Account[]>([]);
 const loading = ref<boolean>(true);
 const totalItems = ref<number>(0);
@@ -157,25 +170,76 @@ interface FetchParams {
   sortBy: { key: keyof Account; order: 'asc' | 'desc' }[];
 }
 
+const lastOptions = ref<FetchParams>({
+  keyword: search.value,
+  page: page.value,
+  itemsPerPage: itemsPerPage.value,
+  sortBy: route.query.memberSort
+    ? [
+        {
+          key: String(route.query.memberSort) as keyof Account,
+          order: route.query.memberOrder === 'asc' ? 'asc' : 'desc',
+        },
+      ]
+    : [],
+});
+
+let pendingPageChange = false;
+
+function handlePageChange(nextPage: number) {
+  page.value = nextPage;
+  pendingPageChange = true;
+}
+
+function saveListState(options: FetchParams) {
+  const sort = options.sortBy[0];
+  void router.replace({
+    query: {
+      ...route.query,
+      memberPage: String(options.page),
+      memberSize: String(options.itemsPerPage),
+      memberSearch: search.value || undefined,
+      memberSort: sort?.key ? String(sort.key) : undefined,
+      memberOrder: sort?.order,
+    },
+  });
+}
+
 async function loadItems(options: FetchParams) {
   try {
-    const sortKey = options.sortBy[0]?.key || 'created_at';
-    const sortOrder = options.sortBy[0]?.order || 'desc';
+    const requestedPage = pendingPageChange ? page.value : options.page || page.value;
+    pendingPageChange = false;
 
+    const normalizedOptions: FetchParams = {
+      ...options,
+      keyword: search.value,
+      page: requestedPage,
+      itemsPerPage: options.itemsPerPage || itemsPerPage.value,
+      sortBy: options.sortBy ?? [],
+    };
+    lastOptions.value = normalizedOptions;
+    page.value = normalizedOptions.page;
+    itemsPerPage.value = normalizedOptions.itemsPerPage;
+    saveListState(normalizedOptions);
+
+    const sortKey = normalizedOptions.sortBy[0]?.key || 'created_at';
+    const sortOrder = normalizedOptions.sortBy[0]?.order || 'desc';
+
+    loading.value = true;
     const response = await api.get(
       `${getBaseUrl('DATA')}/account/search?keyword=${search.value}&page=${
-        options.page
-      }&itemsPerPage=${options.itemsPerPage}&sortBy=${sortKey}&orderBy=${sortOrder}&clan=${
+        normalizedOptions.page
+      }&itemsPerPage=${normalizedOptions.itemsPerPage}&sortBy=${sortKey}&orderBy=${sortOrder}&clan=${
         account.clan.name
       }`
     );
 
-    loading.value = true;
     serverItems.value = response.data.datas;
     totalItems.value = response.data.totalCount;
-    loading.value = false;
   } catch (error) {
     console.error('기업 목록 불러오기 실패:', error);
+  } finally {
+    loading.value = false;
   }
 }
 
@@ -264,7 +328,7 @@ function handleSearch() {
     keyword: search.value,
     page: 1,
     itemsPerPage: itemsPerPage.value,
-    sortBy: [],
+    sortBy: lastOptions.value.sortBy,
   });
 }
 
@@ -273,7 +337,11 @@ async function leaveClan(item: any) {
     id: item.id,
     clan_id: null,
   });
-  handleSearch();
+  await loadItems(lastOptions.value);
+
+  if (serverItems.value.length === 0 && page.value > 1) {
+    await loadItems({ ...lastOptions.value, page: page.value - 1 });
+  }
 }
 
 function handleClear() {
