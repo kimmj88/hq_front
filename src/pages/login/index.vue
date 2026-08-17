@@ -86,6 +86,8 @@ const rules = {
 };
 
 async function redirectToMicrosoft() {
+  const redirect = sessionStorage.getItem('clanInviteRedirect');
+  if (redirect) sessionStorage.setItem('clanInviteRedirect', redirect);
   location.href = `${getBaseUrl('AUTH')}/auth/redirect/kakao`;
   Cookies.remove('accessToken');
   Cookies.remove('idToken');

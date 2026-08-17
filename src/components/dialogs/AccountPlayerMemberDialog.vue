@@ -2,7 +2,16 @@
   <v-dialog v-model="dialog" max-width="640">
     <!-- 액티베이터 -->
     <template #activator="{ props }">
-      <v-btn color="secondary" v-bind="props" prepend-icon="mdi-account-plus">롤 계정 동기화</v-btn>
+      <v-btn
+        :color="buttonColor"
+        :block="block"
+        :size="buttonSize"
+        :rounded="buttonRounded"
+        v-bind="props"
+        prepend-icon="mdi-link-variant"
+      >
+        {{ buttonText }}
+      </v-btn>
     </template>
 
     <v-card>
@@ -118,6 +127,23 @@ import api from '@/@core/composable/useAxios';
 import type { Tier } from '@/data/types/tier';
 import axios from 'axios';
 import { useAccountStore } from '@/stores/useAccountStore';
+
+withDefaults(
+  defineProps<{
+    buttonText?: string;
+    buttonColor?: string;
+    buttonSize?: string;
+    buttonRounded?: string;
+    block?: boolean;
+  }>(),
+  {
+    buttonText: '롤 계정 동기화',
+    buttonColor: 'secondary',
+    buttonSize: 'default',
+    buttonRounded: undefined,
+    block: false,
+  }
+);
 
 const account = useAccountStore();
 

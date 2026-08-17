@@ -599,8 +599,13 @@ async function submitEdit() {
   }
 }
 
-function handleAdd(param: any) {
-  fetchAccount();
+async function handleAdd(param: any) {
+  await fetchAccount();
+
+  const inviteRedirect = sessionStorage.getItem('clanInviteRedirect');
+  if (inviteRedirect) {
+    await router.push(inviteRedirect);
+  }
 }
 
 function openPositionDialog() {

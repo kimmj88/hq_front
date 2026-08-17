@@ -121,6 +121,7 @@ import ClanAuctionAdd from '@/pages/clan/auction/add.vue';
 import ClanAuctionView from '@/pages/clan/auction/view.vue';
 
 import MyClan from '@/pages/clan/myclan.vue';
+import ClanInvite from '@/pages/clan/invite.vue';
 
 import Cookies from 'js-cookie';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -148,6 +149,7 @@ const router = createRouter({
     { path: '/exception', component: Exception },
     { path: '/pendingapproval', component: PendingApproval },
     { path: '/register', component: KakaoLolRegister },
+    { path: '/clan/invite/:code', component: ClanInvite },
     { path: '/step1', component: Step1 },
     { path: '/step2', component: Step2 },
     { path: '/step3', component: Step3 },
@@ -394,7 +396,8 @@ router.beforeEach(async (to, from, next) => {
   }
 
   const account = useAccountStore();
-  if (to.path.startsWith('/clan/') && account.isClaned == false) {
+  const isClanInvite = to.path.startsWith('/clan/invite/');
+  if (to.path.startsWith('/clan/') && !isClanInvite && account.isClaned == false) {
     await ensureSession();
 
     const targetClan = String(to.params.name ?? '');
@@ -423,6 +426,24 @@ router.beforeEach(async (to, from, next) => {
     permission.clear?.();
     Cookies.remove('accessToken');
     Cookies.remove('refreshToken');
+  }
+
+  let inviteRedirect = sessionStorage.getItem('clanInviteRedirect');
+  if (account.isClaned && inviteRedirect && !isClanInvite) {
+    sessionStorage.removeItem('clanInviteRedirect');
+    inviteRedirect = null;
+  }
+  const isInvitePlayerLink =
+    !!inviteRedirect && to.path === CONFIG_ACCOUNT_PATH.VIEW(account.id);
+  if (
+    ok &&
+    inviteRedirect &&
+    !isClanInvite &&
+    !isInvitePlayerLink &&
+    to.path !== '/register' &&
+    to.path !== '/pendingapproval'
+  ) {
+    return next(inviteRedirect);
   }
 
   return next();
