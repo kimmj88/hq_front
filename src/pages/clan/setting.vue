@@ -212,6 +212,27 @@ function inviteUrl(code: string) {
   return `${location.origin}/clan/invite/${code}`;
 }
 
+async function copyText(value: string) {
+  if (navigator.clipboard && window.isSecureContext) {
+    await navigator.clipboard.writeText(value);
+    return true;
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = value;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+
+  try {
+    return document.execCommand('copy');
+  } finally {
+    document.body.removeChild(textarea);
+  }
+}
+
 async function loadInvites() {
   try {
     inviteLoading.value = true;
@@ -225,6 +246,7 @@ async function loadInvites() {
 }
 
 async function createInvite() {
+  let createdCode = '';
   try {
     inviteCreating.value = true;
     const { data } = await api.post(`${getBaseUrl('DATA')}/clan-invite/create`, {
@@ -232,19 +254,28 @@ async function createInvite() {
       expires_in_days: inviteForm.expiresInDays || undefined,
       max_uses: inviteForm.maxUses || undefined,
     });
+    createdCode = data.datas.code;
     await loadInvites();
-    await navigator.clipboard.writeText(inviteUrl(data.datas.code));
-    alert('초대 링크를 만들고 클립보드에 복사했습니다.');
+    const copied = await copyText(inviteUrl(createdCode));
+    alert(
+      copied
+        ? '초대 링크를 만들고 클립보드에 복사했습니다.'
+        : '초대 링크는 만들었지만 자동 복사하지 못했습니다. 목록의 복사 버튼을 이용해주세요.'
+    );
   } catch (error: any) {
-    alert(error?.response?.data?.message ?? '초대 링크를 만들지 못했습니다.');
+    if (createdCode) {
+      alert('초대 링크는 생성됐지만 클립보드 복사에 실패했습니다.');
+    } else {
+      alert(error?.response?.data?.message ?? '초대 링크를 만들지 못했습니다.');
+    }
   } finally {
     inviteCreating.value = false;
   }
 }
 
 async function copyInvite(code: string) {
-  await navigator.clipboard.writeText(inviteUrl(code));
-  alert('초대 링크를 복사했습니다.');
+  const copied = await copyText(inviteUrl(code));
+  alert(copied ? '초대 링크를 복사했습니다.' : `아래 링크를 직접 복사해주세요.\n${inviteUrl(code)}`);
 }
 
 async function revokeInvite(id: number) {
