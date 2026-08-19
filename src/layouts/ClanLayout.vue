@@ -84,6 +84,15 @@
           />
 
           <v-list-item
+            v-if="can('PARTY', 'CLAN-SET-PARTY-R')"
+            :active="section === 'party'"
+            prepend-icon="mdi-account-multiple-plus-outline"
+            title="파티 구하기"
+            :to="CLAN_PATH.PARTY(account.clan.name)"
+            @click="section = 'party'"
+          />
+
+          <v-list-item
             v-if="can('MATCH', 'CLAN-SET-MATCH-R')"
             :active="section === 'matches'"
             prepend-icon="mdi-sword-cross"

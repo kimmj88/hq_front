@@ -100,6 +100,11 @@ const messages = {
       'CLAN-SET-AUCTION-C': '경매 생성',
       'CLAN-SET-AUCTION-R': '경매 조회',
       'CLAN-SET-AUCTION-D': '경매 삭제',
+
+      'CLAN-SET-PARTY-C': '파티방 생성',
+      'CLAN-SET-PARTY-R': '파티 찾기 조회',
+      'CLAN-SET-PARTY-U': '파티 참가 및 나가기',
+      'CLAN-SET-PARTY-D': '파티 종료 및 참가자 관리',
     },
   },
   en: {

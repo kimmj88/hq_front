@@ -107,6 +107,7 @@ import ClanPlayer from '@/pages/clan/player.vue';
 import ClanSetting from '@/pages/clan/setting.vue';
 import ClanAccount from '@/pages/clan/account/index.vue';
 import ClanAccountView from '@/pages/clan/account/view.vue';
+import ClanParty from '@/pages/clan/party/index.vue';
 
 import ClanMatch from '@/pages/clan/match/index.vue';
 import ClanMatchAdd from '@/pages/clan/match/add.vue';
@@ -193,6 +194,7 @@ const router = createRouter({
         { path: CLAN_PATH.SETTING(':name'), component: ClanSetting },
         { path: CLAN_PATH.ACCOUNT(':name'), component: ClanAccount },
         { path: CLAN_PATH.ACCOUNT_VIEW(':name', ':id'), component: ClanAccountView, props: true },
+        { path: CLAN_PATH.PARTY(':name'), component: ClanParty },
         { path: CLAN_PATH.PERMISSION(':name'), component: ClanPermission },
         { path: CLAN_PATH.MATCH(':name'), component: ClanMatch },
         { path: CLAN_PATH.MATCH_ADD(':name'), component: ClanMatchAdd },
