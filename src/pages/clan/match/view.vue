@@ -169,11 +169,24 @@
           </div>
         </div>
 
-        <div class="line-center">
+        <div
+          class="line-center"
+          :class="{ 'line-center--swappable': !isConfirmed }"
+          :title="isConfirmed ? '확정된 팀은 변경할 수 없습니다.' : '클릭하여 양 팀 플레이어 스왑'"
+          :role="!isConfirmed ? 'button' : undefined"
+          :tabindex="!isConfirmed ? 0 : undefined"
+          @click="swapLinePlayers(i - 1)"
+          @keydown.enter.prevent="swapLinePlayers(i - 1)"
+          @keydown.space.prevent="swapLinePlayers(i - 1)"
+        >
           <div class="line-icon">
             <v-img :src="getPositionIcon(team1[i - 1].position)" width="70" height="70" />
           </div>
           <div class="line-name">{{ team1[i - 1].position }}</div>
+          <div v-if="!isConfirmed" class="swap-hint">
+            <v-icon size="20">mdi-swap-horizontal</v-icon>
+            스왑
+          </div>
         </div>
 
         <div
@@ -613,6 +626,30 @@ function onShot() {
   updateTotals();
 }
 
+function swapLinePlayers(index: number) {
+  if (isConfirmed.value) return;
+
+  const left = team1.value[index];
+  const right = team2.value[index];
+  if (!left?.player?.id || !right?.player?.id) {
+    snackbar.value = { show: true, msg: '양쪽 팀에 플레이어가 있어야 스왑할 수 있습니다.' };
+    return;
+  }
+
+  const leftPlayer = left.player;
+  left.player = right.player;
+  right.player = leftPlayer;
+
+  left.player.tier.point = getTierPositionPoint(left.player.tier.name, left.position);
+  right.player.tier.point = getTierPositionPoint(right.player.tier.name, right.position);
+  updateTotals();
+
+  snackbar.value = {
+    show: true,
+    msg: `${left.position} 포지션의 양 팀 플레이어를 스왑했습니다.`,
+  };
+}
+
 async function fetch() {
   POSITIONS.length = 0;
 
@@ -1016,6 +1053,23 @@ onMounted(fetch);
   flex-direction: column;
   align-items: center;
   gap: 7px;
+  border-radius: 20px;
+  outline: none;
+}
+
+.line-center--swappable {
+  cursor: pointer;
+}
+
+.line-center--swappable .line-icon {
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.line-center--swappable:hover .line-icon,
+.line-center--swappable:focus-visible .line-icon {
+  transform: scale(1.06);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12), 0 0 0 4px rgba(139, 92, 246, 0.18),
+    0 12px 30px rgba(15, 23, 42, 0.2);
 }
 
 .line-icon {
@@ -1033,6 +1087,18 @@ onMounted(fetch);
   font-size: 13px;
   font-weight: 950;
   color: #475569;
+}
+
+.swap-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: rgba(124, 58, 237, 0.1);
+  color: #7c3aed;
+  font-size: 14px;
+  font-weight: 900;
 }
 
 .player-card {
