@@ -9,7 +9,7 @@
         <p>클랜원들과 함께할 게임을 빠르게 만들고 참가하세요.</p>
       </div>
       <v-btn
-        v-if="can('PARTY', 'CLAN-SET-PARTY-C')"
+        v-if="canParty('CLAN-SET-PARTY-C')"
         color="primary"
         size="large"
         rounded="xl"
@@ -217,7 +217,7 @@
                 <v-tooltip
                   v-if="
                     room.status !== 'CLOSED' &&
-                    (room.is_owner || can('PARTY', 'CLAN-SET-PARTY-D')) &&
+                    (room.is_owner || canParty('CLAN-SET-PARTY-D')) &&
                     member.account.id !== room.owner.id &&
                     member.account.id !== account.id
                   "
@@ -265,7 +265,10 @@
                 >종료</v-chip
               >
               <v-btn
-                v-else-if="room.is_owner || can('PARTY', 'CLAN-SET-PARTY-D')"
+                v-if="
+                  room.status !== 'CLOSED' &&
+                  (room.is_owner || canParty('CLAN-SET-PARTY-D'))
+                "
                 color="error"
                 variant="tonal"
                 rounded="lg"
@@ -273,7 +276,12 @@
                 >파티 종료</v-btn
               >
               <v-btn
-                v-else-if="room.is_joined && can('PARTY', 'CLAN-SET-PARTY-U')"
+                v-if="
+                  room.status !== 'CLOSED' &&
+                  !room.is_owner &&
+                  room.is_joined &&
+                  canParty('CLAN-SET-PARTY-U')
+                "
                 color="secondary"
                 variant="tonal"
                 rounded="lg"
@@ -281,7 +289,12 @@
                 >나가기</v-btn
               >
               <v-btn
-                v-else-if="can('PARTY', 'CLAN-SET-PARTY-U')"
+                v-if="
+                  room.status !== 'CLOSED' &&
+                  !room.is_owner &&
+                  !room.is_joined &&
+                  canParty('CLAN-SET-PARTY-U')
+                "
                 color="primary"
                 rounded="lg"
                 :disabled="room.status !== 'RECRUITING'"
@@ -443,6 +456,9 @@ interface HistoryResult {
 }
 
 const account = useAccountStore();
+function canParty(code: string) {
+  return account.isClanMaster || can('PARTY', code);
+}
 const rooms = ref<PartyRoom[]>([]);
 const loading = ref(false);
 const saving = ref(false);

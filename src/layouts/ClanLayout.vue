@@ -84,7 +84,7 @@
           />
 
           <v-list-item
-            v-if="can('PARTY', 'CLAN-SET-PARTY-R')"
+            v-if="account.isClanMaster || can('PARTY', 'CLAN-SET-PARTY-R')"
             :active="section === 'party'"
             prepend-icon="mdi-account-multiple-plus-outline"
             title="파티 구하기"
