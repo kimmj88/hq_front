@@ -247,6 +247,24 @@
               </div>
             </div>
 
+            <div v-if="room.waitlist_count" class="waitlist-box">
+              <div class="waitlist-head">
+                <span><v-icon size="17">mdi-timer-sand</v-icon> 대기열</span>
+                <strong>{{ room.waitlist_count }}명</strong>
+              </div>
+              <div class="waitlist-people">
+                <v-chip
+                  v-for="waiter in room.waitlist"
+                  :key="waiter.id"
+                  size="small"
+                  :color="waiter.account.id === account.id ? 'warning' : 'default'"
+                  variant="tonal"
+                >
+                  {{ waiter.order }}. {{ waitlistName(waiter) }}
+                </v-chip>
+              </div>
+            </div>
+
             <div class="card-actions">
               <v-btn
                 v-if="room.status !== 'CLOSED'"
@@ -303,14 +321,40 @@
                   room.status !== 'CLOSED' &&
                   !room.is_owner &&
                   !room.is_joined &&
+                  !room.is_waiting &&
+                  room.status === 'RECRUITING' &&
                   canParty('CLAN-SET-PARTY-U')
                 "
                 color="primary"
                 rounded="lg"
-                :disabled="room.status !== 'RECRUITING'"
                 @click="openJoin(room)"
               >
-                {{ room.status === 'RECRUITING' ? '참가하기' : '인원 마감' }}
+                참가하기
+              </v-btn>
+              <v-btn
+                v-if="
+                  room.status === 'FULL' &&
+                  !room.is_owner &&
+                  !room.is_joined &&
+                  !room.is_waiting &&
+                  canParty('CLAN-SET-PARTY-U')
+                "
+                color="warning"
+                variant="tonal"
+                rounded="lg"
+                prepend-icon="mdi-timer-sand"
+                @click="openWaitlist(room)"
+              >
+                대기하기
+              </v-btn>
+              <v-btn
+                v-if="room.status !== 'CLOSED' && room.is_waiting"
+                color="warning"
+                variant="outlined"
+                rounded="lg"
+                @click="cancelWaitlist(room)"
+              >
+                대기 {{ room.waitlist_order }}번 취소
               </v-btn>
             </div>
           </article>
@@ -390,7 +434,9 @@
 
     <v-dialog v-model="joinDialog" max-width="430">
       <v-card rounded="xl">
-        <v-card-title class="pa-6 pb-2 text-h6 font-weight-bold">파티 참가</v-card-title>
+        <v-card-title class="pa-6 pb-2 text-h6 font-weight-bold">
+          {{ joinMode === 'WAITLIST' ? '파티 대기 신청' : '파티 참가' }}
+        </v-card-title>
         <v-card-text class="pa-6 pt-3">
           <p class="text-body-2 text-medium-emphasis mb-4">{{ joiningRoom?.title }}</p>
           <v-select
@@ -398,7 +444,7 @@
             :items="positions"
             item-title="label"
             item-value="value"
-            label="참가 포지션"
+            :label="joinMode === 'WAITLIST' ? '대기 포지션' : '참가 포지션'"
             clearable
             variant="outlined"
             hint="정해지지 않았다면 비워두세요."
@@ -407,7 +453,9 @@
         </v-card-text>
         <v-card-actions class="pa-6 pt-0 justify-end">
           <v-btn variant="text" @click="joinDialog = false">취소</v-btn>
-          <v-btn color="primary" :loading="saving" @click="joinRoom">참가하기</v-btn>
+          <v-btn :color="joinMode === 'WAITLIST' ? 'warning' : 'primary'" :loading="saving" @click="joinRoom">
+            {{ joinMode === 'WAITLIST' ? '대기 신청' : '참가하기' }}
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -436,6 +484,13 @@ interface PartyMember {
   account: { id: number; nickname: string; avatar: string | null };
   player: { nickname: string; tagname: string; tier: string | null } | null;
 }
+interface PartyWaiter {
+  id: number;
+  order: number;
+  position: string | null;
+  account: { id: number; nickname: string; avatar: string | null };
+  player: { nickname: string; tagname: string } | null;
+}
 interface PartyRoom {
   id: number;
   type: RoomType;
@@ -448,8 +503,12 @@ interface PartyRoom {
   discord_url: string | null;
   owner: { id: number; nickname: string; avatar: string | null };
   members: PartyMember[];
+  waitlist: PartyWaiter[];
+  waitlist_count: number;
   is_owner: boolean;
   is_joined: boolean;
+  is_waiting: boolean;
+  waitlist_order: number | null;
 }
 interface HistoryResult {
   account: { id: number; nickname: string; avatar: string | null };
@@ -480,6 +539,7 @@ const createDialog = ref(false);
 const joinDialog = ref(false);
 const joiningRoom = ref<PartyRoom | null>(null);
 const joinPosition = ref<string | null>(null);
+const joinMode = ref<'JOIN' | 'WAITLIST'>('JOIN');
 const snackbar = ref({ show: false, message: '', color: 'success' });
 const historyKeyword = ref('');
 const historyLoading = ref(false);
@@ -565,6 +625,9 @@ function memberName(member: PartyMember) {
   return member.player
     ? `${member.player.nickname}#${member.player.tagname}`
     : member.account.nickname;
+}
+function waitlistName(waiter: PartyWaiter) {
+  return waiter.player ? `${waiter.player.nickname}#${waiter.player.tagname}` : waiter.account.nickname;
 }
 function scheduleLabel(value: string | null) {
   if (!value) return '시간 협의';
@@ -653,19 +716,24 @@ async function openJoinFromLink() {
     notify('참여할 파티방을 찾을 수 없습니다.', 'warning');
     return;
   }
-  if (room.status !== 'RECRUITING') {
-    notify(room.status === 'CLOSED' ? '종료된 파티방입니다.' : '모집 인원이 모두 찼습니다.', 'warning');
+  if (room.status === 'CLOSED') {
+    notify('종료된 파티방입니다.', 'warning');
     return;
   }
   if (room.is_owner || room.is_joined) {
     notify('이미 참가 중인 파티방입니다.', 'info');
     return;
   }
+  if (room.is_waiting) {
+    notify(`이미 대기 ${room.waitlist_order}번으로 등록되어 있습니다.`, 'info');
+    return;
+  }
   if (!canParty('CLAN-SET-PARTY-U')) {
     notify('파티에 참가할 권한이 없습니다.', 'error');
     return;
   }
-  openJoin(room);
+  if (room.status === 'FULL') openWaitlist(room);
+  else openJoin(room);
 }
 
 async function createRoom() {
@@ -701,23 +769,41 @@ async function createRoom() {
 function openJoin(room: PartyRoom) {
   joiningRoom.value = room;
   joinPosition.value = null;
+  joinMode.value = 'JOIN';
+  joinDialog.value = true;
+}
+function openWaitlist(room: PartyRoom) {
+  joiningRoom.value = room;
+  joinPosition.value = null;
+  joinMode.value = 'WAITLIST';
   joinDialog.value = true;
 }
 async function joinRoom() {
   if (!joiningRoom.value) return;
   try {
     saving.value = true;
-    await api.post(`${getBaseUrl('DATA')}/party-room/join`, {
+    const endpoint = joinMode.value === 'WAITLIST' ? 'waitlist' : 'join';
+    await api.post(`${getBaseUrl('DATA')}/party-room/${endpoint}`, {
       room_id: joiningRoom.value.id,
       position: joinPosition.value,
     });
     joinDialog.value = false;
     await loadRooms();
-    notify('파티에 참가했습니다.');
+    notify(joinMode.value === 'WAITLIST' ? '파티 대기열에 등록했습니다.' : '파티에 참가했습니다.');
   } catch (error: any) {
-    notify(error?.response?.data?.message ?? '파티에 참가하지 못했습니다.', 'error');
+    notify(error?.response?.data?.message ?? (joinMode.value === 'WAITLIST' ? '대기 신청에 실패했습니다.' : '파티에 참가하지 못했습니다.'), 'error');
   } finally {
     saving.value = false;
+  }
+}
+async function cancelWaitlist(room: PartyRoom) {
+  if (!confirm(`'${room.title}' 파티 대기를 취소할까요?`)) return;
+  try {
+    await api.post(`${getBaseUrl('DATA')}/party-room/waitlist/cancel`, { room_id: room.id });
+    await loadRooms();
+    notify('대기를 취소했습니다.');
+  } catch (error: any) {
+    notify(error?.response?.data?.message ?? '대기를 취소하지 못했습니다.', 'error');
   }
 }
 async function leaveRoom(room: PartyRoom) {
@@ -1085,6 +1171,32 @@ onMounted(loadRooms);
 .members {
   display: grid;
   gap: 7px;
+}
+.waitlist-box {
+  margin-top: 12px;
+  padding: 11px 12px;
+  border: 1px solid rgba(245, 158, 11, 0.22);
+  border-radius: 14px;
+  background: rgba(245, 158, 11, 0.07);
+}
+.waitlist-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  color: #f59e0b;
+  font-size: 12px;
+}
+.waitlist-head span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 850;
+}
+.waitlist-people {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 .member,
 .empty-member {
