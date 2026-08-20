@@ -135,6 +135,12 @@
 
         <v-list nav density="compact">
           <v-list-item
+            class="support-link"
+            prepend-icon="mdi-heart-outline"
+            title="서비스 후원"
+            @click="openSupport"
+          />
+          <v-list-item
             prepend-icon="mdi-account-search-outline"
             title="클랜 찾기"
             :to="CLAN_PATH.BASE"
@@ -165,6 +171,28 @@
           </v-card-actions>
         </v-card>
       </v-dialog>
+
+      <v-dialog v-model="supportDialog" max-width="500">
+        <v-card class="support-dialog" rounded="xl" overflow-hidden>
+          <div class="support-dialog__head">
+            <div>
+              <span>KAKAO PAY</span>
+              <h2>서비스 후원</h2>
+            </div>
+            <v-btn icon="mdi-close" variant="text" color="#111827" @click="supportDialog = false" />
+          </div>
+          <v-card-text class="pa-0">
+            <v-img
+              src="/kakao-pay-qr.jpg"
+              alt="김민재 카카오페이 후원 QR 코드"
+              class="support-dialog__qr"
+            />
+            <p class="support-dialog__guide">
+              카카오톡 또는 카카오페이의 코드 스캔으로 후원할 수 있습니다.
+            </p>
+          </v-card-text>
+        </v-card>
+      </v-dialog>
     </v-layout>
   </v-app>
 </template>
@@ -184,6 +212,7 @@ const router = useRouter();
 const account = useAccountStore();
 
 const leaveDialog = ref(false);
+const supportDialog = ref(false);
 
 // ✅ Vuetify breakpoint
 const { smAndDown } = useDisplay();
@@ -201,6 +230,11 @@ function toggleRail() {
   drawerRail.value = !drawerRail.value; // ✅ 데스크탑은 rail 토글
 }
 
+function openSupport() {
+  supportDialog.value = true;
+  if (isMobile.value) drawerOpen.value = false;
+}
+
 async function leaveClan() {
   await api.post(`${getBaseUrl('DATA')}/account/leave_clan`, {
     id: account.id,
@@ -212,3 +246,55 @@ async function leaveClan() {
   router.replace('/clan');
 }
 </script>
+
+<style scoped>
+.support-link {
+  margin-bottom: 4px;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.support-link :deep(.v-list-item-title) {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.support-dialog {
+  background: #f7f7f8;
+}
+
+.support-dialog__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  color: #111827;
+  background: #fee500;
+}
+
+.support-dialog__head span {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.support-dialog__head h2 {
+  margin: 2px 0 0;
+  font-size: 23px;
+  letter-spacing: -0.04em;
+}
+
+.support-dialog__qr {
+  width: 80%;
+  margin: 18px auto;
+}
+
+.support-dialog__guide {
+  margin: 0;
+  padding: 0 20px 20px;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 650;
+  text-align: center;
+}
+</style>

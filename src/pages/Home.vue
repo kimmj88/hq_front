@@ -56,97 +56,27 @@
           </div>
         </v-alert>
 
-        <!-- 프로모션 캐러셀 -->
-        <v-carousel
-          v-if="promos.length"
-          height="180"
-          hide-delimiter-background
-          show-arrows="hover"
-          class="mb-4 rounded-xl overflow-hidden elevation-2"
-        >
-          <v-carousel-item
-            v-for="(p, i) in promos"
-            :key="i"
-            :src="p.image"
-            cover
-            @click="openPromo(p)"
-          >
-            <div class="promo-caption">
-              <div class="text-subtitle-2 font-weight-medium">{{ p.title }}</div>
-              <div class="text-caption opacity-80">{{ p.subtitle }}</div>
+        <!-- 카카오페이 간단 후원 -->
+        <v-card class="kakao-support mb-6 rounded-xl overflow-hidden elevation-2">
+          <div class="kakao-support__head">
+            <div>
+              <span>KAKAO PAY</span>
+              <h2>카카오페이 간단 후원</h2>
             </div>
-          </v-carousel-item>
-        </v-carousel>
-
-        <!-- 빠른 액션 -->
-        <!-- <v-card class="mb-4 pa-3 rounded-xl">
-          <div class="d-flex align-center flex-wrap" style="gap: 8px">
-            <v-btn size="small" prepend-icon="mdi-plus-circle" @click="addPost">새 글</v-btn>
-            <v-btn size="small" variant="tonal" prepend-icon="mdi-ticket-percent" @click="goEvent"
-              >이벤트</v-btn
-            >
-            <v-btn size="small" variant="tonal" prepend-icon="mdi-chart-bar" @click="goRanking"
-              >랭킹</v-btn
-            >
-            <v-btn size="small" variant="tonal" prepend-icon="mdi-bell-outline" @click="goToNotice"
-              >공지</v-btn
-            >
-            <v-spacer />
-            <v-chip size="small" variant="flat" color="indigo"> #프로모션 #업데이트 </v-chip>
+            <v-icon color="#111827" size="34">mdi-qrcode-scan</v-icon>
           </div>
-        </v-card> -->
-        <!-- 스폰서/광고 카드 (메인 안쪽 배너) -->
-        <v-card class="mb-6 rounded-xl overflow-hidden elevation-2" @click="openSponsor">
-          <v-row no-gutters>
-            <v-col cols="8" class="pa-4">
-              <div class="text-subtitle-1 font-weight-medium mb-1">
-                후원계좌 : 429502-01-206598 (국민) 김민재
-              </div>
-              <div class="text-body-2 text-medium-emphasis mb-3">
-                여러분의 소중한 후원금으로 빠른시일내로 기능을 추가하도록 하겠습니다.!
-              </div>
-              <!-- <v-btn size="small" color="primary" prepend-icon="mdi-rocket-launch">지금 확인</v-btn> -->
-            </v-col>
-            <v-col cols="4">
-              <!-- <v-img
-                src="https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200&auto=format&fit=crop"
-                height="140"
-                cover
-              /> -->
-            </v-col>
-          </v-row>
+          <v-img
+            src="/kakao-pay-qr.jpg"
+            alt="김민재 카카오페이 후원 QR 코드"
+            class="kakao-support__qr"
+          />
+          <div class="kakao-support__guide">
+            카카오톡 또는 카카오페이의 코드 스캔으로 후원할 수 있습니다.
+          </div>
         </v-card>
 
         <!-- 공지/공유 보드 -->
         <v-row v-if="can('NOTICE', 'SYS-SET-NOTICE-R')" class="mb-4" dense>
-          <v-col cols="12" md="6">
-            <v-card class="rounded-xl">
-              <v-card-title class="py-2">
-                <v-icon size="18" class="mr-2">mdi-bell</v-icon> 공지사항
-                <v-spacer />
-                <v-btn size="small" variant="text" @click="goToNotice">더보기</v-btn>
-              </v-card-title>
-              <v-divider />
-              <v-list density="comfortable">
-                <v-list-item
-                  v-for="(n, i) in notices"
-                  :key="i"
-                  @click="openNotice(n)"
-                  title-class="text-body-2"
-                >
-                  <template #title>
-                    <div class="d-flex align-center">
-                      <span class="truncate-1">{{ n.title }}</span>
-                      <v-chip class="ml-2" size="x-small" color="error" v-if="n.badge">New</v-chip>
-                      <v-spacer />
-                      <span class="text-caption text-medium-emphasis">{{ n.date }}</span>
-                    </div>
-                  </template>
-                </v-list-item>
-              </v-list>
-            </v-card>
-          </v-col>
-
           <!-- <v-col cols="12" md="6">
             <v-card class="rounded-xl">
               <v-card-title class="py-2">
@@ -380,11 +310,6 @@ function goRanking() {
   console.log('랭킹');
 }
 
-// 스폰서
-function openSponsor() {
-  console.log('스폰서 클릭');
-}
-
 // 기존 포스트/댓글
 const commentDialog = ref(false);
 const newComment = ref('');
@@ -503,6 +428,48 @@ onMounted(async () => {
 /* 사이드 광고 카드 폭/여백 미세 조정 */
 .ad-card .v-card-text {
   background: rgba(0, 0, 0, 0.04);
+}
+
+.kakao-support {
+  border: 1px solid rgba(250, 225, 0, 0.45);
+  background: #f7f7f8;
+}
+
+.kakao-support__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 22px 16px;
+  color: #111827;
+  background: #fee500;
+}
+
+.kakao-support__head span {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.kakao-support__head h2 {
+  margin: 3px 0 0;
+  font-size: 24px;
+  letter-spacing: -0.04em;
+}
+
+.kakao-support__qr {
+  display: block;
+  width: 80%;
+  margin: 18px auto;
+  background: #f7f7f8;
+}
+
+.kakao-support__guide {
+  padding: 15px 20px 18px;
+  color: #374151;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 650;
+  text-align: center;
 }
 
 /* 기존 스타일 유지 */
