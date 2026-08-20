@@ -23,6 +23,8 @@
     <div class="party-toolbar">
       <v-chip-group v-model="selectedType" mandatory selected-class="text-primary">
         <v-chip value="ALL" filter color="success">진행 중</v-chip>
+        <v-chip value="DUO" filter color="indigo">듀오랭크</v-chip>
+        <v-chip value="NORMAL_FLEX" filter color="deep-purple">일반게임/자유랭크</v-chip>
         <v-chip value="CLOSED" filter color="grey">종료</v-chip>
       </v-chip-group>
       <div class="toolbar-actions">
@@ -247,33 +249,19 @@
 
             <div class="card-actions">
               <v-btn
-                v-if="room.discord_url"
-                :href="room.discord_url"
-                target="_blank"
-                rel="noopener noreferrer"
-                color="indigo-lighten-1"
+                v-if="room.status !== 'CLOSED'"
+                color="teal-lighten-1"
                 variant="tonal"
                 rounded="lg"
-                prepend-icon="mdi-discord"
-                >디스코드 참가</v-btn
-              >
+                prepend-icon="mdi-link-variant"
+                @click="copyJoinLink(room)"
+              >참여 링크</v-btn>
               <v-chip
                 v-if="room.status === 'CLOSED'"
                 color="grey"
                 variant="tonal"
                 prepend-icon="mdi-lock-outline"
                 >종료</v-chip
-              >
-              <v-btn
-                v-if="
-                  room.status !== 'CLOSED' &&
-                  (room.is_owner || canParty('CLAN-SET-PARTY-D'))
-                "
-                color="error"
-                variant="tonal"
-                rounded="lg"
-                @click="closeRoom(room)"
-                >파티 종료</v-btn
               >
               <v-btn
                 v-if="
@@ -287,6 +275,28 @@
                 rounded="lg"
                 @click="leaveRoom(room)"
                 >나가기</v-btn
+              >
+              <v-btn
+                v-if="
+                  room.status !== 'CLOSED' &&
+                  (room.is_owner || canParty('CLAN-SET-PARTY-D'))
+                "
+                color="error"
+                variant="tonal"
+                rounded="lg"
+                @click="closeRoom(room)"
+                >파티 종료</v-btn
+              >
+              <v-btn
+                v-if="room.discord_url"
+                :href="room.discord_url"
+                target="_blank"
+                rel="noopener noreferrer"
+                color="indigo-lighten-1"
+                variant="tonal"
+                rounded="lg"
+                prepend-icon="mdi-discord"
+                >디스코드 참가</v-btn
               >
               <v-btn
                 v-if="
@@ -408,6 +418,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import api from '@/@core/composable/useAxios';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import { useAccountStore } from '@/stores/useAccountStore';
@@ -456,13 +467,15 @@ interface HistoryResult {
 }
 
 const account = useAccountStore();
+const route = useRoute();
+const router = useRouter();
 function canParty(code: string) {
   return account.isClanMaster || can('PARTY', code);
 }
 const rooms = ref<PartyRoom[]>([]);
 const loading = ref(false);
 const saving = ref(false);
-const selectedType = ref<'ALL' | 'CLOSED'>('ALL');
+const selectedType = ref<'ALL' | 'DUO' | 'NORMAL_FLEX' | 'CLOSED'>('ALL');
 const createDialog = ref(false);
 const joinDialog = ref(false);
 const joiningRoom = ref<PartyRoom | null>(null);
@@ -494,7 +507,12 @@ const form = reactive({
 const filteredRooms = computed(() =>
   rooms.value.filter((room) => {
     if (selectedType.value === 'CLOSED') return room.status === 'CLOSED';
-    return room.status !== 'CLOSED';
+    if (room.status === 'CLOSED') return false;
+    if (selectedType.value === 'DUO') return room.type === 'DUO_RANK';
+    if (selectedType.value === 'NORMAL_FLEX') {
+      return room.type === 'NORMAL' || room.type === 'FLEX_RANK';
+    }
+    return true;
   })
 );
 const groupedRooms = computed(() =>
@@ -596,11 +614,58 @@ async function loadRooms() {
       params: { clan_id: account.clan.id },
     });
     rooms.value = data.datas ?? [];
+    await openJoinFromLink();
   } catch (error: any) {
     notify(error?.response?.data?.message ?? '파티 목록을 불러오지 못했습니다.', 'error');
   } finally {
     loading.value = false;
   }
+}
+
+async function copyJoinLink(room: PartyRoom) {
+  const url = `${window.location.origin}${route.path}?join=${room.id}`;
+  try {
+    await navigator.clipboard.writeText(url);
+    notify('참여 링크를 복사했습니다.');
+  } catch {
+    const input = document.createElement('textarea');
+    input.value = url;
+    input.style.position = 'fixed';
+    input.style.opacity = '0';
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand('copy');
+    input.remove();
+    notify('참여 링크를 복사했습니다.');
+  }
+}
+
+async function openJoinFromLink() {
+  const roomId = Number(route.query.join);
+  if (!Number.isInteger(roomId) || roomId <= 0) return;
+
+  const nextQuery = { ...route.query };
+  delete nextQuery.join;
+  await router.replace({ query: nextQuery });
+
+  const room = rooms.value.find((item) => item.id === roomId);
+  if (!room) {
+    notify('참여할 파티방을 찾을 수 없습니다.', 'warning');
+    return;
+  }
+  if (room.status !== 'RECRUITING') {
+    notify(room.status === 'CLOSED' ? '종료된 파티방입니다.' : '모집 인원이 모두 찼습니다.', 'warning');
+    return;
+  }
+  if (room.is_owner || room.is_joined) {
+    notify('이미 참가 중인 파티방입니다.', 'info');
+    return;
+  }
+  if (!canParty('CLAN-SET-PARTY-U')) {
+    notify('파티에 참가할 권한이 없습니다.', 'error');
+    return;
+  }
+  openJoin(room);
 }
 
 async function createRoom() {
