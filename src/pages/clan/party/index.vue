@@ -25,7 +25,8 @@
         <v-chip value="ALL" filter color="success">진행 중</v-chip>
         <v-chip value="DUO" filter color="indigo">듀오랭크</v-chip>
         <v-chip value="NORMAL_FLEX" filter color="deep-purple">일반게임/자유랭크</v-chip>
-        <v-chip value="CLOSED" filter color="grey">종료</v-chip>
+        <v-chip value="INHOUSE" filter color="orange">내전</v-chip>
+        <!-- <v-chip value="CLOSED" filter color="grey">종료</v-chip> -->
       </v-chip-group>
       <div class="toolbar-actions">
         <v-text-field
@@ -91,6 +92,10 @@
             <div>
               <strong>{{ result.stats.flex_rank }}</strong
               ><span>자유랭크</span>
+            </div>
+            <div>
+              <strong>{{ result.stats.inhouse }}</strong
+              ><span>내전</span>
             </div>
           </div>
           <div v-if="result.rooms.length" class="history-rooms">
@@ -215,6 +220,14 @@
                     </span>
                     <template v-if="member.player?.tier"> · {{ member.player.tier }}</template>
                   </small>
+                  <v-tooltip v-if="member.note" :text="member.note" location="top">
+                    <template #activator="{ props }">
+                      <div v-bind="props" class="member-note">
+                        <v-icon size="12">mdi-message-text-outline</v-icon>
+                        <span>{{ member.note }}</span>
+                      </div>
+                    </template>
+                  </v-tooltip>
                 </div>
                 <v-tooltip
                   v-if="
@@ -261,6 +274,13 @@
                   variant="tonal"
                 >
                   {{ waiter.order }}. {{ waitlistName(waiter) }}
+                  <v-tooltip v-if="waiter.note" :text="waiter.note" location="top">
+                    <template #activator="{ props }">
+                      <v-icon v-bind="props" class="ml-1" size="14"
+                        >mdi-message-text-outline</v-icon
+                      >
+                    </template>
+                  </v-tooltip>
                 </v-chip>
               </div>
             </div>
@@ -273,7 +293,8 @@
                 rounded="lg"
                 prepend-icon="mdi-link-variant"
                 @click="copyJoinLink(room)"
-              >참여 링크</v-btn>
+                >참여 링크</v-btn
+              >
               <v-chip
                 v-if="room.status === 'CLOSED'"
                 color="grey"
@@ -295,10 +316,7 @@
                 >나가기</v-btn
               >
               <v-btn
-                v-if="
-                  room.status !== 'CLOSED' &&
-                  (room.is_owner || canParty('CLAN-SET-PARTY-D'))
-                "
+                v-if="room.status !== 'CLOSED' && (room.is_owner || canParty('CLAN-SET-PARTY-D'))"
                 color="error"
                 variant="tonal"
                 rounded="lg"
@@ -450,10 +468,26 @@
             hint="정해지지 않았다면 비워두세요."
             persistent-hint
           />
+          <v-textarea
+            v-model="joinNote"
+            class="mt-4"
+            label="메모 (선택)"
+            placeholder="파티장이나 팀원에게 전달할 내용을 적어주세요."
+            variant="outlined"
+            rows="2"
+            auto-grow
+            maxlength="20"
+            counter="20"
+            hide-details="auto"
+          />
         </v-card-text>
         <v-card-actions class="pa-6 pt-0 justify-end">
           <v-btn variant="text" @click="joinDialog = false">취소</v-btn>
-          <v-btn :color="joinMode === 'WAITLIST' ? 'warning' : 'primary'" :loading="saving" @click="joinRoom">
+          <v-btn
+            :color="joinMode === 'WAITLIST' ? 'warning' : 'primary'"
+            :loading="saving"
+            @click="joinRoom"
+          >
             {{ joinMode === 'WAITLIST' ? '대기 신청' : '참가하기' }}
           </v-btn>
         </v-card-actions>
@@ -477,10 +511,11 @@ import midIcon from '@/assets/positions/mid.svg';
 import adcIcon from '@/assets/positions/adc.webp';
 import supIcon from '@/assets/positions/sup.svg';
 
-type RoomType = 'DUO_RANK' | 'NORMAL' | 'FLEX_RANK';
+type RoomType = 'DUO_RANK' | 'NORMAL' | 'FLEX_RANK' | 'INHOUSE';
 interface PartyMember {
   id: number;
   position: string | null;
+  note: string | null;
   account: { id: number; nickname: string; avatar: string | null };
   player: { nickname: string; tagname: string; tier: string | null } | null;
 }
@@ -488,6 +523,7 @@ interface PartyWaiter {
   id: number;
   order: number;
   position: string | null;
+  note: string | null;
   account: { id: number; nickname: string; avatar: string | null };
   player: { nickname: string; tagname: string } | null;
 }
@@ -513,7 +549,7 @@ interface PartyRoom {
 interface HistoryResult {
   account: { id: number; nickname: string; avatar: string | null };
   player: { id: number; nickname: string; tagname: string } | null;
-  stats: { total: number; duo_rank: number; normal: number; flex_rank: number };
+  stats: { total: number; duo_rank: number; normal: number; flex_rank: number; inhouse: number };
   rooms: {
     id: number;
     type: RoomType;
@@ -534,11 +570,12 @@ function canParty(code: string) {
 const rooms = ref<PartyRoom[]>([]);
 const loading = ref(false);
 const saving = ref(false);
-const selectedType = ref<'ALL' | 'DUO' | 'NORMAL_FLEX' | 'CLOSED'>('ALL');
+const selectedType = ref<'ALL' | 'DUO' | 'NORMAL_FLEX' | 'INHOUSE' | 'CLOSED'>('ALL');
 const createDialog = ref(false);
 const joinDialog = ref(false);
 const joiningRoom = ref<PartyRoom | null>(null);
 const joinPosition = ref<string | null>(null);
+const joinNote = ref('');
 const joinMode = ref<'JOIN' | 'WAITLIST'>('JOIN');
 const snackbar = ref({ show: false, message: '', color: 'success' });
 const historyKeyword = ref('');
@@ -555,6 +592,7 @@ const typeOptions = [
   { label: '듀오랭크 (2명)', value: 'DUO_RANK' },
   { label: '일반게임 (5명)', value: 'NORMAL' },
   { label: '자유랭크 (5명)', value: 'FLEX_RANK' },
+  { label: '내전 (10명)', value: 'INHOUSE' },
 ];
 const form = reactive({
   type: 'DUO_RANK' as RoomType,
@@ -572,11 +610,12 @@ const filteredRooms = computed(() =>
     if (selectedType.value === 'NORMAL_FLEX') {
       return room.type === 'NORMAL' || room.type === 'FLEX_RANK';
     }
+    if (selectedType.value === 'INHOUSE') return room.type === 'INHOUSE';
     return true;
   })
 );
 const groupedRooms = computed(() =>
-  (['DUO_RANK', 'FLEX_RANK', 'NORMAL'] as RoomType[])
+  (['DUO_RANK', 'INHOUSE', 'FLEX_RANK', 'NORMAL'] as RoomType[])
     .map((type) => ({ type, rooms: filteredRooms.value.filter((room) => room.type === type) }))
     .filter((group) => group.rooms.length)
 );
@@ -594,11 +633,16 @@ const positionIcons: Record<string, string> = {
 };
 
 function typeMeta(type: RoomType) {
-  return type === 'DUO_RANK'
-    ? { label: '듀오랭크', color: 'indigo', icon: 'mdi-account-multiple' }
-    : type === 'NORMAL'
-    ? { label: '일반게임', color: 'teal', icon: 'mdi-gamepad-variant-outline' }
-    : { label: '자유랭크', color: 'deep-purple', icon: 'mdi-shield-sword-outline' };
+  if (type === 'DUO_RANK') {
+    return { label: '듀오랭크', color: 'indigo', icon: 'mdi-account-multiple' };
+  }
+  if (type === 'NORMAL') {
+    return { label: '일반게임', color: 'teal', icon: 'mdi-gamepad-variant-outline' };
+  }
+  if (type === 'INHOUSE') {
+    return { label: '내전', color: 'orange', icon: 'mdi-sword-cross' };
+  }
+  return { label: '자유랭크', color: 'deep-purple', icon: 'mdi-shield-sword-outline' };
 }
 function statusMeta(status: PartyRoom['status']) {
   if (status === 'RECRUITING') return { label: '모집 중', className: 'recruiting' };
@@ -627,7 +671,9 @@ function memberName(member: PartyMember) {
     : member.account.nickname;
 }
 function waitlistName(waiter: PartyWaiter) {
-  return waiter.player ? `${waiter.player.nickname}#${waiter.player.tagname}` : waiter.account.nickname;
+  return waiter.player
+    ? `${waiter.player.nickname}#${waiter.player.tagname}`
+    : waiter.account.nickname;
 }
 function scheduleLabel(value: string | null) {
   if (!value) return '시간 협의';
@@ -769,12 +815,14 @@ async function createRoom() {
 function openJoin(room: PartyRoom) {
   joiningRoom.value = room;
   joinPosition.value = null;
+  joinNote.value = '';
   joinMode.value = 'JOIN';
   joinDialog.value = true;
 }
 function openWaitlist(room: PartyRoom) {
   joiningRoom.value = room;
   joinPosition.value = null;
+  joinNote.value = '';
   joinMode.value = 'WAITLIST';
   joinDialog.value = true;
 }
@@ -786,12 +834,19 @@ async function joinRoom() {
     await api.post(`${getBaseUrl('DATA')}/party-room/${endpoint}`, {
       room_id: joiningRoom.value.id,
       position: joinPosition.value,
+      note: joinNote.value.trim() || undefined,
     });
     joinDialog.value = false;
     await loadRooms();
     notify(joinMode.value === 'WAITLIST' ? '파티 대기열에 등록했습니다.' : '파티에 참가했습니다.');
   } catch (error: any) {
-    notify(error?.response?.data?.message ?? (joinMode.value === 'WAITLIST' ? '대기 신청에 실패했습니다.' : '파티에 참가하지 못했습니다.'), 'error');
+    notify(
+      error?.response?.data?.message ??
+        (joinMode.value === 'WAITLIST'
+          ? '대기 신청에 실패했습니다.'
+          : '파티에 참가하지 못했습니다.'),
+      'error'
+    );
   } finally {
     saving.value = false;
   }
@@ -950,7 +1005,7 @@ onMounted(loadRooms);
 }
 .history-stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 7px;
 }
 .history-stats > div {
@@ -1229,6 +1284,22 @@ onMounted(loadRooms);
   color: rgba(var(--v-theme-on-surface), 0.45);
   font-size: 10px;
 }
+.member-note {
+  display: flex;
+  min-width: 0;
+  max-width: 100%;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+  cursor: help;
+  font-size: 10px;
+}
+.member-note span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .member-position {
   display: inline-flex;
   align-items: center;
@@ -1298,7 +1369,7 @@ onMounted(loadRooms);
     grid-template-columns: 1fr;
   }
   .history-stats {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
   .history-room {
     grid-template-columns: 72px 1fr;
