@@ -18,20 +18,24 @@
                 {{ account.datas.nickname || '-' }}
               </div>
 
-              <v-chip v-if="selectedSystemRole" size="small" color="cyan-darken-2" variant="flat">
+              <v-chip v-if="selectedSystemRole && !props.profileOnly" size="small" color="cyan-darken-2" variant="flat">
                 {{ selectedSystemRole.name }}
               </v-chip>
             </div>
 
-            <div class="text-caption text-medium-emphasis">
+            <div v-if="!props.profileOnly" class="text-caption text-medium-emphasis">
               {{ account.datas.email || '-' }}
               <span v-if="account.datas.department"> · {{ account.datas.department }}</span>
+            </div>
+            <div v-if="account.datas.clan" class="text-caption text-primary mt-1">
+              {{ account.datas.clan.name }}
+              <span v-if="account.datas.clanrole?.name"> · {{ account.datas.clanrole.name }}</span>
             </div>
           </div>
         </div>
 
         <!-- right: actions -->
-        <div class="d-flex flex-wrap justify-end" style="gap: 8px">
+        <div v-if="profileTab === 'settings'" class="d-flex flex-wrap justify-end" style="gap: 8px">
           <v-btn
             v-if="props.id === String(accountStore.id)"
             variant="tonal"
@@ -59,13 +63,31 @@
             권한/승인
           </v-btn>
         </div>
+        <v-btn
+          v-if="props.profileOnly && canManageClanRole"
+          color="primary"
+          variant="tonal"
+          prepend-icon="mdi-shield-account-outline"
+          @click="openClanRoleDialog"
+        >
+          클랜 권한 변경
+        </v-btn>
       </div>
+    </v-card>
+
+    <v-card class="profile-tabs mt-4" rounded="xl" elevation="0">
+      <v-tabs v-model="profileTab" color="primary" grow show-arrows>
+        <v-tab value="game" prepend-icon="mdi-gamepad-variant-outline">게임 프로필</v-tab>
+        <v-tab value="awards" prepend-icon="mdi-trophy-outline">우승 기록</v-tab>
+        <v-tab value="activity" prepend-icon="mdi-history">활동 기록</v-tab>
+        <v-tab v-if="!props.profileOnly" value="settings" prepend-icon="mdi-cog-outline">계정 설정</v-tab>
+      </v-tabs>
     </v-card>
 
     <!-- ====== BODY GRID ====== -->
     <v-row class="mt-4" dense>
       <!-- ACCOUNT INFO -->
-      <v-col cols="12" md="6">
+      <v-col v-if="profileTab === 'settings'" cols="12">
         <v-card class="pa-5" rounded="xl" elevation="2">
           <div class="d-flex align-center justify-space-between mb-3">
             <div class="text-subtitle-1 font-weight-bold">계정 정보</div>
@@ -103,7 +125,7 @@
       </v-col>
 
       <!-- PLAYER INFO -->
-      <v-col cols="12" md="6">
+      <v-col v-if="profileTab === 'game'" cols="12">
         <v-card class="pa-5" rounded="xl" elevation="2">
           <div class="d-flex flex-wrap align-center justify-space-between mb-3" style="gap: 8px">
             <div class="d-flex align-center" style="gap: 8px">
@@ -170,6 +192,26 @@
 
               <v-col cols="12" sm="6">
                 <v-card variant="tonal" class="pa-4" rounded="lg">
+                  <div class="text-caption text-medium-emphasis">커스텀 티어</div>
+                  <div class="text-body-1 font-weight-bold">
+                    {{ player.custom_tier?.name || '-' }}
+                  </div>
+                  <div class="text-caption">클랜 내 평가 기준</div>
+                </v-card>
+              </v-col>
+
+              <v-col cols="12" sm="6">
+                <v-card variant="tonal" class="pa-4" rounded="lg">
+                  <div class="text-caption text-medium-emphasis">클랜 티어</div>
+                  <div class="text-body-1 font-weight-bold">
+                    {{ player.clan_tier?.name || '-' }}
+                  </div>
+                  <div class="text-caption">Point: {{ player.clan_tier?.point ?? '-' }}</div>
+                </v-card>
+              </v-col>
+
+              <v-col cols="12" sm="6">
+                <v-card variant="tonal" class="pa-4" rounded="lg">
                   <div class="text-caption text-medium-emphasis">내부 점수</div>
                   <div class="text-body-1 font-weight-bold">
                     {{ player.point ?? '-' }}
@@ -181,15 +223,18 @@
               <v-col cols="12">
                 <v-card variant="tonal" class="pa-4" rounded="lg">
                   <div class="d-flex flex-wrap" style="gap: 8px">
-                    <v-chip size="small" variant="tonal" prepend-icon="mdi-sword-cross">
-                      주: {{ player.main_position || '-' }}
+                    <v-chip
+                      v-for="position in player.positions ?? []"
+                      :key="position.id ?? position.name"
+                      size="small"
+                      variant="tonal"
+                      prepend-icon="mdi-sword-cross"
+                    >
+                      {{ position.name }}
                     </v-chip>
-                    <v-chip size="small" variant="tonal" prepend-icon="mdi-shield-half-full">
-                      부: {{ player.sub_position || '-' }}
-                    </v-chip>
-                    <v-chip size="small" variant="tonal" prepend-icon="mdi-star">
-                      챔피언: {{ player.favorite_champs || '-' }}
-                    </v-chip>
+                    <span v-if="!(player.positions ?? []).length" class="text-body-2 text-medium-emphasis">
+                      선택한 희망 포지션이 없습니다.
+                    </span>
                   </div>
                 </v-card>
               </v-col>
@@ -199,7 +244,89 @@
       </v-col>
     </v-row>
 
+    <v-row v-if="profileTab === 'awards'" class="mt-4" dense>
+      <v-col cols="12" md="6">
+        <v-card class="award-card award-card--main pa-6" rounded="xl" elevation="2">
+          <v-icon size="42" color="amber">mdi-trophy</v-icon>
+          <div><div class="text-caption text-medium-emphasis">난전 우승</div><strong>{{ player?.cup_count ?? 0 }}회</strong></div>
+        </v-card>
+      </v-col>
+      <v-col cols="12" md="6">
+        <v-card class="award-card award-card--auction pa-6" rounded="xl" elevation="2">
+          <v-icon size="42" color="deep-purple-lighten-2">mdi-gavel</v-icon>
+          <div><div class="text-caption text-medium-emphasis">경매내전 우승</div><strong>{{ player?.sub_cup_count ?? 0 }}회</strong></div>
+        </v-card>
+      </v-col>
+      <v-col cols="12">
+        <v-alert v-if="!player" type="info" variant="tonal">롤 계정을 연결하면 우승 기록을 확인할 수 있습니다.</v-alert>
+      </v-col>
+    </v-row>
+
+    <v-row v-if="profileTab === 'activity'" class="mt-4" dense>
+      <v-col cols="12">
+        <v-card class="pa-5" rounded="xl" elevation="2">
+          <div class="d-flex align-center justify-space-between mb-4">
+            <div><div class="text-subtitle-1 font-weight-bold">파티 활동</div><div class="text-caption text-medium-emphasis">종료된 파티 참여 기록입니다.</div></div>
+            <v-progress-circular v-if="activityLoading" indeterminate size="22" color="primary" />
+          </div>
+          <div v-if="partyActivity" class="activity-stats mb-4">
+            <div><strong>{{ partyActivity.stats.total }}</strong><span>전체</span></div>
+            <div><strong>{{ partyActivity.stats.duo_rank }}</strong><span>듀오랭크</span></div>
+            <div><strong>{{ partyActivity.stats.flex_rank }}</strong><span>자유랭크</span></div>
+            <div><strong>{{ partyActivity.stats.normal }}</strong><span>일반게임</span></div>
+            <div><strong>{{ partyActivity.stats.inhouse }}</strong><span>내전</span></div>
+          </div>
+          <v-list v-if="partyActivity?.rooms.length" lines="two">
+            <v-list-item v-for="room in partyActivity.rooms" :key="room.id" prepend-icon="mdi-account-group-outline">
+              <v-list-item-title>{{ room.title }}</v-list-item-title>
+              <v-list-item-subtitle>{{ partyTypeLabel(room.type) }} · {{ formatDate(room.closed_at) }}</v-list-item-subtitle>
+            </v-list-item>
+          </v-list>
+          <v-alert v-else-if="!activityLoading" type="info" variant="tonal">아직 종료된 파티 활동 기록이 없습니다.</v-alert>
+        </v-card>
+      </v-col>
+      <v-col cols="12">
+        <v-card class="pa-5" rounded="xl" elevation="2">
+          <div class="text-subtitle-1 font-weight-bold mb-1">경매내전 활동</div>
+          <div class="text-caption text-medium-emphasis mb-4">참가했던 경매내전 기록입니다.</div>
+          <v-list v-if="auctionActivity.length" lines="two">
+            <v-list-item v-for="auction in auctionActivity" :key="auction.id" prepend-icon="mdi-gavel">
+              <v-list-item-title>{{ auction.title }}</v-list-item-title>
+              <v-list-item-subtitle>
+                {{ auctionStatusLabel(auction.status) }} · {{ formatDate(auction.scheduledAt) }}
+              </v-list-item-subtitle>
+            </v-list-item>
+          </v-list>
+          <v-alert v-else-if="!activityLoading" type="info" variant="tonal">경매내전 참가 기록이 없습니다.</v-alert>
+        </v-card>
+      </v-col>
+    </v-row>
+
     <!-- ====== DIALOGS ====== -->
+
+    <v-dialog v-model="clanRoleDialog" max-width="440">
+      <v-card rounded="xl">
+        <v-card-title class="pa-6 pb-2 text-h6">클랜 권한 변경</v-card-title>
+        <v-card-text class="pa-6 pt-3">
+          <div class="text-body-2 text-medium-emphasis mb-4">
+            {{ account.datas.nickname }} 멤버에게 적용할 클랜 권한을 선택하세요.
+          </div>
+          <v-autocomplete
+            v-model="selectedClanRole"
+            :items="clanRoleList"
+            item-title="name"
+            item-value="id"
+            label="클랜 권한"
+            variant="outlined"
+            return-object
+          />
+        </v-card-text>
+        <v-card-actions class="pa-6 pt-0 justify-end">
+          <v-btn variant="text" :disabled="clanRoleSaving" @click="clanRoleDialog = false">취소</v-btn>
+          <v-btn color="primary" :loading="clanRoleSaving" :disabled="!selectedClanRole" @click="submitClanRole">저장</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <!-- 역할 변경 다이얼로그 -->
     <v-dialog v-model="dialog" max-width="480">
@@ -362,17 +489,41 @@ import { useRouter, useRoute } from 'vue-router';
 import api from '@/@core/composable/useAxios';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import { can } from '@/stores/usePermissionStore';
+import { can as canClan } from '@/stores/useClanPermissionStore';
 import type { SystemRole } from '@/data/types/systemrole';
 import type { Player } from '@/data/types/player';
 import { useAccountStore } from '@/stores/useAccountStore';
 import AccountPlayerMemberDialog from '@/components/dialogs/AccountPlayerMemberDialog.vue';
 import type { Position } from '@/data/types/position';
+import type { ClanRole } from '@/data/types/clanrole';
 
-const props = defineProps<{ id: string }>();
+const props = withDefaults(defineProps<{ id: string; profileOnly?: boolean }>(), {
+  profileOnly: false,
+});
 
 const router = useRouter();
 const route = useRoute();
 const accountStore = useAccountStore();
+const profileTab = ref<'game' | 'awards' | 'activity' | 'settings'>('game');
+const activityLoading = ref(false);
+const clanRoleDialog = ref(false);
+const clanRoleSaving = ref(false);
+const selectedClanRole = ref<ClanRole | null>(null);
+const clanRoleList = ref<ClanRole[]>([]);
+
+interface PartyActivity {
+  stats: { total: number; duo_rank: number; normal: number; flex_rank: number; inhouse: number };
+  rooms: Array<{ id: number; type: string; title: string; closed_at: string }>;
+}
+interface AuctionActivity {
+  id: number;
+  title: string;
+  status: string;
+  scheduledAt: string;
+  participants: Array<{ accountId: number }>;
+}
+const partyActivity = ref<PartyActivity | null>(null);
+const auctionActivity = ref<AuctionActivity[]>([]);
 
 const dialog = ref(false);
 const nicknameDialog = ref(false);
@@ -403,6 +554,8 @@ const account = ref<{
     systemrole: SystemRole | null;
     is_confirm: boolean;
     player?: Player | null;
+    clan?: { id: number; name: string } | null;
+    clanrole?: { id: number; name?: string } | null;
   };
 }>({
   datas: {
@@ -414,6 +567,8 @@ const account = ref<{
     systemrole: null,
     is_confirm: false,
     player: null,
+    clan: null,
+    clanrole: null,
   },
 });
 
@@ -428,16 +583,92 @@ const nicknameGate = ref({
 const clone = (v: any) => JSON.parse(JSON.stringify(v));
 
 const player = computed<Player | null>(() => account.value.datas.player ?? null);
+const canManageClanRole = computed(
+  () => accountStore.isClanMaster || canClan('ACCOUNT', 'CLAN-SET-ACC-U'),
+);
 
 const player_comment = computed(() => {
   if (!player.value) return '';
   const tier = player.value.tier?.name;
-  const pos = player.value;
-  if (tier && pos) return `${tier} ${pos} 플레이어`;
+  const positionNames = (player.value.positions ?? []).map((position) => position.name).join(' · ');
+  if (tier && positionNames) return `${tier} · ${positionNames}`;
   if (tier) return `${tier} 플레이어`;
-  if (pos) return `${pos} 포지션`;
+  if (positionNames) return `${positionNames} 포지션`;
   return '';
 });
+
+function formatDate(value: string) {
+  if (!value) return '-';
+  return new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium' }).format(new Date(value));
+}
+
+function partyTypeLabel(type: string) {
+  return ({ DUO_RANK: '듀오랭크', NORMAL: '일반게임', FLEX_RANK: '자유랭크', INHOUSE: '내전' } as Record<string, string>)[type] ?? type;
+}
+
+function auctionStatusLabel(status: string) {
+  return ({ RECRUITING: '모집 중', READY: '준비', IN_PROGRESS: '진행 중', FINISHED: '종료' } as Record<string, string>)[status] ?? status;
+}
+
+async function openClanRoleDialog() {
+  selectedClanRole.value = account.value.datas.clanrole
+    ? { ...account.value.datas.clanrole }
+    : null;
+  clanRoleDialog.value = true;
+  if (clanRoleList.value.length) return;
+  try {
+    const response = await api.get(`${getBaseUrl('DATA')}/clanrole/all`);
+    clanRoleList.value = response.data?.datas ?? [];
+  } catch (error) {
+    console.error('클랜 권한 목록 불러오기 실패:', error);
+  }
+}
+
+async function submitClanRole() {
+  if (!selectedClanRole.value?.id) return;
+  try {
+    clanRoleSaving.value = true;
+    await api.post(`${getBaseUrl('DATA')}/account/edit_clanrole`, {
+      id: Number(props.id),
+      clanrole_id: selectedClanRole.value.id,
+    });
+    account.value.datas.clanrole = { ...selectedClanRole.value };
+    clanRoleDialog.value = false;
+  } catch (error) {
+    console.error('클랜 권한 변경 실패:', error);
+  } finally {
+    clanRoleSaving.value = false;
+  }
+}
+
+async function fetchActivity() {
+  const clan = account.value.datas.clan;
+  if (!clan) return;
+  activityLoading.value = true;
+  try {
+    const keyword = account.value.datas.player?.nickname || account.value.datas.nickname;
+    const [partyResult, auctionResult] = await Promise.allSettled([
+      api.get(`${getBaseUrl('DATA')}/party-room/history/search`, {
+        params: { clan_id: clan.id, keyword },
+      }),
+      api.get(`${getBaseUrl('DATA')}/auction/list`, {
+        params: { clan_name: clan.name },
+      }),
+    ]);
+
+    if (partyResult.status === 'fulfilled') {
+      const results = partyResult.value.data?.datas ?? [];
+      partyActivity.value = results.find((item: any) => item.account?.id === Number(props.id)) ?? null;
+    }
+    if (auctionResult.status === 'fulfilled') {
+      auctionActivity.value = (auctionResult.value.data?.datas ?? []).filter((auction: AuctionActivity) =>
+        auction.participants?.some((participant) => participant.accountId === Number(props.id)),
+      );
+    }
+  } finally {
+    activityLoading.value = false;
+  }
+}
 
 function getInitials(name?: string) {
   if (!name) return '?';
@@ -476,8 +707,11 @@ async function fetchAccount() {
     // ✅ 선택된 포지션 미리 세팅
     selectedPositions.value = clone(account.value.datas.player?.positions ?? []);
 
-    const roleRes = await api.get(`${getBaseUrl('DATA')}/systemrole/all`);
-    systemRoleList.value = roleRes.data.datas;
+    if (!props.profileOnly || can('ACCOUNT', 'SYS-SET-ACC-U')) {
+      const roleRes = await api.get(`${getBaseUrl('DATA')}/systemrole/all`);
+      systemRoleList.value = roleRes.data.datas;
+    }
+    await fetchActivity();
   } catch (error) {
     console.error('계정 정보 불러오기 실패:', error);
   }
@@ -637,10 +871,15 @@ async function submitPosition() {
 onMounted(async () => {
   await fetchPositions();
 
-  if (can('ACCOUNT', 'SYS-SET-ACC-R') == true) {
+  if (props.profileOnly) {
+    await fetchAccount();
+    if (account.value.datas.clan?.id !== accountStore.clan?.id) {
+      await router.push('/forbidden');
+    }
+  } else if (can('ACCOUNT', 'SYS-SET-ACC-R') == true) {
     await fetchAccount();
   } else if (accountStore.id != +route.params.id) {
-    router.push('/forbidden');
+    await router.push('/forbidden');
   } else {
     await fetchAccount();
   }
@@ -650,5 +889,51 @@ onMounted(async () => {
 <style scoped>
 .account-detail-card {
   min-height: 420px;
+}
+.profile-tabs {
+  overflow: hidden;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  background: rgba(var(--v-theme-surface), 0.82);
+}
+.award-card {
+  display: flex;
+  min-height: 130px;
+  align-items: center;
+  gap: 20px;
+  overflow: hidden;
+}
+.award-card strong {
+  font-size: 30px;
+}
+.award-card--main {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(var(--v-theme-surface), 0.96));
+}
+.award-card--auction {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.18), rgba(var(--v-theme-surface), 0.96));
+}
+.activity-stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+.activity-stats > div {
+  display: flex;
+  padding: 14px 8px;
+  border-radius: 12px;
+  background: rgba(var(--v-theme-on-surface), 0.05);
+  text-align: center;
+  flex-direction: column;
+}
+.activity-stats strong {
+  font-size: 20px;
+}
+.activity-stats span {
+  color: rgba(var(--v-theme-on-surface), 0.55);
+  font-size: 11px;
+}
+@media (max-width: 600px) {
+  .activity-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 </style>
