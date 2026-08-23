@@ -1116,7 +1116,7 @@ onMounted(fetch);
   position: absolute;
   z-index: 3;
   inset: 0;
-  padding: 3px;
+  padding: 6px;
   pointer-events: none;
   content: '';
   border-radius: inherit;
@@ -1134,32 +1134,54 @@ onMounted(fetch);
   background: conic-gradient(
     from var(--match-winner-angle),
     transparent 0deg,
-    transparent 275deg,
-    rgba(255, 171, 0, 0.25) 300deg,
-    #ffd54f 324deg,
-    #fff8d6 337deg,
-    #ffd54f 348deg,
+    transparent 245deg,
+    rgba(255, 152, 0, 0.45) 274deg,
+    #ffca28 303deg,
+    #fff3b0 326deg,
+    #ffffff 337deg,
+    #ffd54f 350deg,
     transparent 360deg
   );
   animation: match-winner-border-turn 1.9s linear infinite;
-  filter: drop-shadow(0 0 5px rgba(255, 193, 7, 0.9));
+  filter: drop-shadow(0 0 4px #ffc107) drop-shadow(0 0 11px rgba(255, 152, 0, 0.95));
 }
 
 .match-subcup-border::after {
   z-index: 4;
-  padding: 2px;
+  inset: 3px;
+  padding: 4px;
   background: conic-gradient(
     from var(--match-subcup-angle),
     transparent 0deg,
-    transparent 285deg,
-    rgba(186, 104, 200, 0.2) 305deg,
-    #ce93d8 326deg,
-    #f3e5f5 339deg,
-    #b388ff 350deg,
+    transparent 255deg,
+    rgba(156, 39, 176, 0.42) 282deg,
+    #ba68c8 308deg,
+    #e1bee7 328deg,
+    #ffffff 339deg,
+    #b388ff 352deg,
     transparent 360deg
   );
   animation: match-subcup-border-turn 2.35s linear infinite reverse;
-  filter: drop-shadow(0 0 5px rgba(179, 136, 255, 0.9));
+  filter: drop-shadow(0 0 4px #b388ff) drop-shadow(0 0 10px rgba(126, 87, 194, 0.95));
+}
+
+.player-card.match-winner-border {
+  box-shadow:
+    0 0 18px rgba(255, 193, 7, 0.28),
+    inset 0 0 18px rgba(255, 193, 7, 0.12);
+}
+
+.player-card.match-subcup-border {
+  box-shadow:
+    0 0 18px rgba(179, 136, 255, 0.28),
+    inset 0 0 18px rgba(179, 136, 255, 0.12);
+}
+
+.player-card.match-winner-border.match-subcup-border {
+  box-shadow:
+    0 0 20px rgba(255, 193, 7, 0.28),
+    0 0 32px rgba(179, 136, 255, 0.2),
+    inset 0 0 22px rgba(255, 255, 255, 0.1);
 }
 
 @property --match-winner-angle {
