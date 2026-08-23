@@ -79,8 +79,12 @@
       :items="serverItems"
       :items-length="totalItems"
       :items-per-page="itemsPerPage"
+      :page="page"
+      :sort-by="lastOptions.sortBy"
       :loading="loading"
       :search="search"
+      @update:page="handlePageChange"
+      @update:items-per-page="itemsPerPage = $event"
       @update:options="loadItems"
     >
       <!-- ✅ NAME: 아바타 + 닉#태그 + 서브 -->
@@ -353,6 +357,7 @@ import { useAccountStore } from '@/stores/useAccountStore';
 
 const account = useAccountStore();
 
+const page = ref<number>(1);
 const itemsPerPage = ref<number>(10);
 
 const search = ref<string>('');
@@ -387,6 +392,13 @@ const lastOptions = ref<FetchParams>({
   itemsPerPage: itemsPerPage.value,
   sortBy: [],
 });
+
+let pendingPageChange = false;
+
+function handlePageChange(nextPage: number) {
+  page.value = nextPage;
+  pendingPageChange = true;
+}
 
 const edit = ref<{
   open: boolean;
@@ -469,24 +481,30 @@ function getTierColor(tier: string): string {
 
 async function loadItems(options: FetchParams) {
   try {
-    // ✅ 마지막 호출 옵션 저장 (현재 page 유지 핵심)
-    lastOptions.value = {
+    const requestedPage = pendingPageChange ? page.value : options.page || page.value;
+    pendingPageChange = false;
+
+    const normalizedOptions: FetchParams = {
       ...options,
-      keyword: search.value, // keyword는 search를 기준으로 고정해도 됨
+      keyword: search.value,
+      page: requestedPage,
       itemsPerPage: options.itemsPerPage ?? itemsPerPage.value,
       sortBy: options.sortBy ?? [],
     };
+    lastOptions.value = normalizedOptions;
+    page.value = normalizedOptions.page;
+    itemsPerPage.value = normalizedOptions.itemsPerPage;
 
-    const sortKey = options.sortBy[0]?.key || 'point';
-    const sortOrder = options.sortBy[0]?.order || 'desc';
+    const sortKey = normalizedOptions.sortBy[0]?.key || 'point';
+    const sortOrder = normalizedOptions.sortBy[0]?.order || 'desc';
 
     loading.value = true;
 
     const response = await api.get(`${getBaseUrl('DATA')}/player/search`, {
       params: {
         keyword: search.value || undefined,
-        page: options.page,
-        itemsPerPage: options.itemsPerPage,
+        page: normalizedOptions.page,
+        itemsPerPage: normalizedOptions.itemsPerPage,
         sortBy: sortKey,
         orderBy: sortOrder,
         clan: account.clan.name,
@@ -507,8 +525,7 @@ function handleSearch() {
   loadItems({
     ...lastOptions.value,
     keyword: search.value,
-    // ✅ page는 lastOptions.value.page 유지
-    // page를 1로 보내고 싶은 경우만 별도 함수로 분리 추천
+    page: 1,
   });
 }
 

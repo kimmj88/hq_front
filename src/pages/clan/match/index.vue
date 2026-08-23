@@ -53,8 +53,12 @@
         :items="serverItems"
         :items-length="totalItems"
         :items-per-page="itemsPerPage"
+        :page="page"
+        :sort-by="lastOptions.sortBy"
         :loading="loading"
         :search="search"
+        @update:page="handlePageChange"
+        @update:items-per-page="itemsPerPage = $event"
         @update:options="loadItems"
       >
       <template #item.name="{ item }">
@@ -214,7 +218,21 @@ interface FetchResponse {
   total: number;
 }
 
+const page = ref<number>(1);
 const itemsPerPage = ref<number>(10);
+const lastOptions = ref<FetchParams>({
+  keyword: '',
+  page: 1,
+  itemsPerPage: itemsPerPage.value,
+  sortBy: [],
+});
+
+let pendingPageChange = false;
+
+function handlePageChange(nextPage: number) {
+  page.value = nextPage;
+  pendingPageChange = true;
+}
 const headers = ref<VDataTableServer['headers']>([
   {
     title: '매치',
@@ -253,26 +271,42 @@ const headers = ref<VDataTableServer['headers']>([
 // ✅ 데이터 로드 함수
 async function loadItems(options: FetchParams) {
   try {
-    const sortKey = options.sortBy[0]?.key || 'created_at';
-    const sortOrder = options.sortBy[0]?.order || 'desc';
+    const requestedPage = pendingPageChange ? page.value : options.page || page.value;
+    pendingPageChange = false;
+
+    const normalizedOptions: FetchParams = {
+      ...options,
+      keyword: search.value,
+      page: requestedPage,
+      itemsPerPage: options.itemsPerPage || itemsPerPage.value,
+      sortBy: options.sortBy ?? [],
+    };
+    lastOptions.value = normalizedOptions;
+    page.value = normalizedOptions.page;
+    itemsPerPage.value = normalizedOptions.itemsPerPage;
+
+    const sortKey = normalizedOptions.sortBy[0]?.key || 'created_at';
+    const sortOrder = normalizedOptions.sortBy[0]?.order || 'desc';
+
+    loading.value = true;
 
     const response = await api.get(`${getBaseUrl('DATA')}/match/search`, {
       params: {
         keyword: search.value,
-        page: options.page,
-        itemsPerPage: options.itemsPerPage,
+        page: normalizedOptions.page,
+        itemsPerPage: normalizedOptions.itemsPerPage,
         sortBy: sortKey,
         orderBy: sortOrder,
         clan: account.clan,
       },
     });
 
-    loading.value = true;
     serverItems.value = response.data.datas;
     totalItems.value = response.data.totalCount;
-    loading.value = false;
   } catch (error) {
     console.error('기업 목록 불러오기 실패:', error);
+  } finally {
+    loading.value = false;
   }
 }
 
