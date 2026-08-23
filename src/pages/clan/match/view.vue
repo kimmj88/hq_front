@@ -442,14 +442,13 @@ let POSITIONS: any[] = [];
 const ROW_POSITIONS = ['TOP', 'JUG', 'MID', 'ADC', 'SUP'] as const;
 
 function getPlayerButtonClass(player?: any) {
-  // const major = Number(player?.cup_count ?? 0);
-  // const minor = Number(player?.sub_cup_count ?? 0);
+  const cupCount = Number(player?.cup_count ?? 0);
+  const subCupCount = Number(player?.sub_cup_count ?? 0);
 
-  // if (major >= 3) return 'player-legend';
-  // if (major >= 1) return 'player-major';
-  // if (minor >= 3) return 'player-minor-elite';
-  // if (minor >= 1) return 'player-minor';
-  return 'player-default';
+  return [
+    'player-default',
+    { 'match-winner-border': cupCount > 0, 'match-subcup-border': subCupCount >= 5 },
+  ];
 }
 
 function updateTotals() {
@@ -1109,6 +1108,89 @@ onMounted(fetch);
   transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
   overflow: hidden;
   position: relative;
+  isolation: isolate;
+}
+
+.match-winner-border::before,
+.match-subcup-border::after {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  padding: 3px;
+  pointer-events: none;
+  content: '';
+  border-radius: inherit;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+.match-winner-border::before {
+  background: conic-gradient(
+    from var(--match-winner-angle),
+    transparent 0deg,
+    transparent 275deg,
+    rgba(255, 171, 0, 0.25) 300deg,
+    #ffd54f 324deg,
+    #fff8d6 337deg,
+    #ffd54f 348deg,
+    transparent 360deg
+  );
+  animation: match-winner-border-turn 1.9s linear infinite;
+  filter: drop-shadow(0 0 5px rgba(255, 193, 7, 0.9));
+}
+
+.match-subcup-border::after {
+  z-index: 4;
+  padding: 2px;
+  background: conic-gradient(
+    from var(--match-subcup-angle),
+    transparent 0deg,
+    transparent 285deg,
+    rgba(186, 104, 200, 0.2) 305deg,
+    #ce93d8 326deg,
+    #f3e5f5 339deg,
+    #b388ff 350deg,
+    transparent 360deg
+  );
+  animation: match-subcup-border-turn 2.35s linear infinite reverse;
+  filter: drop-shadow(0 0 5px rgba(179, 136, 255, 0.9));
+}
+
+@property --match-winner-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@property --match-subcup-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes match-winner-border-turn {
+  to {
+    --match-winner-angle: 360deg;
+  }
+}
+
+@keyframes match-subcup-border-turn {
+  to {
+    --match-subcup-angle: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .match-winner-border::before,
+  .match-subcup-border::after {
+    animation: none;
+  }
 }
 
 .player-card:hover {
