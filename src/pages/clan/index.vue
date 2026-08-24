@@ -373,14 +373,6 @@ import { CONFIG_ACCOUNT_PATH } from '@/router/config/type';
 import type { ClanRole } from '@/data/types/clanrole';
 
 import HQ from '@/assets/HQ.png';
-import ca from '@/assets/ca.png';
-import sample_1 from '@/assets/sample_1.png';
-import slime from '@/assets/slime.png';
-import gamosa from '@/assets/gamosa.png';
-import combat from '@/assets/combat.png';
-import maybe from '@/assets/maybe.png';
-import pop from '@/assets/pop.png';
-import lolbly from '@/assets/lolbly.png';
 
 const router = useRouter();
 const account = useAccountStore();
@@ -568,22 +560,6 @@ function cardBgStyle(clan: any) {
   let source = '';
   if (clan.name == 'HealingQ') {
     source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75)), url(${HQ})`;
-  } else if (clan.name == '청 아') {
-    source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75)), url(${ca})`;
-  } else if (clan.name == '데마시아') {
-    source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75)), url(${sample_1})`;
-  } else if (clan.name == '슬라임') {
-    source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75)), url(${slime})`;
-  } else if (clan.name == '겜모사') {
-    source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75)), url(${gamosa})`;
-  } else if (clan.name == 'Combat') {
-    source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75)), url(${combat})`;
-  } else if (clan.name == 'Maybe') {
-    source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75)), url(${maybe})`;
-  } else if (clan.name == 'POP') {
-    source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75)), url(${pop})`;
-  } else if (clan.name == '롤블리') {
-    source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75)), url(${lolbly})`;
   } else {
     source = `linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.75))`;
   }
