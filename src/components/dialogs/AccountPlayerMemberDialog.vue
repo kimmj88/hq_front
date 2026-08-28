@@ -205,7 +205,7 @@ async function searchPlayer() {
     // 외부 호출은 공용 axios/페치 쓰거나, api 인스턴스에 baseURL/interceptor가 껴있다면 제외
     const a = await axios.get(
       `https://asia.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${name}/${tag}`,
-      { headers: { 'X-Riot-Token': 'RGAPI-ee1558af-f139-456c-aaf5-0e7b82135e35' } } // 브라우저에 키 노출됨(권장 X)
+      { headers: { 'X-Riot-Token': 'RGAPI-e02e009e-5fbd-4010-95e9-c7e5074809eb' } } // 브라우저에 키 노출됨(권장 X)
     );
 
     const find_puuid = a.data.puuid;
@@ -214,7 +214,7 @@ async function searchPlayer() {
       `https://kr.api.riotgames.com/lol/league/v4/entries/by-puuid/${encodeURIComponent(
         find_puuid
       )}`,
-      { headers: { 'X-Riot-Token': 'RGAPI-ee1558af-f139-456c-aaf5-0e7b82135e35' } }
+      { headers: { 'X-Riot-Token': 'RGAPI-e02e009e-5fbd-4010-95e9-c7e5074809eb' } }
     );
 
     if (b.status == 200) {
