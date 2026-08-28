@@ -64,16 +64,6 @@
           >
             확정
           </v-btn>
-          <!-- 🔹 팀 확정 후에만 활성화되는 버튼 -->
-          <v-btn
-            color="indigo"
-            variant="outlined"
-            rounded="pill"
-            :disabled="!cup?.is_confirm"
-            @click="goBracketPage"
-          >
-            대진표 편집
-          </v-btn>
         </div>
       </v-col>
     </v-row>
@@ -162,7 +152,16 @@
     <!-- 🔹 팀 프레임 (SHOT 이후 표시) -->
     <v-row v-if="teams.length" class="team-grid mb-8">
       <v-col v-for="(team, teamIndex) in teams" :key="team.id" cols="12" md="3" sm="6">
-        <v-card class="team-card" rounded="xl">
+        <v-card
+          class="team-card"
+          :class="{
+            'team-card--selectable': cup?.is_confirm && !cup?.winner_team && canSetWinner,
+            'team-card--selected': selectedWinnerTeamId === team.id,
+            'team-card--champion': cup?.winner_team?.id === team.id,
+          }"
+          rounded="xl"
+          @click="selectWinnerTeam(team.id)"
+        >
           <v-card-title class="d-flex justify-space-between align-center py-3">
             <div class="d-flex flex-column">
               <span class="text-subtitle-1 font-weight-medium">
@@ -234,6 +233,31 @@
         </v-card>
       </v-col>
     </v-row>
+
+    <v-card v-if="cup?.is_confirm" class="winner-select-panel pa-5" rounded="xl" variant="tonal">
+      <div class="text-center">
+        <v-icon size="38" color="amber">mdi-trophy-variant</v-icon>
+        <div class="text-h6 font-weight-black mt-2">
+          {{ cup.winner_team ? '내전 컵 우승팀' : '우승팀을 선택하세요' }}
+        </div>
+        <div class="text-body-2 text-medium-emphasis mt-1">
+          {{ cup.winner_team ? cup.winner_team.name : '위 팀 카드를 클릭한 뒤 우승을 확정할 수 있습니다.' }}
+        </div>
+        <v-btn
+          v-if="!cup.winner_team && canSetWinner"
+          class="mt-4"
+          color="amber"
+          size="large"
+          rounded="pill"
+          prepend-icon="mdi-check-decagram"
+          :disabled="!selectedWinnerTeamId"
+          :loading="winnerSaving"
+          @click="confirmWinner"
+        >
+          우승팀 확정
+        </v-btn>
+      </div>
+    </v-card>
   </v-container>
 
   <!-- 스낵바 -->
@@ -248,13 +272,12 @@ import CupMemberDialog from '@/components/dialogs/CupMemberDialog.vue';
 import type { Player } from '@/data/types/player';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import api from '@/@core/composable/useAxios';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import type { Cup, PositionPlayerList } from '@/data/types/cup';
 import { useAccountStore } from '@/stores/useAccountStore';
-import { CLAN_PATH } from '@/router/clan/type';
+import { can } from '@/stores/useClanPermissionStore';
 
 const route = useRoute();
-const router = useRouter();
 
 const account = useAccountStore();
 
@@ -349,6 +372,9 @@ function getPositionIcon(pos: string) {
 
 const positions: string[] = ['TOP', 'JUG', 'MID', 'ADC', 'SUP'];
 const cup = ref<Cup | null>(null);
+const selectedWinnerTeamId = ref<number | null>(null);
+const winnerSaving = ref(false);
+const canSetWinner = computed(() => account.isClanMaster || can('CUP', 'CLAN-SET-CUP-C'));
 
 const is_btnActive = ref<boolean>(false);
 
@@ -409,8 +435,30 @@ interface TeamFrame {
   totalPoint: number;
 }
 
-function goBracketPage() {
-  router.push(CLAN_PATH.CUP_BRACKET(account.clan.name, route.params.id));
+function selectWinnerTeam(teamId: number) {
+  if (!cup.value?.is_confirm || cup.value.winner_team || !canSetWinner.value) return;
+  selectedWinnerTeamId.value = teamId;
+}
+
+async function confirmWinner() {
+  if (!selectedWinnerTeamId.value || !cup.value) return;
+  const team = cup.value.cup_teams.find((item) => item.id === selectedWinnerTeamId.value);
+  if (!team || !confirm(`${team.name} 팀을 우승팀으로 확정할까요? 확정 후에는 변경할 수 없습니다.`)) return;
+  try {
+    winnerSaving.value = true;
+    await api.post(`${getBaseUrl('DATA')}/cup/winner`, {
+      cup_id: cup.value.id,
+      winner_team_id: team.id,
+    });
+    snackbar.msg = `${team.name} 팀이 우승팀으로 확정되었습니다.`;
+    snackbar.show = true;
+    await fetch();
+  } catch (error: any) {
+    snackbar.msg = error?.response?.data?.message ?? '우승팀을 확정하지 못했습니다.';
+    snackbar.show = true;
+  } finally {
+    winnerSaving.value = false;
+  }
 }
 
 /* 유틸: 점수 계산 */
@@ -634,6 +682,7 @@ async function fetch() {
   // ⭐️ 2단계: cup_teams 데이터를 채워넣기
   for (let i = 0; i < teamCount; i++) {
     const teamData = data.datas.cup_teams[i];
+    frames[i].id = teamData.id;
     frames[i].label = teamData.name;
 
     for (const item of teamData.cup_members) {
@@ -690,6 +739,27 @@ onMounted(fetch);
   background: radial-gradient(circle at top left, #1e293b, #020617);
   border: 1px solid rgba(148, 163, 184, 0.35);
   box-shadow: 0 18px 45px rgba(15, 23, 42, 0.7);
+}
+.team-card--selectable {
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.team-card--selectable:hover {
+  border-color: rgba(245, 158, 11, 0.7);
+  transform: translateY(-3px);
+}
+.team-card--selected {
+  border: 2px solid #facc15;
+  box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.18), 0 18px 45px rgba(245, 158, 11, 0.22);
+}
+.team-card--champion {
+  border: 2px solid #facc15;
+  background: radial-gradient(circle at top, rgba(245, 158, 11, 0.25), #020617 68%);
+  box-shadow: 0 0 28px rgba(245, 158, 11, 0.28);
+}
+.winner-select-panel {
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  background: radial-gradient(circle at 50% 0, rgba(245, 158, 11, 0.16), transparent 62%);
 }
 
 .team-slot-row {

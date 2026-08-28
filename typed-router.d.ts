@@ -33,7 +33,6 @@ declare module 'vue-router/auto-routes' {
     '/clan/board/view': RouteRecordInfo<'/clan/board/view', '/clan/board/view', Record<never, never>, Record<never, never>>,
     '/clan/cup/': RouteRecordInfo<'/clan/cup/', '/clan/cup', Record<never, never>, Record<never, never>>,
     '/clan/cup/add': RouteRecordInfo<'/clan/cup/add', '/clan/cup/add', Record<never, never>, Record<never, never>>,
-    '/clan/cup/bracket': RouteRecordInfo<'/clan/cup/bracket', '/clan/cup/bracket', Record<never, never>, Record<never, never>>,
     '/clan/cup/view': RouteRecordInfo<'/clan/cup/view', '/clan/cup/view', Record<never, never>, Record<never, never>>,
     '/clan/enquire/': RouteRecordInfo<'/clan/enquire/', '/clan/enquire', Record<never, never>, Record<never, never>>,
     '/clan/enquire/add': RouteRecordInfo<'/clan/enquire/add', '/clan/enquire/add', Record<never, never>, Record<never, never>>,

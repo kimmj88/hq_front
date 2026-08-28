@@ -431,7 +431,9 @@
               ><v-text-field
                 v-model="form.scheduledAt"
                 type="datetime-local"
-                label="시작 예정 시간"
+                label="시작 예정 시간 (한국시간)"
+                hint="대한민국 표준시(KST)를 기준으로 저장됩니다."
+                persistent-hint
                 clearable
                 variant="outlined"
             /></v-col>
@@ -682,6 +684,7 @@ function scheduleLabel(value: string | null) {
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    timeZone: 'Asia/Seoul',
   }).format(new Date(value));
 }
 function historyPlayerName(result: HistoryResult) {
@@ -690,9 +693,20 @@ function historyPlayerName(result: HistoryResult) {
     : result.account.nickname;
 }
 function formatHistoryDate(value: string) {
-  return new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeStyle: 'short' }).format(
+  return new Intl.DateTimeFormat('ko-KR', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: 'Asia/Seoul',
+  }).format(
     new Date(value)
   );
+}
+
+function koreanDateTimeToIso(value: string) {
+  if (!value) return undefined;
+  const normalized = value.length === 16 ? `${value}:00` : value;
+  const date = new Date(`${normalized}+09:00`);
+  return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
 }
 function clearHistory() {
   historyKeyword.value = '';
@@ -791,7 +805,7 @@ async function createRoom() {
       title: form.title,
       description: form.description,
       position: form.position,
-      scheduled_at: form.scheduledAt || undefined,
+      scheduled_at: koreanDateTimeToIso(form.scheduledAt),
       discord_url: form.discordUrl.trim() || undefined,
     });
     createDialog.value = false;

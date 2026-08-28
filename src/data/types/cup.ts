@@ -15,6 +15,7 @@ export interface Cup {
   position_players?: PositionPlayerList[];
 
   cup_matches: CupMatch[];
+  winner_team: CupTeam | null;
 }
 
 export interface CupTeam {
