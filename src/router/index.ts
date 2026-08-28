@@ -96,7 +96,6 @@ import EnquireView from '@/pages/enquire/view.vue';
 //Clan
 import { CLAN_PATH } from '@/router/clan/type';
 import Clan2 from '@/pages/clan/index2.vue';
-import Clan from '@/pages/clan/index.vue';
 import ClanBoard from '@/pages/clan/board/index.vue';
 import ClanBoardAdd from '@/pages/clan/board/add.vue';
 import ClanBoardView from '@/pages/clan/board/view.vue';
@@ -105,6 +104,7 @@ import ClanEnquireAdd from '@/pages/clan/enquire/add.vue';
 import ClanEnquireView from '@/pages/clan/enquire/view.vue';
 import ClanPlayer from '@/pages/clan/player.vue';
 import ClanSetting from '@/pages/clan/setting.vue';
+import ClanExplore from '@/pages/clan/explore.vue';
 import ClanAccount from '@/pages/clan/account/index.vue';
 import ClanParty from '@/pages/clan/party/index.vue';
 
@@ -295,7 +295,8 @@ const router = createRouter({
       component: DefaultLayout,
       children: [
         { path: '/home', component: Home },
-        { path: '', component: Clan },
+        { path: '', component: ClanExplore },
+        { path: 'explore/:id', component: ClanExplore },
         { path: 'myclan', component: MyClan, props: true },
       ],
     },

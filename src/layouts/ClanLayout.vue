@@ -50,6 +50,13 @@
             @click="section = 'home'"
           />
           <v-list-item
+            :active="section === 'explore'"
+            prepend-icon="mdi-telescope"
+            title="클랜 엿보기"
+            :to="CLAN_PATH.BASE"
+            @click="section = 'explore'"
+          />
+          <v-list-item
             :active="section === 'notice'"
             prepend-icon="mdi-bullhorn-outline"
             title="공지 사항"

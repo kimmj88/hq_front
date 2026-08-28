@@ -1,5 +1,6 @@
 export const CLAN_PATH = {
   BASE: '/clan/',
+  PUBLIC_EXPLORE: (id: string | number = ':id') => `/clan/explore/${id}`,
   VIEW: (name: string | number = ':name') => `/clan/${name}`,
   PLAYER: (name: string | number = ':name') => `/clan/${name}/player`,
   SETTING: (name: string | number = ':name') => `/clan/${name}/setting`,

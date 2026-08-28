@@ -32,7 +32,7 @@
               counter="300"
             />
 
-            <!-- <div class="text-caption text-medium-emphasis mb-2">클랜 배너 이미지</div>
+            <div class="text-caption text-medium-emphasis mb-2">클랜 배너 이미지</div>
 
             <v-file-input
               v-model="bannerFile"
@@ -40,16 +40,24 @@
               variant="outlined"
               density="compact"
               prepend-icon="mdi-image"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp"
               clearable
+              :disabled="!isClanMaster"
+              hint="JPG, PNG, WebP · 최대 5MB · 권장 비율 4:1"
+              persistent-hint
+              @update:model-value="validateBanner"
             />
+
+            <v-alert v-if="bannerError" type="error" variant="tonal" density="compact" class="mt-3">
+              {{ bannerError }}
+            </v-alert>
 
             <v-card v-if="previewUrl" class="mt-3" variant="tonal" rounded="lg">
               <v-card-text class="pa-2">
-                <v-img :src="previewUrl" height="160" cover class="rounded-lg" />
+                <v-img :src="previewUrl" aspect-ratio="4" cover class="rounded-lg banner-preview" />
                 <div class="text-caption text-medium-emphasis mt-2">배너 미리보기</div>
               </v-card-text>
-            </v-card> -->
+            </v-card>
 
             <!-- 버튼 -->
             <div class="d-flex justify-end mt-4 gap-2">
@@ -178,7 +186,8 @@ const isClanMaster = computed(() => {
 
 const description = ref<string>(account.clan.description ?? '');
 const bannerFile = ref<File | null>(null);
-const previewUrl = ref<string | null>(null);
+const previewUrl = ref<string | null>(account.clan?.banner_url ? assetUrl(account.clan.banner_url) : null);
+const bannerError = ref('');
 const loading = ref(false);
 
 interface ClanInvite {
@@ -288,22 +297,46 @@ onMounted(loadInvites);
 
 /** 파일 선택 시 미리보기 */
 watch(bannerFile, (file) => {
+  if (previewUrl.value?.startsWith('blob:')) URL.revokeObjectURL(previewUrl.value);
   if (!file) {
-    previewUrl.value = null;
+    previewUrl.value = account.clan?.banner_url ? assetUrl(account.clan.banner_url) : null;
     return;
   }
   previewUrl.value = URL.createObjectURL(file);
 });
 
+function assetUrl(value: string) {
+  if (!value) return '';
+  if (/^https?:\/\//i.test(value)) return value;
+  return `${getBaseUrl('DATA').replace(/\/$/, '')}/${value.replace(/^\//, '')}`;
+}
+
+function validateBanner(value: File | File[] | null) {
+  const file = Array.isArray(value) ? value[0] : value;
+  bannerError.value = '';
+  if (!file) return;
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+    bannerError.value = 'JPG, PNG, WebP 이미지만 업로드할 수 있습니다.';
+    bannerFile.value = null;
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    bannerError.value = '배너 이미지는 5MB 이하여야 합니다.';
+    bannerFile.value = null;
+  }
+}
+
 /** 되돌리기 */
 function resetForm() {
   description.value = account.clan.description ?? '';
   bannerFile.value = null;
-  previewUrl.value = null;
+  bannerError.value = '';
+  previewUrl.value = account.clan?.banner_url ? assetUrl(account.clan.banner_url) : null;
 }
 
 /** 저장 */
 async function onSubmit() {
+  if (bannerError.value) return;
   try {
     loading.value = true;
 
@@ -315,7 +348,7 @@ async function onSubmit() {
       formData.append('file', bannerFile.value);
     }
 
-    await api.post(`${getBaseUrl('DATA')}/clan/update`, formData, {
+    const { data } = await api.post(`${getBaseUrl('DATA')}/clan/update`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -323,12 +356,26 @@ async function onSubmit() {
 
     // 성공 시 로컬 상태 반영
     account.clan.description = description.value;
-
-    // TODO: 서버에서 banner_url 내려주면 같이 반영
-  } catch (e) {
+    const savedClan = data?.rows;
+    if (savedClan?.banner_url) {
+      account.clan.banner_url = savedClan.banner_url;
+      previewUrl.value = assetUrl(savedClan.banner_url);
+    }
+    bannerFile.value = null;
+    alert('클랜 설정을 저장했습니다.');
+  } catch (e: any) {
     console.error('클랜 설정 저장 실패', e);
+    alert(e?.response?.data?.message ?? '클랜 설정을 저장하지 못했습니다.');
   } finally {
     loading.value = false;
   }
 }
 </script>
+
+<style scoped>
+.banner-preview {
+  min-height: 120px;
+  max-height: 220px;
+  background: rgb(var(--v-theme-surface-variant));
+}
+</style>
