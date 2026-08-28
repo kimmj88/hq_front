@@ -73,7 +73,13 @@
       <v-divider class="my-2" />
 
       <v-list nav density="compact">
-        <v-list-item prepend-icon="mdi-exit-run" title="클랜 나가기" @click="leaveDialog = true" />
+        <v-list-item
+          prepend-icon="mdi-exit-run"
+          title="클랜 나가기"
+          :subtitle="account.isClanMaster ? '마스터 위임 후 탈퇴 가능' : undefined"
+          :disabled="account.isClanMaster"
+          @click="!account.isClanMaster && (leaveDialog = true)"
+        />
       </v-list>
     </v-navigation-drawer>
 
@@ -412,11 +418,11 @@
       <v-card rounded="xl">
         <v-card-title class="text-h6 font-weight-bold">클랜 탈퇴</v-card-title>
         <v-card-text class="text-body-2 text-medium-emphasis">
-          클랜을 탈퇴 하시겠습니까?
+          {{ account.isClanMaster ? '클랜 마스터는 탈퇴할 수 없습니다. 다른 멤버에게 마스터를 위임해 주세요.' : '클랜을 탈퇴 하시겠습니까?' }}
         </v-card-text>
         <v-card-actions class="justify-end">
           <v-btn variant="text" @click="leaveDialog = false">취소</v-btn>
-          <v-btn color="error" @click="leaveClan">나가기</v-btn>
+          <v-btn color="error" :disabled="account.isClanMaster" @click="leaveClan">나가기</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -446,6 +452,7 @@ import { useRouter } from 'vue-router';
 import api from '@/@core/composable/useAxios';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import { useAccountStore } from '@/stores/useAccountStore';
+import { useClanPermissionStore } from '@/stores/useClanPermissionStore';
 import type { Clan } from '@/data/types/clan';
 import type { VDataTableServer } from 'vuetify/components';
 import ServerDataTable from '@/components/common/ServerDataTable.vue';
@@ -488,6 +495,7 @@ const positions = ref<Position[]>([]);
 const selectedPositions = ref<Position[] | null>([]);
 
 const account = useAccountStore();
+const clanPermissionStore = useClanPermissionStore();
 const router = useRouter();
 const section = ref<'notice' | 'members' | 'missions' | 'settings'>('notice');
 const clan2 = ref<Clan>({ name: '', description: '', id: 0 });
@@ -750,12 +758,16 @@ function reject(p: Pending) {
 }
 
 async function leaveClan() {
+  if (account.isClanMaster) return;
   await api.post(`${getBaseUrl('DATA')}/account/update`, {
     id: account.id,
     clan_id: null,
   });
 
   leaveDialog.value = false;
+  account.clan = null;
+  account.clanrole = null;
+  clanPermissionStore.clear();
   toast('클랜 탈퇴');
   router.replace('/clan');
 }

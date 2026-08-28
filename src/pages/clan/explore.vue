@@ -84,7 +84,22 @@
         </v-card-text>
         <v-card-text v-else-if="dashboard" class="dashboard-body">
           <v-row>
-            <v-col v-for="card in summaryCards" :key="card.label" cols="6" md="3">
+            <v-col cols="12" md="4">
+              <div class="summary-card summary-card--master">
+                <v-avatar size="54" color="deep-purple-darken-2">
+                  <v-img v-if="dashboard.master?.avatar" :src="assetUrl(dashboard.master.avatar)" cover />
+                  <span v-else>{{ masterInitial }}</span>
+                </v-avatar>
+                <div>
+                  <span class="master-label">CLAN MASTER</span>
+                  <strong>{{ dashboard.master?.account_name || '마스터 미정' }}</strong>
+                  <small v-if="dashboard.master?.player_nickname">
+                    {{ dashboard.master.player_nickname }}#{{ dashboard.master.tagname }}
+                  </small>
+                </div>
+              </div>
+            </v-col>
+            <v-col v-for="card in summaryCards" :key="card.label" cols="6" md="2">
               <div class="summary-card">
                 <v-icon :color="card.color">{{ card.icon }}</v-icon>
                 <strong>{{ card.value }}</strong>
@@ -94,43 +109,19 @@
           </v-row>
 
           <v-row class="mt-2">
-            <v-col cols="12" md="7">
-              <section class="dashboard-section">
-                <div class="section-title"><v-icon>mdi-podium</v-icon><h3>우승 리더</h3></div>
-                <div v-if="dashboard.leaders.length" class="leader-list">
-                  <div v-for="(leader, index) in dashboard.leaders" :key="leader.id" class="leader-row">
-                    <b>{{ index + 1 }}</b>
-                    <v-avatar color="deep-purple-darken-2" size="42">{{ leader.nickname.slice(0, 1) }}</v-avatar>
-                    <div><strong>{{ leader.nickname }}#{{ leader.tagname }}</strong><span>{{ leader.tier_name || '티어 미정' }}</span></div>
-                    <v-chip color="amber" size="small">컵 {{ leader.cup_count }} · 경매 {{ leader.sub_cup_count }}</v-chip>
+            <v-col cols="12">
+              <section class="dashboard-section tier-panel">
+                <div class="section-title"><div><span class="panel-kicker">TIER BALANCE</span><h3>클랜 티어 분포</h3></div></div>
+                <div class="tier-list">
+                  <div v-for="tier in tierDistribution" :key="tier.name" class="tier-row">
+                    <div><strong>{{ tier.name }}</strong><span>{{ tier.count }}명</span></div>
+                    <v-progress-linear :model-value="tier.percent" :color="tier.color" height="7" rounded />
                   </div>
-                </div>
-                <div v-else class="empty-copy">아직 공개할 우승 기록이 없습니다.</div>
-              </section>
-            </v-col>
-            <v-col cols="12" md="5">
-              <section class="dashboard-section distribution">
-                <div class="section-title"><v-icon>mdi-chart-donut</v-icon><h3>클랜 티어 분포</h3></div>
-                <div v-for="tier in dashboard.tier_distribution" :key="tier.name" class="distribution-row">
-                  <span>{{ tier.name }}</span>
-                  <v-progress-linear :model-value="distributionPercent(tier.count)" color="deep-purple-accent-2" height="8" rounded />
-                  <b>{{ tier.count }}</b>
                 </div>
                 <div v-if="!dashboard.tier_distribution.length" class="empty-copy">표시할 티어 정보가 없습니다.</div>
               </section>
             </v-col>
           </v-row>
-
-          <section class="dashboard-section mt-4">
-            <div class="section-title"><v-icon>mdi-map-marker-path</v-icon><h3>주 포지션 분포</h3></div>
-            <div class="position-grid">
-              <div v-for="position in dashboard.position_distribution" :key="position.name">
-                <v-icon color="cyan-lighten-1">mdi-shield-sword-outline</v-icon>
-                <span>{{ position.name }}</span><strong>{{ position.count }}명</strong>
-              </div>
-            </div>
-            <div v-if="!dashboard.position_distribution.length" class="empty-copy">표시할 포지션 정보가 없습니다.</div>
-          </section>
         </v-card-text>
       </v-card>
     </v-dialog>
@@ -208,9 +199,8 @@ type Distribution = { name: string; count: number };
 type PublicDashboard = {
   clan: { id: number; name: string; description: string; banner_url: string | null; created_at: string };
   summary: { member_count: number; active_player_count: number; completed_match_count: number; completed_cup_count: number; completed_auction_count: number };
-  leaders: Array<{ id: number; nickname: string; tagname: string; tier_name: string | null; cup_count: number; sub_cup_count: number }>;
+  master: { id: number; account_name: string; avatar: string | null; player_nickname: string | null; tagname: string | null; tier_name: string | null } | null;
   tier_distribution: Distribution[];
-  position_distribution: Distribution[];
 };
 
 const keyword = ref('');
@@ -241,6 +231,20 @@ const summaryCards = computed(() => {
     { label: '컵 · 경매내전', value: `${value.completed_cup_count + value.completed_auction_count}회`, icon: 'mdi-trophy', color: 'amber' },
   ];
 });
+const tierColors: Record<string, string> = {
+  CHALLENGER: '#38bdf8', GRANDMASTER: '#f43f5e', MASTER: '#c084fc', DIAMOND: '#60a5fa',
+  EMERALD: '#34d399', PLATINUM: '#2dd4bf', GOLD: '#fbbf24', SILVER: '#94a3b8',
+  BRONZE: '#b45309', IRON: '#78716c', UNRANK: '#64748b', '티어 미정': '#64748b',
+};
+const tierDistribution = computed(() => {
+  const items = dashboard.value?.tier_distribution ?? [];
+  const totalCount = items.reduce((sum, item) => sum + Number(item.count), 0) || 1;
+  return items.map((item) => {
+    const group = item.name.split(' ')[0].toUpperCase();
+    return { ...item, percent: (Number(item.count) / totalCount) * 100, color: tierColors[group] || '#64748b' };
+  });
+});
+const masterInitial = computed(() => dashboard.value?.master?.account_name?.slice(0, 1) || 'M');
 
 function assetUrl(value: string | null) {
   if (!value) return '';
@@ -250,10 +254,6 @@ function assetUrl(value: string | null) {
 function bannerStyle(value: string | null) {
   const url = assetUrl(value);
   return url ? { backgroundImage: `url("${url}")` } : {};
-}
-function distributionPercent(count: number) {
-  const totalCount = dashboard.value?.summary.active_player_count || 1;
-  return Math.min(100, (Number(count) / totalCount) * 100);
 }
 async function loadClans(nextPage = page.value) {
   page.value = nextPage;
@@ -346,11 +346,11 @@ onMounted(async () => {
 .dashboard-body { padding:26px; }
 .summary-card { display:flex; min-height:132px; flex-direction:column; justify-content:center; align-items:center; gap:5px; border:1px solid rgba(255,255,255,.1); border-radius:16px; background:rgba(255,255,255,.025); }
 .summary-card strong { font-size:24px; }.summary-card span { color:rgba(255,255,255,.55); font-size:13px; }
+.summary-card--master { align-items:center; justify-content:flex-start; padding:20px; color:inherit; background:linear-gradient(135deg,rgba(245,158,11,.1),rgba(124,58,237,.08)); flex-direction:row; gap:15px; }.summary-card--master>div { display:flex; min-width:0; flex-direction:column; align-items:flex-start; }.summary-card--master strong { overflow:hidden; max-width:210px; font-size:18px; text-overflow:ellipsis; white-space:nowrap; }.summary-card--master small { overflow:hidden; max-width:210px; color:rgba(255,255,255,.5); font-size:11px; text-overflow:ellipsis; white-space:nowrap; }
 .dashboard-section { height:100%; padding:20px; border:1px solid rgba(255,255,255,.09); border-radius:18px; background:rgba(255,255,255,.02); }
 .section-title { display:flex; align-items:center; gap:9px; margin-bottom:16px; }.section-title h3 { font-size:16px; }
-.leader-list { display:grid; gap:9px; }.leader-row { display:grid; grid-template-columns:26px 42px 1fr auto; align-items:center; gap:10px; padding:10px; border-radius:12px; background:rgba(255,255,255,.035); }.leader-row>div { display:flex; flex-direction:column; }.leader-row span { font-size:12px; color:rgba(255,255,255,.5); }
-.distribution-row { display:grid; grid-template-columns:90px 1fr 25px; gap:10px; align-items:center; margin:12px 0; font-size:13px; }
-.position-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; }.position-grid>div { display:flex; align-items:center; gap:7px; padding:13px; border-radius:12px; background:rgba(255,255,255,.035); }.position-grid strong { margin-left:auto; }
+.master-label,.panel-kicker { color:#a78bfa!important; font-size:10px!important; font-weight:900; letter-spacing:.15em; }
+.tier-list { display:grid; gap:15px; }.tier-row>div { display:flex; justify-content:space-between; margin-bottom:6px; }.tier-row strong { font-size:11px; }.tier-row span { color:rgba(226,232,240,.5); font-size:10px; }
 .empty-copy { padding:20px; text-align:center; color:rgba(255,255,255,.45); }
-@media(max-width:700px){.explore-hero{align-items:stretch;flex-direction:column;padding:22px}.explore-search{max-width:none}.position-grid{grid-template-columns:repeat(2,1fr)}.leader-row{grid-template-columns:22px 38px 1fr}.leader-row .v-chip{display:none}.dashboard-banner__shade{padding:24px}.dashboard-body{padding:16px}}
+@media(max-width:700px){.explore-hero{align-items:stretch;flex-direction:column;padding:22px}.explore-search{max-width:none}.dashboard-banner__shade{padding:24px}.dashboard-body{padding:16px}}
 </style>

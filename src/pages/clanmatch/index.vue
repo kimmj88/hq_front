@@ -9,7 +9,12 @@
       </div>
 
       <div class="d-flex align-center" style="gap: 8px">
-        <v-btn color="primary" prepend-icon="mdi-plus" @click="$router.push(CLAN_MATCH_PATH.ADD)">
+        <v-btn
+          v-if="account.clan?.id"
+          color="primary"
+          prepend-icon="mdi-plus"
+          @click="$router.push(CLAN_MATCH_PATH.ADD)"
+        >
           클랜전 생성
         </v-btn>
 
@@ -104,7 +109,9 @@
                 수락(매치잡기)
               </v-btn>
 
-              <v-chip v-else variant="tonal" size="small" color="grey"> 내가 만든 매치 </v-chip>
+              <v-chip v-else-if="isMyClanMatch(m)" variant="tonal" size="small" color="grey">
+                내가 만든 매치
+              </v-chip>
             </div>
           </div>
 
@@ -276,7 +283,13 @@ const filtered = computed(() => {
 });
 
 function canAccept(m: ClanMatch) {
-  return m.status === 'WAITING' && m.host_clan?.id !== account.clan.id;
+  const clanId = account.clan?.id;
+  return Boolean(clanId && m.status === 'WAITING' && m.host_clan?.id !== clanId);
+}
+
+function isMyClanMatch(m: ClanMatch) {
+  const clanId = account.clan?.id;
+  return Boolean(clanId && m.host_clan?.id === clanId);
 }
 
 function openDetail(m: ClanMatch) {

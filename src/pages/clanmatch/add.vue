@@ -293,7 +293,7 @@ const selectedTierDesc = computed(
 
 const mode = computed(() => {
   if (isCreate.value) return 'CREATE';
-  return clanMatch.value?.host_clan.id === account.clan.id ? 'HOST_VIEW' : 'GUEST_ACCEPT';
+  return clanMatch.value?.host_clan.id === account.clan?.id ? 'HOST_VIEW' : 'GUEST_ACCEPT';
 });
 
 const isGuestMode = computed(() => mode.value === 'GUEST_ACCEPT');
@@ -343,6 +343,11 @@ const canSubmitGuest = computed(() => {
 async function submitCreate() {
   errorMsg.value = '';
 
+  if (!account.clan?.id) {
+    errorMsg.value = '클랜에 가입한 사용자만 클랜전을 생성할 수 있습니다.';
+    return;
+  }
+
   try {
     // datetime-local → ISO(+09:00 유지)
     const matchAt = new Date(form.value.matchAt).toISOString();
@@ -372,6 +377,10 @@ async function submitCreate() {
 
 async function submitAccept() {
   errorMsg.value = '';
+  if (!account.clan?.id) {
+    errorMsg.value = '클랜에 가입한 사용자만 클랜전을 수락할 수 있습니다.';
+    return;
+  }
   try {
     const payload = {
       id: matchId.value,

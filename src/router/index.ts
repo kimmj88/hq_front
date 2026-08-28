@@ -357,6 +357,8 @@ async function hydrateUser(accessToken: string) {
   if (me.clan != null) {
     const clanPermissions = await setClanRole(me.clanrole.id);
     clanPermissionStore.setClanPermissions(clanPermissions);
+  } else {
+    clanPermissionStore.clear();
   }
 
   auth.setTokens(accessToken);
@@ -401,7 +403,16 @@ router.beforeEach(async (to, from, next) => {
 
   const account = useAccountStore();
   const isClanInvite = to.path.startsWith('/clan/invite/');
-  if (to.path.startsWith('/clan/') && !isClanInvite && account.isClaned == false) {
+  const isPublicClanPage =
+    to.path === '/clan' ||
+    to.path === '/clan/' ||
+    to.path.startsWith('/clan/explore/');
+  if (
+    to.path.startsWith('/clan/') &&
+    !isClanInvite &&
+    !isPublicClanPage &&
+    account.isClaned === false
+  ) {
     await ensureSession();
 
     const targetClan = String(to.params.name ?? '');

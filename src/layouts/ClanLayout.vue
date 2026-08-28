@@ -155,7 +155,9 @@
           <v-list-item
             prepend-icon="mdi-exit-run"
             title="클랜 나가기"
-            @click="leaveDialog = true"
+            :subtitle="account.isClanMaster ? '마스터 위임 후 탈퇴 가능' : undefined"
+            :disabled="account.isClanMaster"
+            @click="!account.isClanMaster && (leaveDialog = true)"
           />
         </v-list>
       </v-navigation-drawer>
@@ -170,11 +172,11 @@
         <v-card rounded="xl">
           <v-card-title class="text-h6 font-weight-bold">클랜 탈퇴</v-card-title>
           <v-card-text class="text-body-2 text-medium-emphasis">
-            클랜을 탈퇴 하시겠습니까?
+            {{ account.isClanMaster ? '클랜 마스터는 탈퇴할 수 없습니다. 다른 멤버에게 마스터를 위임해 주세요.' : '클랜을 탈퇴 하시겠습니까?' }}
           </v-card-text>
           <v-card-actions class="justify-end">
             <v-btn variant="text" @click="leaveDialog = false">취소</v-btn>
-            <v-btn color="error" @click="leaveClan">나가기</v-btn>
+            <v-btn color="error" :disabled="account.isClanMaster" @click="leaveClan">나가기</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -208,7 +210,7 @@
 import { ref, computed } from 'vue';
 import { useDisplay } from 'vuetify'; // ✅ 추가
 import HeaderBar from '@/components/header/Header.vue';
-import { can } from '@/stores/useClanPermissionStore';
+import { can, useClanPermissionStore } from '@/stores/useClanPermissionStore';
 import { useAccountStore } from '@/stores/useAccountStore';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import api from '@/@core/composable/useAxios';
@@ -217,6 +219,7 @@ import { CLAN_PATH } from '@/router/clan/type';
 
 const router = useRouter();
 const account = useAccountStore();
+const clanPermissionStore = useClanPermissionStore();
 
 const leaveDialog = ref(false);
 const supportDialog = ref(false);
@@ -243,6 +246,7 @@ function openSupport() {
 }
 
 async function leaveClan() {
+  if (account.isClanMaster) return;
   await api.post(`${getBaseUrl('DATA')}/account/leave_clan`, {
     id: account.id,
     clan_id: null,
@@ -250,6 +254,9 @@ async function leaveClan() {
   });
 
   leaveDialog.value = false;
+  account.clan = null;
+  account.clanrole = null;
+  clanPermissionStore.clear();
   router.replace('/clan');
 }
 </script>
