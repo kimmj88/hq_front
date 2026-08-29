@@ -156,7 +156,17 @@
 
     <!-- 하단 컨트롤 -->
     <v-row align="center" justify="space-between">
-      <v-col cols="12" md="6" class="d-flex align-center" style="gap: 12px"> </v-col>
+      <v-col cols="12" md="6" class="d-flex align-center" style="gap: 12px">
+        <v-btn
+          v-if="player"
+          color="primary"
+          variant="tonal"
+          prepend-icon="mdi-chart-timeline-variant"
+          @click="openActivityDialog"
+        >
+          활동 기록
+        </v-btn>
+      </v-col>
 
       <v-col cols="12" md="6" class="d-flex justify-end" style="gap: 8px">
         <v-btn
@@ -168,14 +178,6 @@
         >
           마스터 변경
         </v-btn>
-        <v-btn
-          v-if="can('ACCOUNT', 'CLAN-SET-ACC-U')"
-          color="primary"
-          variant="flat"
-          @click="dialog = true"
-        >
-          Edit Role
-        </v-btn>
         <!-- <v-btn color="primary" variant="tonal" @click="submitEdit"> 저장 </v-btn> -->
         <!-- <v-btn color="secondary" variant="text" @click="router.push('/config/account')">
           뒤로
@@ -184,37 +186,71 @@
     </v-row>
   </v-card>
 
-  <!-- 역할 변경 다이얼로그 -->
-  <v-dialog v-model="dialog" max-width="480">
-    <v-card>
-      <v-card-title class="text-h6">계정 설정</v-card-title>
+  <v-dialog v-model="activityDialog" max-width="820" scrollable>
+    <v-card class="activity-dialog" rounded="xl">
+      <v-card-title class="activity-dialog-head">
+        <div>
+          <span class="activity-kicker">PLAYER ACTIVITY</span>
+          <h2>
+            {{ activityData?.player.nickname || player?.nickname || account.datas.nickname }}
+            <small v-if="activityData?.player.tagname || player?.tagname">
+              #{{ activityData?.player.tagname || player?.tagname }}
+            </small>
+          </h2>
+        </div>
+        <v-btn icon="mdi-close" variant="text" @click="activityDialog = false" />
+      </v-card-title>
+
       <v-card-text>
-        <v-text-field v-model="account.datas.name" label="Name" readonly />
-        <v-text-field v-model="account.datas.email" label="Email" readonly />
-        <v-text-field v-model="account.datas.department" label="Department" readonly />
+        <div class="activity-category-grid">
+          <button
+            v-for="category in activityCategories"
+            :key="category.key"
+            type="button"
+            class="activity-category"
+            :class="{ active: selectedActivityCategory === category.key }"
+            @click="selectedActivityCategory = category.key"
+          >
+            <v-icon :color="category.color">{{ category.icon }}</v-icon>
+            <span>{{ category.label }}</span>
+            <strong>{{ activityData?.counts[category.key] ?? 0 }}회</strong>
+          </button>
+        </div>
 
-        <v-autocomplete
-          v-model="selectedSystemRole"
-          :items="systemRoleList"
-          item-title="name"
-          item-value="id"
-          label="System Role"
-          return-object
-          class="mt-2"
-        />
+        <div class="activity-history-head">
+          <strong>{{ selectedActivityLabel }} 기록</strong>
+          <span>최신순</span>
+        </div>
 
-        <v-switch
-          v-model="accountIsConfirm"
-          label="플레이어 로그인 승인"
-          color="success"
-          inset
-          hide-details
-          class="mt-4"
-        />
+        <v-list v-if="filteredActivityEvents.length" class="activity-history-list" lines="two">
+          <v-list-item v-for="event in filteredActivityEvents" :key="`${event.category}-${event.id}`">
+            <template #prepend>
+              <v-avatar size="40" :color="activityCategoryColor(event.category)" variant="tonal">
+                <v-icon size="20">{{ activityCategoryIcon(event.category) }}</v-icon>
+              </v-avatar>
+            </template>
+            <v-list-item-title class="font-weight-medium">{{ event.title }}</v-list-item-title>
+            <v-list-item-subtitle>
+              {{ activityCategoryLabel(event.category) }} · {{ formatActivityDate(event.occurredAt) }}
+            </v-list-item-subtitle>
+          </v-list-item>
+        </v-list>
+
+        <div v-else-if="activityLoading" class="activity-empty">
+          <v-progress-circular indeterminate color="primary" />
+          <span>활동 기록을 불러오고 있습니다.</span>
+        </div>
+        <div v-else class="activity-empty">
+          <v-icon size="44" color="grey">mdi-history</v-icon>
+          <strong>해당 활동 기록이 없습니다.</strong>
+        </div>
       </v-card-text>
-      <v-card-actions class="justify-end">
-        <v-btn variant="text" @click="dialog = false">취소</v-btn>
-        <v-btn color="primary" @click="submitEdit">저장</v-btn>
+
+      <v-card-actions class="px-6 pb-5 justify-end">
+        <v-btn variant="tonal" prepend-icon="mdi-open-in-new" :disabled="!activityData" @click="openOpgg">
+          OP.GG
+        </v-btn>
+        <v-btn color="primary" @click="activityDialog = false">확인</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -276,6 +312,13 @@ const router = useRouter();
 
 const accountStore = useAccountStore();
 
+type ActivityCategory = 'DUO_RANK' | 'FLEX_RANK' | 'NORMAL' | 'MATCH' | 'CUP' | 'AUCTION';
+type PlayerActivity = {
+  player: { id: number; nickname: string; tagname: string; accountId: number };
+  counts: Record<ActivityCategory, number>;
+  events: Array<{ category: ActivityCategory; id: number; title: string; occurredAt: string }>;
+};
+
 const isClanMaster = computed(() => accountStore.isClanMaster);
 
 const snack = ref({ show: false, msg: '' });
@@ -286,10 +329,31 @@ function toast(msg: string) {
 
 const props = defineProps<{ id: string }>();
 
-const dialog = ref(false);
+const activityDialog = ref(false);
+const activityLoading = ref(false);
+const activityData = ref<PlayerActivity | null>(null);
+const selectedActivityCategory = ref<'ALL' | ActivityCategory>('ALL');
+const activityCategories = [
+  { key: 'DUO_RANK' as const, label: '듀오랭크', icon: 'mdi-account-multiple', color: 'indigo-lighten-1' },
+  { key: 'FLEX_RANK' as const, label: '자유랭크', icon: 'mdi-account-group', color: 'blue-lighten-1' },
+  { key: 'NORMAL' as const, label: '일반게임', icon: 'mdi-gamepad-variant-outline', color: 'teal-lighten-1' },
+  { key: 'MATCH' as const, label: '내전 매치', icon: 'mdi-sword-cross', color: 'red-lighten-1' },
+  { key: 'CUP' as const, label: '내전 컵', icon: 'mdi-trophy-outline', color: 'amber' },
+  { key: 'AUCTION' as const, label: '경매내전', icon: 'mdi-gavel', color: 'deep-purple-lighten-2' },
+];
+const filteredActivityEvents = computed(() => {
+  const events = activityData.value?.events ?? [];
+  return selectedActivityCategory.value === 'ALL'
+    ? events
+    : events.filter((event) => event.category === selectedActivityCategory.value);
+});
+const selectedActivityLabel = computed(() =>
+  selectedActivityCategory.value === 'ALL'
+    ? '전체 활동'
+    : activityCategoryLabel(selectedActivityCategory.value),
+);
+
 const selectedSystemRole = ref<ClanRole | null>(null);
-const systemRoleList = ref<ClanRole[]>([]);
-const accountIsConfirm = ref<boolean>(false);
 
 const account = ref<{
   datas: {
@@ -362,6 +426,48 @@ async function submitNickname() {
 
 const player = computed<Player | null>(() => account.value.datas.player ?? null);
 
+async function openActivityDialog() {
+  if (!player.value?.id || !accountStore.clan?.id) return;
+  activityDialog.value = true;
+  activityLoading.value = true;
+  activityData.value = null;
+  selectedActivityCategory.value = 'ALL';
+  try {
+    const response = await api.get(`${getBaseUrl('DATA')}/Clan/dashboard_player_activity`, {
+      params: { clan_id: accountStore.clan.id, player_id: player.value.id },
+    });
+    activityData.value = response.data?.datas ?? null;
+  } catch (error) {
+    console.error('플레이어 활동 기록을 불러오지 못했습니다.', error);
+    toast('활동 기록을 불러오지 못했습니다.');
+  } finally {
+    activityLoading.value = false;
+  }
+}
+
+function activityCategoryLabel(category: ActivityCategory) {
+  return activityCategories.find((item) => item.key === category)?.label ?? category;
+}
+function activityCategoryIcon(category: ActivityCategory) {
+  return activityCategories.find((item) => item.key === category)?.icon ?? 'mdi-history';
+}
+function activityCategoryColor(category: ActivityCategory) {
+  return activityCategories.find((item) => item.key === category)?.color ?? 'primary';
+}
+function formatActivityDate(value: string) {
+  return new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
+}
+function openOpgg() {
+  const target = activityData.value?.player;
+  if (!target?.nickname || !target.tagname) return;
+  const nickname = target.nickname.replace(/#.*/, '');
+  window.open(
+    `https://www.op.gg/summoners/kr/${encodeURIComponent(`${nickname}-${target.tagname}`)}`,
+    '_blank',
+    'noopener,noreferrer',
+  );
+}
+
 // 예시: 플레이어 한줄 설명
 const player_comment = computed(() => {
   if (!player.value) return '';
@@ -390,32 +496,8 @@ async function fetchAccount() {
     account.value = res.data;
 
     selectedSystemRole.value = account.value.datas.clanrole || null;
-    accountIsConfirm.value = account.value.datas.is_confirm;
-
-    const roleRes = await api.get(`${getBaseUrl('DATA')}/clanrole/all`);
-    systemRoleList.value = roleRes.data.datas;
   } catch (error) {
     console.error('계정 정보 불러오기 실패:', error);
-  }
-}
-
-async function submitEdit() {
-  try {
-    const payload = {
-      id: props.id,
-      clanrole_id: selectedSystemRole.value?.id,
-      is_confirm: accountIsConfirm.value,
-    };
-
-    await api.post(`${getBaseUrl('DATA')}/account/edit_clanrole`, payload);
-
-    // 로컬 상태 반영
-    account.value.datas.clanrole = selectedSystemRole.value || null;
-    account.value.datas.is_confirm = accountIsConfirm.value;
-
-    dialog.value = false;
-  } catch (err) {
-    console.error('계정 업데이트 실패:', err);
   }
 }
 
@@ -439,5 +521,27 @@ onMounted(async () => {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: rgba(255, 255, 255, 0.7);
+}
+
+.activity-dialog { border: 1px solid rgba(139, 92, 246, .24); background: #151922; }
+.activity-dialog-head { display: flex; align-items: center; justify-content: space-between; padding: 22px 24px 12px; }
+.activity-kicker { color: #a78bfa; font-size: .68rem; font-weight: 900; letter-spacing: .12em; }
+.activity-dialog-head h2 { margin: 3px 0 0; font-size: 1.35rem; }
+.activity-dialog-head h2 small { color: rgba(226, 232, 240, .48); font-size: .82rem; }
+.activity-category-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 9px; margin-bottom: 24px; }
+.activity-category { display: flex; min-width: 0; min-height: 104px; align-items: center; justify-content: center; gap: 4px; border: 1px solid rgba(148, 163, 184, .13); border-radius: 15px; color: rgba(248, 250, 252, .84); background: rgba(255, 255, 255, .025); cursor: pointer; flex-direction: column; transition: border-color .18s ease, background .18s ease, transform .18s ease; }
+.activity-category:hover { transform: translateY(-2px); }
+.activity-category:hover, .activity-category.active { border-color: rgba(139, 92, 246, .6); background: rgba(139, 92, 246, .12); }
+.activity-category span { overflow: hidden; max-width: 100%; color: rgba(226, 232, 240, .58); font-size: .7rem; text-overflow: ellipsis; white-space: nowrap; }
+.activity-category strong { font-size: 1.05rem; }
+.activity-history-head { display: flex; align-items: center; justify-content: space-between; padding: 0 4px 10px; }
+.activity-history-head strong { font-size: .86rem; }
+.activity-history-head span { color: rgba(226, 232, 240, .42); font-size: .7rem; }
+.activity-history-list { max-height: 350px; overflow-y: auto; border-top: 1px solid rgba(148, 163, 184, .1); background: transparent; }
+.activity-history-list :deep(.v-list-item) { border-bottom: 1px solid rgba(148, 163, 184, .08); }
+.activity-empty { display: flex; min-height: 190px; align-items: center; justify-content: center; gap: 10px; color: rgba(226, 232, 240, .55); flex-direction: column; }
+@media (max-width: 700px) {
+  .activity-category-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .activity-category { min-height: 84px; }
 }
 </style>

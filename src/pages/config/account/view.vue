@@ -264,40 +264,70 @@
 
     <v-row v-if="profileTab === 'activity'" class="mt-4" dense>
       <v-col cols="12">
-        <v-card class="pa-5" rounded="xl" elevation="2">
-          <div class="d-flex align-center justify-space-between mb-4">
-            <div><div class="text-subtitle-1 font-weight-bold">파티 활동</div><div class="text-caption text-medium-emphasis">종료된 파티 참여 기록입니다.</div></div>
-            <v-progress-circular v-if="activityLoading" indeterminate size="22" color="primary" />
+        <v-card class="player-activity-panel" rounded="xl" elevation="2">
+          <div class="player-activity-head">
+            <div>
+              <span class="activity-kicker">PLAYER ACTIVITY</span>
+              <h2>
+                {{ activityData?.player.nickname || player?.nickname || account.datas.nickname }}
+                <small v-if="activityData?.player.tagname || player?.tagname">
+                  #{{ activityData?.player.tagname || player?.tagname }}
+                </small>
+              </h2>
+            </div>
+            <v-progress-circular v-if="activityLoading" indeterminate size="25" color="primary" />
           </div>
-          <div v-if="partyActivity" class="activity-stats mb-4">
-            <div><strong>{{ partyActivity.stats.total }}</strong><span>전체</span></div>
-            <div><strong>{{ partyActivity.stats.duo_rank }}</strong><span>듀오랭크</span></div>
-            <div><strong>{{ partyActivity.stats.flex_rank }}</strong><span>자유랭크</span></div>
-            <div><strong>{{ partyActivity.stats.normal }}</strong><span>일반게임</span></div>
-            <div><strong>{{ partyActivity.stats.inhouse }}</strong><span>내전</span></div>
+
+          <div class="player-activity-body">
+            <div class="activity-category-grid">
+              <button
+                v-for="category in activityCategories"
+                :key="category.key"
+                type="button"
+                class="activity-category"
+                :class="{ active: selectedActivityCategory === category.key }"
+                @click="selectedActivityCategory = category.key"
+              >
+                <v-icon :color="category.color">{{ category.icon }}</v-icon>
+                <span>{{ category.label }}</span>
+                <strong>{{ activityData?.counts[category.key] ?? 0 }}회</strong>
+              </button>
+            </div>
+
+            <div class="activity-history-head">
+              <strong>{{ selectedActivityLabel }} 기록</strong>
+              <span>최신순</span>
+            </div>
+
+            <v-list v-if="filteredActivityEvents.length" class="activity-history-list" lines="two">
+              <v-list-item v-for="event in filteredActivityEvents" :key="`${event.category}-${event.id}`">
+                <template #prepend>
+                  <v-avatar size="40" :color="activityCategoryColor(event.category)" variant="tonal">
+                    <v-icon size="20">{{ activityCategoryIcon(event.category) }}</v-icon>
+                  </v-avatar>
+                </template>
+                <v-list-item-title class="font-weight-medium">{{ event.title }}</v-list-item-title>
+                <v-list-item-subtitle>
+                  {{ activityCategoryLabel(event.category) }} · {{ formatActivityDate(event.occurredAt) }}
+                </v-list-item-subtitle>
+              </v-list-item>
+            </v-list>
+
+            <div v-else-if="activityLoading" class="activity-empty">
+              <v-progress-circular indeterminate color="primary" />
+              <span>활동 기록을 불러오고 있습니다.</span>
+            </div>
+            <div v-else class="activity-empty">
+              <v-icon size="44" color="grey">mdi-history</v-icon>
+              <strong>해당 활동 기록이 없습니다.</strong>
+            </div>
           </div>
-          <v-list v-if="partyActivity?.rooms.length" lines="two">
-            <v-list-item v-for="room in partyActivity.rooms" :key="room.id" prepend-icon="mdi-account-group-outline">
-              <v-list-item-title>{{ room.title }}</v-list-item-title>
-              <v-list-item-subtitle>{{ partyTypeLabel(room.type) }} · {{ formatDate(room.closed_at) }}</v-list-item-subtitle>
-            </v-list-item>
-          </v-list>
-          <v-alert v-else-if="!activityLoading" type="info" variant="tonal">아직 종료된 파티 활동 기록이 없습니다.</v-alert>
-        </v-card>
-      </v-col>
-      <v-col cols="12">
-        <v-card class="pa-5" rounded="xl" elevation="2">
-          <div class="text-subtitle-1 font-weight-bold mb-1">경매내전 활동</div>
-          <div class="text-caption text-medium-emphasis mb-4">참가했던 경매내전 기록입니다.</div>
-          <v-list v-if="auctionActivity.length" lines="two">
-            <v-list-item v-for="auction in auctionActivity" :key="auction.id" prepend-icon="mdi-gavel">
-              <v-list-item-title>{{ auction.title }}</v-list-item-title>
-              <v-list-item-subtitle>
-                {{ auctionStatusLabel(auction.status) }} · {{ formatDate(auction.scheduledAt) }}
-              </v-list-item-subtitle>
-            </v-list-item>
-          </v-list>
-          <v-alert v-else-if="!activityLoading" type="info" variant="tonal">경매내전 참가 기록이 없습니다.</v-alert>
+
+          <div class="player-activity-actions">
+            <v-btn variant="tonal" prepend-icon="mdi-open-in-new" :disabled="!activityData" @click="openActivityOpgg">
+              OP.GG
+            </v-btn>
+          </div>
         </v-card>
       </v-col>
     </v-row>
@@ -511,19 +541,33 @@ const clanRoleSaving = ref(false);
 const selectedClanRole = ref<ClanRole | null>(null);
 const clanRoleList = ref<ClanRole[]>([]);
 
-interface PartyActivity {
-  stats: { total: number; duo_rank: number; normal: number; flex_rank: number; inhouse: number };
-  rooms: Array<{ id: number; type: string; title: string; closed_at: string }>;
+type ActivityCategory = 'DUO_RANK' | 'FLEX_RANK' | 'NORMAL' | 'MATCH' | 'CUP' | 'AUCTION';
+interface PlayerActivity {
+  player: { id: number; nickname: string; tagname: string; accountId: number };
+  counts: Record<ActivityCategory, number>;
+  events: Array<{ category: ActivityCategory; id: number; title: string; occurredAt: string }>;
 }
-interface AuctionActivity {
-  id: number;
-  title: string;
-  status: string;
-  scheduledAt: string;
-  participants: Array<{ accountId: number }>;
-}
-const partyActivity = ref<PartyActivity | null>(null);
-const auctionActivity = ref<AuctionActivity[]>([]);
+const activityData = ref<PlayerActivity | null>(null);
+const selectedActivityCategory = ref<'ALL' | ActivityCategory>('ALL');
+const activityCategories = [
+  { key: 'DUO_RANK' as const, label: '듀오랭크', icon: 'mdi-account-multiple', color: 'indigo-lighten-1' },
+  { key: 'FLEX_RANK' as const, label: '자유랭크', icon: 'mdi-account-group', color: 'blue-lighten-1' },
+  { key: 'NORMAL' as const, label: '일반게임', icon: 'mdi-gamepad-variant-outline', color: 'teal-lighten-1' },
+  { key: 'MATCH' as const, label: '내전 매치', icon: 'mdi-sword-cross', color: 'red-lighten-1' },
+  { key: 'CUP' as const, label: '내전 컵', icon: 'mdi-trophy-outline', color: 'amber' },
+  { key: 'AUCTION' as const, label: '경매내전', icon: 'mdi-gavel', color: 'deep-purple-lighten-2' },
+];
+const filteredActivityEvents = computed(() => {
+  const events = activityData.value?.events ?? [];
+  return selectedActivityCategory.value === 'ALL'
+    ? events
+    : events.filter((event) => event.category === selectedActivityCategory.value);
+});
+const selectedActivityLabel = computed(() =>
+  selectedActivityCategory.value === 'ALL'
+    ? '전체 활동'
+    : activityCategoryLabel(selectedActivityCategory.value),
+);
 
 const dialog = ref(false);
 const nicknameDialog = ref(false);
@@ -602,12 +646,27 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium' }).format(new Date(value));
 }
 
-function partyTypeLabel(type: string) {
-  return ({ DUO_RANK: '듀오랭크', NORMAL: '일반게임', FLEX_RANK: '자유랭크', INHOUSE: '내전' } as Record<string, string>)[type] ?? type;
+function activityCategoryLabel(category: ActivityCategory) {
+  return activityCategories.find((item) => item.key === category)?.label ?? category;
 }
-
-function auctionStatusLabel(status: string) {
-  return ({ RECRUITING: '모집 중', READY: '준비', IN_PROGRESS: '진행 중', FINISHED: '종료' } as Record<string, string>)[status] ?? status;
+function activityCategoryIcon(category: ActivityCategory) {
+  return activityCategories.find((item) => item.key === category)?.icon ?? 'mdi-history';
+}
+function activityCategoryColor(category: ActivityCategory) {
+  return activityCategories.find((item) => item.key === category)?.color ?? 'primary';
+}
+function formatActivityDate(value: string) {
+  return new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
+}
+function openActivityOpgg() {
+  const target = activityData.value?.player;
+  if (!target?.nickname || !target.tagname) return;
+  const nickname = target.nickname.replace(/#.*/, '');
+  window.open(
+    `https://www.op.gg/summoners/kr/${encodeURIComponent(`${nickname}-${target.tagname}`)}`,
+    '_blank',
+    'noopener,noreferrer',
+  );
 }
 
 async function openClanRoleDialog() {
@@ -643,28 +702,21 @@ async function submitClanRole() {
 
 async function fetchActivity() {
   const clan = account.value.datas.clan;
-  if (!clan) return;
+  const playerId = account.value.datas.player?.id;
+  if (!clan || !playerId) {
+    activityData.value = null;
+    return;
+  }
   activityLoading.value = true;
+  selectedActivityCategory.value = 'ALL';
   try {
-    const keyword = account.value.datas.player?.nickname || account.value.datas.nickname;
-    const [partyResult, auctionResult] = await Promise.allSettled([
-      api.get(`${getBaseUrl('DATA')}/party-room/history/search`, {
-        params: { clan_id: clan.id, keyword },
-      }),
-      api.get(`${getBaseUrl('DATA')}/auction/list`, {
-        params: { clan_name: clan.name },
-      }),
-    ]);
-
-    if (partyResult.status === 'fulfilled') {
-      const results = partyResult.value.data?.datas ?? [];
-      partyActivity.value = results.find((item: any) => item.account?.id === Number(props.id)) ?? null;
-    }
-    if (auctionResult.status === 'fulfilled') {
-      auctionActivity.value = (auctionResult.value.data?.datas ?? []).filter((auction: AuctionActivity) =>
-        auction.participants?.some((participant) => participant.accountId === Number(props.id)),
-      );
-    }
+    const response = await api.get(`${getBaseUrl('DATA')}/Clan/dashboard_player_activity`, {
+      params: { clan_id: clan.id, player_id: playerId },
+    });
+    activityData.value = response.data?.datas ?? null;
+  } catch (error) {
+    console.error('플레이어 활동 기록을 불러오지 못했습니다.', error);
+    activityData.value = null;
   } finally {
     activityLoading.value = false;
   }
@@ -911,29 +963,28 @@ onMounted(async () => {
 .award-card--auction {
   background: linear-gradient(135deg, rgba(139, 92, 246, 0.18), rgba(var(--v-theme-surface), 0.96));
 }
-.activity-stats {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 8px;
-}
-.activity-stats > div {
-  display: flex;
-  padding: 14px 8px;
-  border-radius: 12px;
-  background: rgba(var(--v-theme-on-surface), 0.05);
-  text-align: center;
-  flex-direction: column;
-}
-.activity-stats strong {
-  font-size: 20px;
-}
-.activity-stats span {
-  color: rgba(var(--v-theme-on-surface), 0.55);
-  font-size: 11px;
-}
+.player-activity-panel { overflow: hidden; border: 1px solid rgba(139, 92, 246, .24); background: #151922; }
+.player-activity-head { display: flex; align-items: center; justify-content: space-between; padding: 24px 24px 14px; }
+.activity-kicker { color: #a78bfa; font-size: .68rem; font-weight: 900; letter-spacing: .12em; }
+.player-activity-head h2 { margin: 4px 0 0; font-size: 1.35rem; }
+.player-activity-head h2 small { color: rgba(226, 232, 240, .48); font-size: .82rem; }
+.player-activity-body { padding: 12px 24px 0; }
+.activity-category-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 9px; margin-bottom: 24px; }
+.activity-category { display: flex; min-width: 0; min-height: 104px; align-items: center; justify-content: center; gap: 4px; border: 1px solid rgba(148, 163, 184, .13); border-radius: 15px; color: rgba(248, 250, 252, .84); background: rgba(255, 255, 255, .025); cursor: pointer; flex-direction: column; transition: border-color .18s ease, background .18s ease, transform .18s ease; }
+.activity-category:hover { transform: translateY(-2px); }
+.activity-category:hover, .activity-category.active { border-color: rgba(139, 92, 246, .6); background: rgba(139, 92, 246, .12); }
+.activity-category span { overflow: hidden; max-width: 100%; color: rgba(226, 232, 240, .58); font-size: .7rem; text-overflow: ellipsis; white-space: nowrap; }
+.activity-category strong { font-size: 1.05rem; }
+.activity-history-head { display: flex; align-items: center; justify-content: space-between; padding: 0 4px 10px; }
+.activity-history-head strong { font-size: .86rem; }
+.activity-history-head span { color: rgba(226, 232, 240, .42); font-size: .7rem; }
+.activity-history-list { max-height: 390px; overflow-y: auto; border-top: 1px solid rgba(148, 163, 184, .1); background: transparent; }
+.activity-history-list :deep(.v-list-item) { border-bottom: 1px solid rgba(148, 163, 184, .08); }
+.activity-empty { display: flex; min-height: 190px; align-items: center; justify-content: center; gap: 10px; color: rgba(226, 232, 240, .55); flex-direction: column; }
+.player-activity-actions { display: flex; justify-content: flex-end; padding: 18px 24px 22px; }
 @media (max-width: 600px) {
-  .activity-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  .activity-category-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .activity-category { min-height: 84px; }
+  .player-activity-head, .player-activity-body, .player-activity-actions { padding-inline: 16px; }
 }
 </style>
