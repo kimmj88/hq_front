@@ -94,8 +94,8 @@
           role="button"
           tabindex="0"
           style="gap: 12px; cursor: pointer"
-          @click="openOpgg(item)"
-          @keyup.enter="openOpgg(item)"
+          @click="openFow(item)"
+          @keyup.enter="openFow(item)"
         >
           <v-avatar size="32" color="deep-purple-darken-2">
             <span class="text-caption text-white">
@@ -419,13 +419,13 @@ const edit = ref<{
   form: { id: 0, name: '', point: null, cup_count: null, sub_cup_count: null, is_active: false },
 });
 
-function openOpgg(item: any) {
+function openFow(item: any) {
   if (!item.nickname || !item.tagname) return;
 
   const region = 'kr';
   const riotId = `${item.nickname}-${item.tagname}`;
   const encoded = encodeURIComponent(riotId);
-  const url = `https://www.op.gg/summoners/${region}/${encoded}`;
+  const url = `https://www.fow.lol/find/${region}/${encoded}?hl=ko_KR`;
   window.open(url, '_blank', 'noopener,noreferrer');
 }
 

@@ -278,9 +278,8 @@ function openPlayer(p?: ClickablePlayer | null) {
   if (!p?.nickname || !p?.tagname) return;
 
   const region = 'kr';
-  // op.gg는 보통 "nickname-tag" 형태 (공백/특수문자 때문에 encode 필요)
   const riotId = `${p.nickname}-${p.tagname}`;
-  const url = `https://www.op.gg/summoners/${region}/${encodeURIComponent(riotId)}`;
+  const url = `https://www.fow.lol/find/${region}/${encodeURIComponent(riotId)}?hl=ko_KR`;
 
   window.open(url, '_blank', 'noopener,noreferrer');
 }

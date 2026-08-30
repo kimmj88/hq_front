@@ -218,7 +218,7 @@
           <div v-if="activityLoading" class="empty-state"><v-progress-circular indeterminate color="primary" /></div>
         </v-card-text>
         <v-card-actions class="px-6 pb-5 justify-end">
-          <v-btn variant="tonal" prepend-icon="mdi-open-in-new" @click="activityData && openPlayer(activityData.player)">OP.GG</v-btn>
+          <v-btn variant="tonal" prepend-icon="mdi-open-in-new" @click="activityData && openPlayer(activityData.player)">FOW.LOL</v-btn>
           <v-btn color="primary" @click="activityDialog = false">확인</v-btn>
         </v-card-actions>
       </v-card>
@@ -396,7 +396,7 @@ function openPlayer(player: { nickname: string; tagname?: string }) {
   const [nickname, embeddedTag] = player.nickname.split('#');
   const tag = player.tagname || embeddedTag;
   if (!nickname || !tag) return;
-  window.open(`https://www.op.gg/summoners/kr/${encodeURIComponent(`${nickname}-${tag}`)}`, '_blank', 'noopener,noreferrer');
+  window.open(`https://www.fow.lol/find/kr/${encodeURIComponent(`${nickname}-${tag}`)}?hl=ko_KR`, '_blank', 'noopener,noreferrer');
 }
 function initials(name = '') { return name.replace(/#.*/, '').trim().slice(0, 2).toUpperCase() || '?'; }
 const avatarPalette = ['#7c3aed', '#0891b2', '#059669', '#dc2626', '#d97706', '#4f46e5'];

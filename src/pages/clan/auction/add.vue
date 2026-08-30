@@ -5,9 +5,9 @@
     </v-btn>
 
     <v-card class="pa-5 pa-md-7" rounded="xl">
-      <div class="text-h5 font-weight-black">경매 내전 생성</div>
+      <div class="text-h5 font-weight-black">경매 내전 {{ isEditing ? '수정' : '생성' }}</div>
       <div class="text-body-2 text-medium-emphasis mt-1 mb-6">
-        참가 인원과 경매 팀 수를 설정하세요.
+        {{ isEditing ? '모집 중인 경매 내전 설정을 변경합니다.' : '참가 인원과 경매 팀 수를 설정하세요.' }}
       </div>
 
       <v-form ref="formRef" @submit.prevent="submit">
@@ -97,7 +97,7 @@
             :disabled="!account.isLoggedIn"
             :loading="submitting"
           >
-            생성하기
+            {{ isEditing ? '수정하기' : '생성하기' }}
           </v-btn>
         </div>
       </v-form>
@@ -106,7 +106,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import type { VForm } from 'vuetify/components';
 import { useAccountStore } from '@/stores/useAccountStore';
@@ -121,6 +121,8 @@ const formRef = ref<VForm>();
 const submitting = ref(false);
 const errorMessage = ref('');
 const clanName = computed(() => String(route.params.name ?? ''));
+const auctionId = computed(() => Number(route.params.id || 0));
+const isEditing = computed(() => auctionId.value > 0);
 const form = ref({
   title: '',
   description: '',
@@ -132,6 +134,36 @@ const form = ref({
 });
 const required = (value: unknown) => !!value || '필수 입력 항목입니다.';
 
+function toLocalDateTime(value: string) {
+  const date = new Date(value);
+  const offset = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+}
+
+async function loadAuction() {
+  if (!isEditing.value) return;
+  try {
+    const response = await api.get(`${getBaseUrl('DATA')}/auction/list`, {
+      params: { clan_name: clanName.value },
+    });
+    const room = (response.data?.datas ?? []).find((item: any) => item.id === auctionId.value);
+    if (!room) throw new Error('수정할 경매 내전을 찾을 수 없습니다.');
+    if (room.ownerId !== account.id) throw new Error('경매 생성자만 수정할 수 있습니다.');
+    if (room.status !== 'RECRUITING') throw new Error('참가 모집 중인 경매 내전만 수정할 수 있습니다.');
+    form.value = {
+      title: room.title,
+      description: room.description || '',
+      scheduledAt: toLocalDateTime(room.scheduledAt),
+      teamCount: room.teamCount,
+      maxParticipants: room.maxParticipants,
+      bidSeconds: room.bidSeconds,
+      isBlind: !!room.isBlind,
+    };
+  } catch (error: any) {
+    errorMessage.value = error?.response?.data?.message || error?.message || '경매 내전을 불러오지 못했습니다.';
+  }
+}
+
 async function submit() {
   const result = await formRef.value?.validate();
   if (!result?.valid || !account.isLoggedIn || submitting.value) return;
@@ -140,9 +172,8 @@ async function submit() {
   errorMessage.value = '';
 
   try {
-    const response = await api.post(`${getBaseUrl('DATA')}/auction/create`, {
-      clan_id: account.clanId,
-      owner_id: account.id,
+    const response = await api.post(`${getBaseUrl('DATA')}/auction/${isEditing.value ? 'update' : 'create'}`, {
+      ...(isEditing.value ? { id: auctionId.value } : { clan_id: account.clanId, owner_id: account.id }),
       title: form.value.title.trim(),
       description: form.value.description.trim() || undefined,
       scheduled_at: new Date(form.value.scheduledAt).toISOString(),
@@ -153,15 +184,17 @@ async function submit() {
     });
 
     if (response.status >= 400 || !response.data?.datas?.id) {
-      throw new Error(response.data?.message || '경매 내전 생성에 실패했습니다.');
+      throw new Error(response.data?.message || `경매 내전 ${isEditing.value ? '수정' : '생성'}에 실패했습니다.`);
     }
 
     await router.replace(CLAN_PATH.AUCTION_VIEW(clanName.value, response.data.datas.id));
   } catch (error: any) {
     errorMessage.value =
-      error?.response?.data?.message || error?.message || '경매 내전 생성 중 오류가 발생했습니다.';
+      error?.response?.data?.message || error?.message || `경매 내전 ${isEditing.value ? '수정' : '생성'} 중 오류가 발생했습니다.`;
   } finally {
     submitting.value = false;
   }
 }
+
+onMounted(loadAuction);
 </script>

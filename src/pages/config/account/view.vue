@@ -324,8 +324,8 @@
           </div>
 
           <div class="player-activity-actions">
-            <v-btn variant="tonal" prepend-icon="mdi-open-in-new" :disabled="!activityData" @click="openActivityOpgg">
-              OP.GG
+            <v-btn variant="tonal" prepend-icon="mdi-open-in-new" :disabled="!activityData" @click="openActivityFow">
+              FOW.LOL
             </v-btn>
           </div>
         </v-card>
@@ -658,12 +658,12 @@ function activityCategoryColor(category: ActivityCategory) {
 function formatActivityDate(value: string) {
   return new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
 }
-function openActivityOpgg() {
+function openActivityFow() {
   const target = activityData.value?.player;
   if (!target?.nickname || !target.tagname) return;
   const nickname = target.nickname.replace(/#.*/, '');
   window.open(
-    `https://www.op.gg/summoners/kr/${encodeURIComponent(`${nickname}-${target.tagname}`)}`,
+    `https://www.fow.lol/find/kr/${encodeURIComponent(`${nickname}-${target.tagname}`)}?hl=ko_KR`,
     '_blank',
     'noopener,noreferrer',
   );

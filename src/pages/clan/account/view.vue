@@ -247,8 +247,8 @@
       </v-card-text>
 
       <v-card-actions class="px-6 pb-5 justify-end">
-        <v-btn variant="tonal" prepend-icon="mdi-open-in-new" :disabled="!activityData" @click="openOpgg">
-          OP.GG
+        <v-btn variant="tonal" prepend-icon="mdi-open-in-new" :disabled="!activityData" @click="openFow">
+          FOW.LOL
         </v-btn>
         <v-btn color="primary" @click="activityDialog = false">확인</v-btn>
       </v-card-actions>
@@ -457,12 +457,12 @@ function activityCategoryColor(category: ActivityCategory) {
 function formatActivityDate(value: string) {
   return new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
 }
-function openOpgg() {
+function openFow() {
   const target = activityData.value?.player;
   if (!target?.nickname || !target.tagname) return;
   const nickname = target.nickname.replace(/#.*/, '');
   window.open(
-    `https://www.op.gg/summoners/kr/${encodeURIComponent(`${nickname}-${target.tagname}`)}`,
+    `https://www.fow.lol/find/kr/${encodeURIComponent(`${nickname}-${target.tagname}`)}?hl=ko_KR`,
     '_blank',
     'noopener,noreferrer',
   );

@@ -44,6 +44,15 @@
 
           <div v-if="room.status === 'RECRUITING'" class="d-flex ga-2">
             <v-btn
+              v-if="isOwner && can('AUCTION', 'CLAN-SET-AUCTION-C')"
+              color="primary"
+              variant="tonal"
+              prepend-icon="mdi-pencil-outline"
+              @click="router.push(CLAN_PATH.AUCTION_EDIT(clanName, room.id))"
+            >
+              설정 수정
+            </v-btn>
+            <v-btn
               :color="isParticipating ? 'error' : 'success'"
               :variant="isParticipating ? 'tonal' : 'flat'"
               :disabled="

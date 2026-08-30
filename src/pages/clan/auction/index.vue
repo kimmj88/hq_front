@@ -50,6 +50,17 @@
             </div>
             <div class="d-flex align-center ga-1">
               <v-btn
+                v-if="room.status === 'RECRUITING' && room.ownerId === account.id && can('AUCTION', 'CLAN-SET-AUCTION-C')"
+                icon
+                size="small"
+                variant="text"
+                color="primary"
+                @click.stop="router.push(CLAN_PATH.AUCTION_EDIT(clanName, room.id))"
+              >
+                <v-icon size="19">mdi-pencil-outline</v-icon>
+                <v-tooltip activator="parent" location="top">수정</v-tooltip>
+              </v-btn>
+              <v-btn
                 v-if="can('AUCTION', 'CLAN-SET-AUCTION-D')"
                 icon
                 size="small"

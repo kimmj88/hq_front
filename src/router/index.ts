@@ -206,6 +206,7 @@ const router = createRouter({
         { path: CLAN_PATH.CUP_VIEW(':name', ':id'), component: ClanCupView, props: true },
         { path: CLAN_PATH.AUCTION(':name'), component: ClanAuction },
         { path: CLAN_PATH.AUCTION_ADD(':name'), component: ClanAuctionAdd },
+        { path: CLAN_PATH.AUCTION_EDIT(':name', ':id'), component: ClanAuctionAdd },
         { path: CLAN_PATH.AUCTION_VIEW(':name', ':id'), component: ClanAuctionView, props: true },
       ],
     },

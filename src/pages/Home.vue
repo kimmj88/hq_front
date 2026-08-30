@@ -1,500 +1,305 @@
 <template>
-  <v-container>
-    <!-- 3열 레이아웃 -->
-    <v-row class="gx-4">
-      <!-- Left Ad Rail (md↑) -->
-      <v-col v-if="mdAndUp" cols="12" md="3">
-        <div class="sticky-rail">
-          <v-card
-            v-for="(ad, i) in leftAds"
-            :key="'L' + i"
-            class="mb-4 rounded-xl overflow-hidden elevation-2 ad-card"
-            @click="openAd(ad)"
-          >
-            <v-img
-              :src="ad.image"
-              height="160"
-              cover
-              @error="(e:any) => {
-    const id = ad.href ? extractYouTubeVideoId(ad.href) : null;
-    if (id) (e.target as HTMLImageElement).src = youtubeThumbFallback(id);
-  }"
-            />
-            <v-card-text class="py-3">
-              <div class="text-subtitle-2 font-weight-medium">{{ ad.title }}</div>
-              <div class="text-caption text-medium-emphasis mt-1">{{ ad.subtitle }}</div>
-              <v-btn size="small" class="mt-2" color="primary" prepend-icon="mdi-open-in-new">
-                {{ ad.cta || '자세히' }}
-              </v-btn>
-            </v-card-text>
-          </v-card>
+  <main class="report-home">
+    <v-container class="report-container py-8 py-md-12">
+      <section class="hero-section">
+        <div class="hero-copy">
+          <div class="hero-kicker"><v-icon size="17">mdi-shield-search</v-icon> PLAYER CHECK</div>
+          <h1>같이 게임하기 전,<br /><span>먼저 검색하세요.</span></h1>
+          <p>욕설·탈주·고의 트롤 등 운영자 검토를 거친 공개 제보 기록을 확인할 수 있습니다.</p>
         </div>
-      </v-col>
 
-      <!-- Main (기존 내용 전부) -->
-      <v-col cols="12" md="6">
-        <!-- ====== 여기부터 네가 이미 만든 메인 콘텐츠 ====== -->
-
-        <!-- 공지 배너 -->
-        <v-alert
-          v-if="showAnnouncement"
-          type="info"
-          variant="tonal"
-          class="mb-3"
-          prominent
-          closable
-          @click:close="dismissAnnouncement"
-        >
-          <div class="d-flex align-center">
-            <v-icon class="mr-2">mdi-bullhorn</v-icon>
-            <div class="text-body-2">
-              <strong>{{ announcement.title }}</strong>
-              <span class="ml-2">{{ announcement.message }}</span>
-            </div>
-            <v-spacer />
-            <v-btn size="small" variant="text" @click.stop="goToNotice">자세히</v-btn>
+        <v-card class="search-card" rounded="xl" elevation="0">
+          <div class="search-label">Riot ID 검색</div>
+          <div class="search-fields">
+            <v-text-field
+              v-model="searchForm.nickname"
+              label="게임 닉네임"
+              placeholder="플레이어 이름"
+              variant="outlined"
+              hide-details
+              @keyup.enter="searchReports"
+            />
+            <v-text-field
+              v-model="searchForm.tagname"
+              label="태그"
+              placeholder="KR1"
+              prefix="#"
+              variant="outlined"
+              hide-details
+              @keyup.enter="searchReports"
+            />
+            <v-btn color="deep-purple-accent-2" size="large" height="56" :loading="searching" @click="searchReports">
+              <v-icon start>mdi-magnify</v-icon>검색
+            </v-btn>
           </div>
-        </v-alert>
-
-        <!-- 카카오페이 간단 후원 -->
-        <v-card class="kakao-support mb-6 rounded-xl overflow-hidden elevation-2">
-          <div class="kakao-support__head">
-            <div>
-              <span>KAKAO PAY</span>
-              <h2>카카오페이 간단 후원</h2>
-            </div>
-            <v-icon color="#111827" size="34">mdi-qrcode-scan</v-icon>
-          </div>
-          <v-img
-            src="/kakao-pay-qr.jpg"
-            alt="김민재 카카오페이 후원 QR 코드"
-            class="kakao-support__qr"
-          />
-          <div class="kakao-support__guide">
-            카카오톡 또는 카카오페이의 코드 스캔으로 후원할 수 있습니다.
+          <div class="search-foot">
+            <span><v-icon size="15">mdi-information-outline</v-icon> 제보 내용은 사실로 확정된 정보가 아닙니다.</span>
+            <v-btn class="report-cta" variant="flat" color="error" size="large" prepend-icon="mdi-alert-plus-outline" @click="openReportDialog()">
+              비매너 사용자 제보하기
+            </v-btn>
           </div>
         </v-card>
+      </section>
 
-        <!-- 공지/공유 보드 -->
-        <v-row v-if="can('NOTICE', 'SYS-SET-NOTICE-R')" class="mb-4" dense>
-          <!-- <v-col cols="12" md="6">
-            <v-card class="rounded-xl">
-              <v-card-title class="py-2">
-                <v-icon size="18" class="mr-2">mdi-share-variant</v-icon> 내전 리스트
-                <v-spacer />
-                <v-btn size="small" variant="text" @click="goShare">더보기</v-btn>
-              </v-card-title>
-              <v-divider />
-              <v-list density="comfortable">
-                <v-list-item v-for="(s, i) in shares" :key="i" @click="openShare(s)">
-                  <template #title>
-                    <div class="d-flex align-center">
-                      <span class="truncate-1">{{ s.title }}</span>
-                      <v-spacer />
-                      <span class="text-caption text-medium-emphasis">{{ s.date }}</span>
-                    </div>
-                  </template>
-                  <template #subtitle>
-                    <div class="truncate-1 text-caption">{{ s.snippet }}</div>
-                  </template>
-                </v-list-item>
-              </v-list>
-            </v-card>
-          </v-col> -->
-        </v-row>
+      <v-alert v-if="pageError" type="error" variant="tonal" closable class="mb-5" @click:close="pageError = ''">
+        {{ pageError }}
+      </v-alert>
 
-        <!-- 기존 피드 -->
-        <!-- <v-btn color="primary" class="mb-4" @click="addPost">Add</v-btn> -->
-
-        <template v-if="isLoading">
-          <v-skeleton-loader type="image, article, actions" class="mb-4 rounded-xl" />
-          <v-skeleton-loader type="image, article, actions" class="mb-4 rounded-xl" />
-        </template>
-
-        <div v-for="(post, index) in allPosts" :key="index">
-          <v-card class="instagram-card" flat>
-            <v-card-title class="d-flex align-center justify-space-between px-3 py-2">
-              <div class="d-flex align-center">
-                <v-avatar size="32"><v-img :src="post.userAvatar" /></v-avatar>
-                <div class="ml-3">
-                  <div class="text-subtitle-2 font-weight-medium">{{ post.account.name }}</div>
-                  <div class="text-caption text-grey-lighten-1">
-                    {{ post.created_at.slice(0, 10) }}
-                  </div>
-                </div>
-              </div>
-              <v-icon size="20">mdi-dots-horizontal</v-icon>
-            </v-card-title>
-            <v-img :src="post.image_url" height="400" cover />
-            <v-card-actions class="px-3 py-2">
-              <v-btn icon variant="text"><v-icon>mdi-heart-outline</v-icon></v-btn>
-              <v-btn icon variant="text" @click="openDialog(post)"
-                ><v-icon>mdi-comment-outline</v-icon></v-btn
-              >
-              <v-btn icon variant="text"><v-icon>mdi-share-outline</v-icon></v-btn>
-              <v-spacer />
-              <v-btn icon variant="text"><v-icon>mdi-bookmark-outline</v-icon></v-btn>
-            </v-card-actions>
-            <v-card-text class="px-3 py-0">
-              <div class="text-body-2">{{ post.description }}</div>
-              <div class="text-caption text-grey">
-                댓글 {{ post.post_comments.length }}개 모두 보기
-              </div>
-            </v-card-text>
-          </v-card>
+      <section v-if="searchResult" class="result-section mb-8">
+        <div class="result-head">
+          <div>
+            <span class="section-kicker">SEARCH RESULT</span>
+            <h2>{{ searchResult.player.nickname }}<small>#{{ searchResult.player.tagname }}</small></h2>
+          </div>
+          <div class="report-total" :class="{ clean: searchResult.totalCount === 0 }">
+            <span>공개 제보</span><strong>{{ searchResult.totalCount }}</strong><em>건</em>
+          </div>
         </div>
 
-        <v-dialog v-model="commentDialog" max-width="900">
-          <v-card style="max-height: 90vh">
-            <v-row no-gutters>
-              <v-col cols="6"
-                ><v-img v-if="selectedPost" :src="selectedPost.image_url" height="100%" cover
-              /></v-col>
-              <v-col cols="6" class="d-flex flex-column">
-                <v-card-title class="text-h6">댓글</v-card-title>
-                <v-divider />
-                <v-card-text class="flex-grow-1 overflow-y-auto" style="max-height: 300px">
-                  <div
-                    v-for="(comment, index) in selectedPost.post_comments"
-                    :key="index"
-                    class="mb-2"
-                  >
-                    <strong>{{ comment.account.name }}</strong
-                    >: {{ comment.message }}
-                  </div>
-                </v-card-text>
-                <v-divider />
-                <v-card-actions>
-                  <v-text-field
-                    v-model="newComment"
-                    label="댓글 입력"
-                    variant="plain"
-                    class="flex-grow-1"
-                    density="compact"
-                  />
-                  <v-btn variant="text" @click="submitComment(selectedPost)">게시</v-btn>
-                </v-card-actions>
-              </v-col>
-            </v-row>
-          </v-card>
-        </v-dialog>
-
-        <!-- ====== 여기까지 기존 메인 콘텐츠 ====== -->
-      </v-col>
-
-      <!-- Right Ad Rail (md↑) -->
-      <v-col v-if="mdAndUp" cols="12" md="3">
-        <div class="sticky-rail">
-          <v-card
-            v-for="(ad, i) in rightAds"
-            :key="'R' + i"
-            class="mb-4 rounded-xl overflow-hidden elevation-2 ad-card"
-            @click="openAd(ad)"
-          >
-            <v-img
-              :src="ad.image"
-              height="160"
-              cover
-              @error="(e:any) => {
-    const id = ad.href ? extractYouTubeVideoId(ad.href) : null;
-    if (id) (e.target as HTMLImageElement).src = youtubeThumbFallback(id);
-  }"
-            />
-            <v-card-text class="py-3">
-              <div class="text-subtitle-2 font-weight-medium">{{ ad.title }}</div>
-              <div class="text-caption text-medium-emphasis mt-1">{{ ad.subtitle }}</div>
-              <v-btn size="small" class="mt-2" color="primary" prepend-icon="mdi-open-in-new">
-                {{ ad.cta || '바로가기' }}
-              </v-btn>
-            </v-card-text>
-          </v-card>
+        <div v-if="searchResult.totalCount" class="category-grid">
+          <div v-for="category in categories" :key="category.value" class="category-card">
+            <v-icon :color="category.color">{{ category.icon }}</v-icon>
+            <span>{{ category.title }}</span>
+            <strong>{{ searchResult.counts[category.value] || 0 }}건</strong>
+          </div>
         </div>
-      </v-col>
-    </v-row>
-  </v-container>
+
+        <div v-if="searchResult.reports.length" class="report-list">
+          <article v-for="report in searchResult.reports" :key="report.id" class="report-row">
+            <v-avatar size="44" :color="categoryMeta(report.category).color" variant="tonal">
+              <v-icon>{{ categoryMeta(report.category).icon }}</v-icon>
+            </v-avatar>
+            <div class="report-content">
+              <div class="report-row-head">
+                <strong>{{ categoryMeta(report.category).title }}</strong>
+                <time>{{ formatDate(report.createdAt) }}</time>
+              </div>
+              <p>{{ report.description }}</p>
+              <button v-if="report.evidenceUrl" type="button" class="evidence-thumb" @click="openEvidence(report.evidenceUrl)">
+                <v-img :src="evidenceUrl(report.evidenceUrl)" width="180" height="104" cover />
+                <span><v-icon size="15">mdi-magnify-plus-outline</v-icon> 증거 이미지 크게 보기</span>
+              </button>
+            </div>
+            <v-btn size="small" variant="text" color="grey" @click="openAppealDialog(report)">이의 신청</v-btn>
+          </article>
+        </div>
+
+        <div v-else class="clean-result">
+          <v-icon size="54" color="success">mdi-shield-check-outline</v-icon>
+          <strong>공개된 제보 기록이 없습니다.</strong>
+          <span>기록이 없다는 것이 해당 사용자의 행동을 보증하지는 않습니다.</span>
+        </div>
+      </section>
+
+      <section class="recent-section">
+        <div class="section-title-row">
+          <div><span class="section-kicker">RECENT REPORTS</span><h2>최근 공개 제보</h2></div>
+          <div class="d-flex ga-2">
+            <v-btn v-if="isModerator" variant="tonal" color="warning" prepend-icon="mdi-clipboard-check-outline" @click="openModeration">
+              검토 대기 {{ pendingReports.length ? `(${pendingReports.length})` : '' }}
+            </v-btn>
+          </div>
+        </div>
+
+        <v-table v-if="recentReports.length" class="recent-table" density="comfortable">
+          <thead>
+            <tr><th>Riot ID</th><th>제보 유형</th><th>내용</th><th>등록일</th><th></th></tr>
+          </thead>
+          <tbody>
+            <tr v-for="report in recentReports" :key="report.id" @click="searchTarget(report)">
+              <td><strong>{{ report.targetNickname }}</strong><small>#{{ report.targetTagname }}</small></td>
+              <td><v-chip size="small" :color="categoryMeta(report.category).color" variant="tonal">{{ categoryMeta(report.category).title }}</v-chip></td>
+              <td><span class="recent-description">{{ report.description }}</span></td>
+              <td><time>{{ formatDate(report.createdAt) }}</time></td>
+              <td><v-icon size="17" color="deep-purple-lighten-2">mdi-chevron-right</v-icon></td>
+            </tr>
+          </tbody>
+        </v-table>
+        <div v-else class="empty-recent"><v-icon size="42">mdi-shield-check-outline</v-icon><span>아직 공개된 제보가 없습니다.</span></div>
+      </section>
+    </v-container>
+
+    <v-dialog v-model="reportDialog" max-width="620" persistent>
+      <v-card rounded="xl" class="dialog-card">
+        <v-card-title class="dialog-head"><div><span>NEW REPORT</span><h2>비매너 사용자 제보</h2></div><v-btn icon="mdi-close" variant="text" @click="reportDialog = false" /></v-card-title>
+        <v-card-text class="px-6">
+          <v-alert type="warning" variant="tonal" density="compact" class="mb-5">
+            제보는 운영자 검토 후 공개됩니다. 실명, 연락처, SNS 등 개인정보를 작성하지 마세요.
+          </v-alert>
+          <v-row dense>
+            <v-col cols="8"><v-text-field v-model="reportForm.nickname" label="게임 닉네임" variant="outlined" /></v-col>
+            <v-col cols="4"><v-text-field v-model="reportForm.tagname" label="태그" prefix="#" variant="outlined" /></v-col>
+          </v-row>
+          <v-select v-model="reportForm.category" :items="categories" item-title="title" item-value="value" label="제보 유형" variant="outlined" />
+          <v-textarea v-model="reportForm.description" label="상황 설명" placeholder="언제, 어떤 일이 있었는지 사실 중심으로 작성해 주세요. (10~500자)" maxlength="500" counter variant="outlined" rows="4" />
+          <v-file-input v-model="reportForm.evidenceFile" label="인게임 채팅 증거 이미지 (선택)" accept="image/jpeg,image/png,image/webp" prepend-icon="mdi-camera-outline" variant="outlined" hint="JPG, PNG, WebP · 최대 8MB" persistent-hint />
+          <v-img v-if="evidencePreview" :src="evidencePreview" class="upload-preview mt-3" height="220" cover />
+          <v-checkbox v-model="reportForm.acceptedTerms" color="primary" hide-details>
+            <template #label><span class="terms-label">허위 제보와 개인정보 노출에 대한 책임이 작성자에게 있으며, 운영 정책에 따라 숨김·삭제될 수 있음에 동의합니다.</span></template>
+          </v-checkbox>
+          <v-alert v-if="dialogError" type="error" variant="tonal" density="compact" class="mt-3">{{ dialogError }}</v-alert>
+        </v-card-text>
+        <v-card-actions class="px-6 pb-6"><v-spacer /><v-btn variant="text" :disabled="submitting" @click="reportDialog = false">취소</v-btn><v-btn color="deep-purple-accent-2" :loading="submitting" @click="submitReport">검토 요청</v-btn></v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="appealDialog" max-width="520">
+      <v-card rounded="xl" class="dialog-card">
+        <v-card-title class="dialog-head"><div><span>APPEAL</span><h2>공개 제보 이의 신청</h2></div><v-btn icon="mdi-close" variant="text" @click="appealDialog = false" /></v-card-title>
+        <v-card-text class="px-6"><v-textarea v-model="appealMessage" label="이의 신청 내용" maxlength="500" counter rows="5" variant="outlined" /><v-alert v-if="dialogError" type="error" variant="tonal" density="compact">{{ dialogError }}</v-alert></v-card-text>
+        <v-card-actions class="px-6 pb-6"><v-spacer /><v-btn variant="text" @click="appealDialog = false">취소</v-btn><v-btn color="primary" :loading="submitting" @click="submitAppeal">신청하기</v-btn></v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="moderationDialog" max-width="760" scrollable>
+      <v-card rounded="xl" class="dialog-card">
+        <v-card-title class="dialog-head"><div><span>MODERATION</span><h2>공개 제보 검토</h2></div><v-btn icon="mdi-close" variant="text" @click="moderationDialog = false" /></v-card-title>
+        <v-card-text class="px-6">
+          <div v-for="report in pendingReports" :key="report.id" class="moderation-row">
+            <div><strong>{{ report.targetNickname }}#{{ report.targetTagname }}</strong><span>{{ categoryMeta(report.category).title }} · {{ formatDate(report.createdAt) }}</span><p>{{ report.description }}</p><button v-if="report.evidenceUrl" type="button" class="moderation-evidence" @click="openEvidence(report.evidenceUrl)"><v-icon size="15">mdi-image-search-outline</v-icon> 증거 이미지 확인</button></div>
+            <div><v-btn size="small" color="success" variant="tonal" @click="moderate(report.id, 'PUBLIC')">공개 승인</v-btn><v-btn size="small" color="error" variant="text" @click="moderate(report.id, 'HIDDEN')">숨김</v-btn></div>
+          </div>
+          <div v-if="!pendingReports.length" class="empty-recent">검토 대기 중인 제보가 없습니다.</div>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="evidenceDialog" max-width="980">
+      <v-card rounded="xl" class="evidence-dialog">
+        <v-card-title class="d-flex align-center justify-space-between">
+          증거 이미지
+          <v-btn icon="mdi-close" variant="text" @click="evidenceDialog = false" />
+        </v-card-title>
+        <v-img :src="selectedEvidence" max-height="78vh" contain />
+      </v-card>
+    </v-dialog>
+
+    <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="3200">{{ snackbar.message }}</v-snackbar>
+  </main>
 </template>
 
 <script setup lang="ts">
-import { useDisplay } from 'vuetify';
-import { getBaseUrl } from '@/@core/composable/createUrl';
-import axios from 'axios';
 import { computed, onMounted, ref } from 'vue';
-import { useAccountStore } from '@/stores/useAccountStore';
-import { usePostStore } from '@/stores/usePostSotre';
 import api from '@/@core/composable/useAxios';
-import { useRoute } from 'vue-router';
-import { useRouter } from 'vue-router';
+import { getBaseUrl } from '@/@core/composable/createUrl';
+import { useAccountStore } from '@/stores/useAccountStore';
 import { can } from '@/stores/usePermissionStore';
 
-const route = useRoute();
-const router = useRouter();
+type ReportItem = { id: number; targetNickname: string; targetTagname: string; category: string; description: string; evidenceUrl?: string; createdAt: string };
+type SearchResult = { player: { nickname: string; tagname: string }; totalCount: number; counts: Record<string, number>; reports: ReportItem[] };
+const categories = [
+  { value: 'VERBAL_ABUSE', title: '욕설·혐오 발언', icon: 'mdi-message-alert-outline', color: 'red-lighten-1' },
+  { value: 'INTENTIONAL_TROLL', title: '고의 트롤', icon: 'mdi-emoticon-devil-outline', color: 'deep-orange' },
+  { value: 'AFK', title: '탈주·잠수', icon: 'mdi-account-off-outline', color: 'amber-darken-1' },
+  { value: 'GAME_DISRUPTION', title: '게임 방해', icon: 'mdi-sword-cross', color: 'purple-lighten-1' },
+  { value: 'BOOSTING_SUSPECTED', title: '사기·대리 의심', icon: 'mdi-account-alert-outline', color: 'blue-grey-lighten-1' },
+  { value: 'OTHER', title: '기타', icon: 'mdi-alert-circle-outline', color: 'grey-lighten-1' },
+];
 
-import { extractYouTubeVideoId, youtubeThumbUrl, youtubeThumbFallback } from '@/utils/youtube';
-
-const accountStore = useAccountStore();
-const postStore = usePostStore();
-const allPosts = computed(() => postStore.posts);
-
-// 로딩 제어
-const isLoading = ref(false);
-
-// 공지 배너
-const ANNOUNCE_KEY = 'home_announcement_closed_v1';
-const showAnnouncement = ref(localStorage.getItem(ANNOUNCE_KEY) !== '1');
-const announcement = ref({
-  title: '시스템 업데이트',
-  message: '오늘 22:00–23:00 점검 예정입니다.',
+const account = useAccountStore();
+const isModerator = computed(() => can('ACCOUNT', 'SYS-SET-ACC-U'));
+const searchForm = ref({ nickname: '', tagname: '' });
+const reportForm = ref<{ nickname: string; tagname: string; category: string; description: string; evidenceFile: File | File[] | null; acceptedTerms: boolean }>({ nickname: '', tagname: '', category: '', description: '', evidenceFile: null, acceptedTerms: false });
+const searchResult = ref<SearchResult | null>(null);
+const recentReports = ref<ReportItem[]>([]);
+const pendingReports = ref<ReportItem[]>([]);
+const searching = ref(false);
+const submitting = ref(false);
+const reportDialog = ref(false);
+const appealDialog = ref(false);
+const moderationDialog = ref(false);
+const evidenceDialog = ref(false);
+const selectedEvidence = ref('');
+const appealTarget = ref<ReportItem | null>(null);
+const appealMessage = ref('');
+const pageError = ref('');
+const dialogError = ref('');
+const snackbar = ref({ show: false, message: '', color: 'success' });
+const evidencePreview = computed(() => {
+  const value = reportForm.value.evidenceFile;
+  const file = Array.isArray(value) ? value[0] : value;
+  return file instanceof File ? URL.createObjectURL(file) : '';
 });
-function dismissAnnouncement() {
-  showAnnouncement.value = false;
-  localStorage.setItem(ANNOUNCE_KEY, '1');
-}
-function goToNotice() {
-  // 라우팅 연결
-  router.push('/board');
-  console.log('공지 이동');
+
+function categoryMeta(value: string) { return categories.find((item) => item.value === value) ?? categories[5]; }
+function formatDate(value: string) { return new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)); }
+function responseError(response: any, fallback: string) { return response?.data?.message || fallback; }
+function evidenceUrl(value: string) { return /^https?:\/\//i.test(value) ? value : `${getBaseUrl('DATA').replace(/\/$/, '')}${value.startsWith('/') ? '' : '/'}${value}`; }
+function openEvidence(value: string) { selectedEvidence.value = evidenceUrl(value); evidenceDialog.value = true; }
+
+async function loadRecent() {
+  try { const response = await api.get(`${getBaseUrl('DATA')}/player-report/recent`, { params: { limit: 8 } }); recentReports.value = response.data?.datas ?? []; }
+  catch { recentReports.value = []; }
 }
 
-// 프로모션 캐러셀
-const promos = ref([
-  {
-    title: 'Healing Q',
-    subtitle: '힐링큐 유튜브 구독자 이벤트 시작!',
-    image:
-      'https://past-coral-fwbnqvr8jk.edgeone.app/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA%202025-10-31%20%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE%204.55.50.png',
-    href: 'https://www.youtube.com/watch?v=mJ4cBFQQiiQ',
-  },
-  {
-    title: '프로필 꾸미기',
-    subtitle: '새로운 템플릿 업데이트',
-    image:
-      'https://images.unsplash.com/photo-1520975922215-230f2b565a3c?q=80&w=1200&auto=format&fit=crop',
-    href: '#',
-  },
-]);
-function openPromo(p: any) {
-  if (p.href) window.open(p.href, '_blank');
-}
-
-// 공지/공유 보드
-const notices = ref([
-  { title: '!!!협곡난전 큐드컵!!!', date: '2025-11-01', badge: true },
-  { title: '!!!협곡난전 큐드컵!!!', date: '2025-11-01', badge: true },
-  { title: '!!!협곡난전 큐드컵!!!', date: '2025-11-01', badge: true },
-  { title: '운영 정책 변경 안내', date: '2025-10-12', badge: false },
-  { title: '보안 점검 결과 보고', date: '2025-10-05', badge: false },
-  { title: '!!!협곡난전 큐드컵!!!', date: '2025-11-01', badge: true },
-  { title: '!!!협곡난전 큐드컵!!!', date: '2025-11-01', badge: true },
-  { title: '!!!협곡난전 큐드컵!!!', date: '2025-11-01', badge: true },
-  { title: '운영 정책 변경 안내', date: '2025-10-12', badge: false },
-  { title: '보안 점검 결과 보고', date: '2025-10-05', badge: false },
-]);
-const shares = ref([
-  { title: '내전방 1번', snippet: '3명 / 10명', date: '2025-10-22' },
-  { title: '내전방 2번', snippet: '5명 / 10명', date: '2025-10-18' },
-  { title: '내전방 2번', snippet: '10명 / 10명', date: '2025-10-10' },
-]);
-function openNotice(n: any) {
-  console.log('공지:', n);
-}
-function openShare(s: any) {
-  console.log('공유:', s);
-}
-function goShare() {
-  console.log('공유 더보기');
-}
-function goEvent() {
-  console.log('이벤트');
-}
-function goRanking() {
-  console.log('랭킹');
-}
-
-// 기존 포스트/댓글
-const commentDialog = ref(false);
-const newComment = ref('');
-const selectedPost = ref<any>(null);
-
-function openDialog(post: any) {
-  selectedPost.value = post;
-  commentDialog.value = true;
-}
-
-async function submitComment(item: any) {
-  if (!newComment.value.trim()) return;
+async function searchReports() {
+  if (!searchForm.value.nickname.trim() || !searchForm.value.tagname.trim()) { pageError.value = '닉네임과 태그를 모두 입력해 주세요.'; return; }
+  searching.value = true; pageError.value = '';
   try {
-    const response = await axios.post(`${getBaseUrl('DATA')}/postcomment/create`, {
-      post_id: item.id,
-      account_id: accountStore.id,
-      message: newComment.value,
-    });
-    selectedPost.value.post_comments.unshift(response.data.datas);
-    newComment.value = '';
-  } catch (error) {
-    console.error('댓글 등록 실패:', error);
-  }
+    const response = await api.get(`${getBaseUrl('DATA')}/player-report/search`, { params: { nickname: searchForm.value.nickname.trim(), tagname: searchForm.value.tagname.trim().replace(/^#/, '') } });
+    searchResult.value = response.data?.datas ?? null;
+  } catch (error: any) { pageError.value = error?.response?.data?.message || '제보 기록을 검색하지 못했습니다.'; }
+  finally { searching.value = false; }
 }
 
-// 데모용 “Add” 버튼
-function addPost() {
-  postStore.posts.unshift({
-    id: Math.random(),
-    description: '데모 포스트입니다.',
-    created_at: new Date().toISOString(),
-    image_url: 'https://picsum.photos/800/600?random=' + Math.random(),
-    account: { name: 'demo' },
-    userAvatar: 'https://randomuser.me/api/portraits/men/75.jpg',
-    post_comments: [],
-  });
+function searchTarget(report: ReportItem) { searchForm.value = { nickname: report.targetNickname, tagname: report.targetTagname }; void searchReports(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+function openReportDialog(report?: ReportItem) {
+  if (!account.isLoggedIn) { snackbar.value = { show: true, message: '로그인 후 제보할 수 있습니다.', color: 'warning' }; return; }
+  reportForm.value = { nickname: report?.targetNickname || searchForm.value.nickname, tagname: report?.targetTagname || searchForm.value.tagname, category: '', description: '', evidenceFile: null, acceptedTerms: false };
+  dialogError.value = ''; reportDialog.value = true;
 }
 
-const { mdAndUp } = useDisplay();
-
-// 좌우 광고 데이터
-// ✅ 광고 타입
-type AdItem = { title: string; subtitle?: string; image?: string; href?: string; cta?: string };
-
-const leftAds = computed<AdItem[]>(() =>
-  leftAdsRaw.value.map((ad) => {
-    if (!ad.image && ad.href) {
-      const id = extractYouTubeVideoId(ad.href);
-      if (id) return { ...ad, image: youtubeThumbUrl(id) };
+async function submitReport() {
+  const form = reportForm.value;
+  if (!form.nickname.trim() || !form.tagname.trim() || !form.category || form.description.trim().length < 10 || !form.acceptedTerms) { dialogError.value = '대상, 유형, 10자 이상의 설명과 책임 동의를 확인해 주세요.'; return; }
+  submitting.value = true; dialogError.value = '';
+  try {
+    let uploadedEvidenceUrl: string | undefined;
+    const fileValue = form.evidenceFile;
+    const evidenceFile = Array.isArray(fileValue) ? fileValue[0] : fileValue;
+    if (evidenceFile) {
+      const uploadData = new FormData();
+      uploadData.append('evidence', evidenceFile);
+      const uploadResponse = await api.post(`${getBaseUrl('DATA')}/player-report/evidence`, uploadData);
+      uploadedEvidenceUrl = uploadResponse.data?.datas?.evidenceUrl;
+      if (!uploadedEvidenceUrl) throw new Error('증거 이미지를 업로드하지 못했습니다.');
     }
-    return ad;
-  })
-);
-
-// ✅ 원본(이미지 없을 수 있음): 유튜브 영상 링크만 있어도 OK
-const leftAdsRaw = ref<AdItem[]>([
-  // 유튜브 영상 링크 → 썸네일 자동
-  //   {
-  //     title: '힐링큐 Youtube',
-  //     subtitle: '구독과 좋아요 눌러주세요!!!!',
-  //     href: 'https://www.youtube.com/watch?v=mJ4cBFQQiiQ',
-  //     cta: '참여하기',
-  //   },
-  //   // 일반 이미지 광고
-  //   {
-  //     title: '프리미엄 구독',
-  //     subtitle: '더 강력한 도구 모음',
-  //     image:
-  //       'https://past-coral-fwbnqvr8jk.edgeone.app/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA%202025-10-31%20%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE%204.55.50.png',
-  //     href: '#',
-  //     cta: '업그레이드',
-  //   },
-  // ]);
-  // const rightAds = ref<AdItem[]>([
-  //   {
-  //     title: '디자인 템플릿',
-  //     subtitle: '새로운 UI 킷 공개',
-  //     image:
-  //       'https://past-coral-fwbnqvr8jk.edgeone.app/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA%202025-10-31%20%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE%204.55.50.png',
-  //     href: '#',
-  //   },
-  //   {
-  //     title: '데이터 인사이트',
-  //     subtitle: '리포트 다운받기',
-  //     image:
-  //       'https://past-coral-fwbnqvr8jk.edgeone.app/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA%202025-10-31%20%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE%204.55.50.png',
-  //     href: '#',
-  //     cta: '다운받기',
-  //   },
-]);
-
-function openAd(ad: AdItem) {
-  if (ad.href) window.open(ad.href, '_blank', 'noopener,noreferrer');
+    const response = await api.post(`${getBaseUrl('DATA')}/player-report/create`, { nickname: form.nickname.trim(), tagname: form.tagname.trim().replace(/^#/, ''), category: form.category, description: form.description.trim(), evidence_url: uploadedEvidenceUrl, accepted_terms: form.acceptedTerms });
+    if (response.status >= 400) throw new Error(responseError(response, '제보를 접수하지 못했습니다.'));
+    reportDialog.value = false; snackbar.value = { show: true, message: '제보가 접수되었습니다. 운영자 검토 후 공개됩니다.', color: 'success' };
+    if (isModerator.value) await loadPending();
+  } catch (error: any) { dialogError.value = error?.response?.data?.message || error?.message || '제보를 접수하지 못했습니다.'; }
+  finally { submitting.value = false; }
 }
 
-onMounted(async () => {
-  try {
-    isLoading.value = true;
-    //await postStore.fetchPosts();
-    const response = await api.get(`${getBaseUrl('DATA')}/board/all`);
+function openAppealDialog(report: ReportItem) { if (!account.isLoggedIn) { snackbar.value = { show: true, message: '로그인 후 이의를 신청할 수 있습니다.', color: 'warning' }; return; } appealTarget.value = report; appealMessage.value = ''; dialogError.value = ''; appealDialog.value = true; }
+async function submitAppeal() {
+  if (!appealTarget.value || appealMessage.value.trim().length < 10) { dialogError.value = '이의 신청 내용을 10자 이상 입력해 주세요.'; return; }
+  submitting.value = true;
+  try { const response = await api.post(`${getBaseUrl('DATA')}/player-report/appeal`, { report_id: appealTarget.value.id, message: appealMessage.value.trim() }); if (response.status >= 400) throw new Error(responseError(response, '이의 신청에 실패했습니다.')); appealDialog.value = false; snackbar.value = { show: true, message: '이의 신청이 접수되었습니다.', color: 'success' }; }
+  catch (error: any) { dialogError.value = error?.response?.data?.message || error?.message || '이의 신청에 실패했습니다.'; }
+  finally { submitting.value = false; }
+}
 
-    notices.value = response.data.datas;
-  } finally {
-    isLoading.value = false;
-  }
-});
+async function loadPending() { if (!isModerator.value) return; try { const response = await api.get(`${getBaseUrl('DATA')}/player-report/pending`); pendingReports.value = response.data?.datas ?? []; } catch { pendingReports.value = []; } }
+async function openModeration() { await loadPending(); moderationDialog.value = true; }
+async function moderate(id: number, status: 'PUBLIC' | 'HIDDEN') { try { await api.post(`${getBaseUrl('DATA')}/player-report/moderate`, { id, status }); await Promise.all([loadPending(), loadRecent()]); snackbar.value = { show: true, message: status === 'PUBLIC' ? '제보를 공개했습니다.' : '제보를 숨겼습니다.', color: 'success' }; } catch (error: any) { snackbar.value = { show: true, message: error?.response?.data?.message || '처리하지 못했습니다.', color: 'error' }; } }
+
+onMounted(async () => { await loadRecent(); if (isModerator.value) await loadPending(); });
 </script>
 
 <style scoped>
-/* 사이드 레일 상단 고정 */
-.sticky-rail {
-  position: sticky;
-  top: 72px; /* 헤더 높이에 맞춰 조절 */
-}
-
-/* 사이드 광고 카드 폭/여백 미세 조정 */
-.ad-card .v-card-text {
-  background: rgba(0, 0, 0, 0.04);
-}
-
-.kakao-support {
-  border: 1px solid rgba(250, 225, 0, 0.45);
-  background: #f7f7f8;
-}
-
-.kakao-support__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 22px 16px;
-  color: #111827;
-  background: #fee500;
-}
-
-.kakao-support__head span {
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: 0.14em;
-}
-
-.kakao-support__head h2 {
-  margin: 3px 0 0;
-  font-size: 24px;
-  letter-spacing: -0.04em;
-}
-
-.kakao-support__qr {
-  display: block;
-  width: 80%;
-  margin: 18px auto;
-  background: #f7f7f8;
-}
-
-.kakao-support__guide {
-  padding: 15px 20px 18px;
-  color: #374151;
-  background: #fff;
-  font-size: 13px;
-  font-weight: 650;
-  text-align: center;
-}
-
-/* 기존 스타일 유지 */
-.instagram-card {
-  background-color: #121212;
-  color: #fff;
-  border-radius: 12px;
-  max-width: 500px;
-  margin: 20px auto;
-}
-
-.promo-caption {
-  position: absolute;
-  left: 12px;
-  bottom: 12px;
-  padding: 10px 12px;
-  background: rgba(0, 0, 0, 0.45);
-  border-radius: 10px;
-}
-
-.truncate-1 {
-  display: inline-block;
-  max-width: 75%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+.report-home { min-height: calc(100vh - 64px); color: #f8fafc; background: radial-gradient(circle at 15% 0, rgba(124,58,237,.18), transparent 28%), radial-gradient(circle at 90% 25%, rgba(239,68,68,.08), transparent 24%), #0b0e14; }
+.report-container { max-width: 1180px; }
+.hero-section { display: grid; grid-template-columns: .9fr 1.25fr; align-items: center; gap: 52px; min-height: 430px; }
+.hero-kicker,.section-kicker { display: flex; align-items: center; gap: 7px; color: #a78bfa; font-size: 11px; font-weight: 900; letter-spacing: .14em; }
+.hero-copy h1 { margin: 15px 0; font-size: clamp(38px,5vw,64px); line-height: 1.08; letter-spacing: -.055em; }.hero-copy h1 span { color: #a78bfa; }.hero-copy p { max-width: 460px; color: rgba(226,232,240,.62); font-size: 15px; line-height: 1.75; }
+.search-card { padding: 28px; border: 1px solid rgba(139,92,246,.3); background: rgba(21,25,34,.9); box-shadow: 0 24px 70px rgba(0,0,0,.34); }.search-label { margin-bottom: 14px; font-size: 13px; font-weight: 800; }.search-fields { display: grid; grid-template-columns: 1.5fr .8fr auto; gap: 10px; }.search-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 18px; color: rgba(226,232,240,.45); font-size: 11px; }.search-foot span { display: flex; align-items: center; gap: 5px; }.report-cta { min-height: 46px; padding-inline: 20px !important; font-weight: 800; box-shadow: 0 8px 24px rgba(239,68,68,.28); }
+.result-section,.recent-section { padding: 28px; border: 1px solid rgba(148,163,184,.13); border-radius: 24px; background: #121620; }.result-head,.section-title-row { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 22px; }.result-head h2,.section-title-row h2 { margin: 4px 0 0; font-size: 24px; }.result-head h2 small { margin-left: 3px; color: rgba(226,232,240,.46); font-size: 14px; }.report-total { display: flex; align-items: baseline; gap: 4px; color: #fb7185; }.report-total span { margin-right: 5px; color: rgba(226,232,240,.45); font-size: 11px; }.report-total strong { font-size: 32px; }.report-total em { font-size: 12px; font-style: normal; }.report-total.clean { color: #34d399; }
+.category-grid { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 8px; margin-bottom: 24px; }.category-card { display: flex; min-height: 100px; align-items: center; justify-content: center; gap: 3px; border-radius: 14px; background: rgba(255,255,255,.035); flex-direction: column; }.category-card span { color: rgba(226,232,240,.5); font-size: 10px; }.category-card strong { font-size: 17px; }
+.report-list { border-top: 1px solid rgba(148,163,184,.12); }.report-row { display: grid; grid-template-columns: auto 1fr auto; align-items: start; gap: 14px; padding: 18px 4px; border-bottom: 1px solid rgba(148,163,184,.09); }.report-row-head { display: flex; justify-content: space-between; gap: 12px; }.report-row-head time { color: rgba(226,232,240,.38); font-size: 10px; }.report-content p { display: -webkit-box; overflow: hidden; margin: 5px 0; color: rgba(226,232,240,.64); font-size: 13px; line-height: 1.55; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }.evidence-thumb { display: block; overflow: hidden; width: 180px; margin-top: 10px; padding: 0; border: 1px solid rgba(139,92,246,.26); border-radius: 11px; color: #c4b5fd; background: rgba(139,92,246,.08); text-align: left; cursor: pointer; }.evidence-thumb span { display: flex; align-items: center; gap: 4px; padding: 7px 9px; font-size: 10px; }.upload-preview { overflow: hidden; border: 1px solid rgba(139,92,246,.25); border-radius: 14px; }.evidence-dialog { overflow: hidden; background: #10131b; }.moderation-evidence { display: inline-flex; align-items: center; gap: 4px; color: #a78bfa; font-size: 11px; }.clean-result,.empty-recent { display: flex; min-height: 190px; align-items: center; justify-content: center; gap: 8px; color: rgba(226,232,240,.48); flex-direction: column; }.clean-result strong { color: #d1fae5; font-size: 17px; }.clean-result span { font-size: 11px; }
+.recent-table { overflow: hidden; border: 1px solid rgba(148,163,184,.1); border-radius: 14px; background: rgba(255,255,255,.015); }.recent-table th { height: 48px !important; color: rgba(226,232,240,.5) !important; font-size: 12px !important; font-weight: 700 !important; }.recent-table tbody tr { height: 62px; cursor: pointer; transition: background .15s ease; }.recent-table tbody tr:hover { background: rgba(139,92,246,.08); }.recent-table td { font-size: 14px; }.recent-table td:first-child { white-space: nowrap; }.recent-table td:first-child strong { font-size: 15px; }.recent-table td:first-child small { margin-left: 3px; color: rgba(226,232,240,.48); font-size: 12px; }.recent-table time { color: rgba(226,232,240,.5); font-size: 12px; white-space: nowrap; }.recent-description { display: block; overflow: hidden; max-width: 330px; color: rgba(226,232,240,.66); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.dialog-card { border: 1px solid rgba(139,92,246,.24); background: #151922; }.dialog-head { display: flex; align-items: center; justify-content: space-between; padding: 22px 24px 16px; }.dialog-head span { color: #a78bfa; font-size: 10px; font-weight: 900; letter-spacing: .13em; }.dialog-head h2 { margin-top: 3px; font-size: 21px; }.terms-label { color: rgba(226,232,240,.62); font-size: 12px; line-height: 1.5; }.moderation-row { display: grid; grid-template-columns: 1fr auto; gap: 16px; padding: 17px 0; border-bottom: 1px solid rgba(148,163,184,.1); }.moderation-row > div:first-child { display: flex; gap: 4px; flex-direction: column; }.moderation-row span { color: rgba(226,232,240,.45); font-size: 11px; }.moderation-row p { margin: 5px 0; color: rgba(226,232,240,.7); font-size: 13px; }.moderation-row > div:last-child { display: flex; align-items: center; gap: 5px; }
+@media (max-width: 800px) { .hero-section { grid-template-columns: 1fr; gap: 24px; padding-block: 30px 44px; }.search-fields { grid-template-columns: 1fr .7fr; }.search-fields .v-btn { grid-column: 1/-1; }.category-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }.recent-table th:nth-child(3),.recent-table td:nth-child(3) { display: none; } }
+@media (max-width: 520px) { .report-container { padding-inline: 14px; }.search-card,.result-section,.recent-section { padding: 19px; }.hero-copy h1 { font-size: 39px; }.search-foot { align-items: flex-start; flex-direction: column; }.report-row { grid-template-columns: auto 1fr; }.report-row > .v-btn { grid-column: 2; justify-self: end; }.moderation-row { grid-template-columns: 1fr; } }
 </style>
