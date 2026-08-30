@@ -89,7 +89,7 @@
           <v-expansion-panels v-model="expandedPanels" multiple>
             <v-expansion-panel v-for="(group, gIdx) in editedPermissions" :key="group.code">
               <v-expansion-panel-title class="text-subtitle-1 font-weight-bold">
-                {{ group.code }}
+                {{ $te('system_permission_group.' + group.code) ? $t('system_permission_group.' + group.code) : group.code }}
               </v-expansion-panel-title>
               <v-expansion-panel-text>
                 <v-row>
