@@ -29,6 +29,8 @@ export const CLAN_PATH = {
     `/clan/${name}/cup/view/${id}`,
   AUCTION: (name: string | number = ':name') => `/clan/${name}/auction`,
   AUCTION_ADD: (name: string | number = ':name') => `/clan/${name}/auction/add`,
+  AUCTION_EDIT: (name: string | number = ':name', id: string | number = ':id') =>
+    `/clan/${name}/auction/edit/${id}`,
   AUCTION_VIEW: (name: string | number = ':name', id: string | number = ':id') =>
     `/clan/${name}/auction/view/${id}`,
 };
