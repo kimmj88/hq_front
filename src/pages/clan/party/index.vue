@@ -230,6 +230,40 @@
                   </v-tooltip>
                 </div>
                 <v-tooltip
+                  v-if="room.status !== 'CLOSED' && member.account.id === account.id"
+                  text="내 메모 수정"
+                >
+                  <template #activator="{ props }">
+                    <v-btn
+                      v-bind="props"
+                      icon="mdi-pencil-outline"
+                      size="x-small"
+                      variant="text"
+                      color="primary"
+                      @click="openNoteEdit(room, member.note)"
+                    />
+                  </template>
+                </v-tooltip>
+                <v-tooltip
+                  v-if="
+                    room.status !== 'CLOSED' &&
+                    room.is_owner &&
+                    member.account.id !== room.owner.id
+                  "
+                  text="파티장 위임"
+                >
+                  <template #activator="{ props }">
+                    <v-btn
+                      v-bind="props"
+                      icon="mdi-crown-outline"
+                      size="x-small"
+                      variant="text"
+                      color="warning"
+                      @click="transferOwner(room, member)"
+                    />
+                  </template>
+                </v-tooltip>
+                <v-tooltip
                   v-if="
                     room.status !== 'CLOSED' &&
                     (room.is_owner || canParty('CLAN-SET-PARTY-D')) &&
@@ -281,6 +315,14 @@
                       >
                     </template>
                   </v-tooltip>
+                  <v-btn
+                    v-if="room.status !== 'CLOSED' && waiter.account.id === account.id"
+                    class="ml-1"
+                    icon="mdi-pencil-outline"
+                    size="x-small"
+                    variant="text"
+                    @click.stop="openNoteEdit(room, waiter.note)"
+                  />
                 </v-chip>
               </div>
             </div>
@@ -496,6 +538,31 @@
       </v-card>
     </v-dialog>
 
+    <v-dialog v-model="noteDialog" max-width="430">
+      <v-card rounded="xl">
+        <v-card-title class="pa-6 pb-2 text-h6 font-weight-bold">내 메모 수정</v-card-title>
+        <v-card-text class="pa-6 pt-3">
+          <p class="text-body-2 text-medium-emphasis mb-4">{{ noteRoom?.title }}</p>
+          <v-textarea
+            v-model="editingNote"
+            label="메모"
+            placeholder="예: 한 판만 가능, 22시부터 가능"
+            variant="outlined"
+            rows="2"
+            auto-grow
+            maxlength="20"
+            counter="20"
+            autofocus
+            hide-details="auto"
+          />
+        </v-card-text>
+        <v-card-actions class="pa-6 pt-0 justify-end">
+          <v-btn variant="text" @click="noteDialog = false">취소</v-btn>
+          <v-btn color="primary" :loading="saving" @click="saveMyNote">저장</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <v-snackbar v-model="snackbar.show" :color="snackbar.color">{{ snackbar.message }}</v-snackbar>
   </v-container>
 </template>
@@ -575,10 +642,13 @@ const saving = ref(false);
 const selectedType = ref<'ALL' | 'DUO' | 'NORMAL_FLEX' | 'INHOUSE' | 'CLOSED'>('ALL');
 const createDialog = ref(false);
 const joinDialog = ref(false);
+const noteDialog = ref(false);
 const joiningRoom = ref<PartyRoom | null>(null);
+const noteRoom = ref<PartyRoom | null>(null);
 const joinPosition = ref<string | null>(null);
 const joinNote = ref('');
 const joinMode = ref<'JOIN' | 'WAITLIST'>('JOIN');
+const editingNote = ref('');
 const snackbar = ref({ show: false, message: '', color: 'success' });
 const historyKeyword = ref('');
 const historyLoading = ref(false);
@@ -861,6 +931,47 @@ async function joinRoom() {
           : '파티에 참가하지 못했습니다.'),
       'error'
     );
+  } finally {
+    saving.value = false;
+  }
+}
+function openNoteEdit(room: PartyRoom, note: string | null) {
+  noteRoom.value = room;
+  editingNote.value = note ?? '';
+  noteDialog.value = true;
+}
+async function saveMyNote() {
+  if (!noteRoom.value) return;
+  try {
+    saving.value = true;
+    await api.post(`${getBaseUrl('DATA')}/party-room/member/note`, {
+      room_id: noteRoom.value.id,
+      note: editingNote.value.trim(),
+    });
+    noteDialog.value = false;
+    await loadRooms();
+    notify(editingNote.value.trim() ? '메모를 수정했습니다.' : '메모를 삭제했습니다.');
+  } catch (error: any) {
+    notify(error?.response?.data?.message ?? '메모를 수정하지 못했습니다.', 'error');
+  } finally {
+    saving.value = false;
+  }
+}
+async function transferOwner(room: PartyRoom, member: PartyMember) {
+  const name = memberName(member);
+  if (!confirm(`${name} 님에게 파티장을 위임할까요?\n위임 후에는 해당 참가자가 파티를 관리합니다.`)) {
+    return;
+  }
+  try {
+    saving.value = true;
+    await api.post(`${getBaseUrl('DATA')}/party-room/transfer-owner`, {
+      room_id: room.id,
+      target_account_id: member.account.id,
+    });
+    await loadRooms();
+    notify(`${name} 님에게 파티장을 위임했습니다.`);
+  } catch (error: any) {
+    notify(error?.response?.data?.message ?? '파티장을 위임하지 못했습니다.', 'error');
   } finally {
     saving.value = false;
   }
