@@ -86,9 +86,12 @@ import { useRouter } from 'vue-router';
 import { useAccountStore } from '@/stores/useAccountStore';
 import { CONFIG_ACCOUNT_PATH } from '@/router/config/type';
 import { getBaseUrl } from '@/@core/composable/createUrl';
+import axios from 'axios';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 const router = useRouter();
 const account = useAccountStore();
+const auth = useAuthStore();
 
 defineProps<{
   drawerOpen: boolean;
@@ -99,10 +102,19 @@ defineEmits<{
   (e: 'toggle-drawer'): void;
 }>();
 
-function logout() {
-  Cookies.remove('refreshToken');
-  Cookies.remove('accessToken');
-  window.location.href = '/home';
+async function logout() {
+  try {
+    await axios.post(`${getBaseUrl('AUTH')}/auth/logout`, {}, { withCredentials: true });
+  } finally {
+    const sharedOptions = { path: '/', domain: '.clangg.kr' };
+    for (const name of ['idToken', 'accessToken', 'refreshToken']) {
+      Cookies.remove(name);
+      Cookies.remove(name, sharedOptions);
+    }
+    auth.clear();
+    account.clear();
+    window.location.href = '/home';
+  }
 }
 
 function avatarUrl(value: string) {
