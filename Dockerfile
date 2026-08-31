@@ -14,11 +14,15 @@ RUN npm install --force
 
 # `.env` 파일 생성
 RUN echo "\
-VITE_AUTH_URL=http://158.247.246.203:4000\n\
-VITE_DATA_URL=http://158.247.246.203:4001\n" > /app/.env
+VITE_AUTH_URL=https://auth.clangg.kr\n\
+VITE_DATA_URL=https://api.clangg.kr\n" > /app/.env
 
 # 빌드 실행
 RUN npm run build-only
 
 # 애플리케이션 실행
 CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "8108"]
+
+
+
+
