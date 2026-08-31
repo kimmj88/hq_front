@@ -44,6 +44,7 @@ export default defineConfig({
   },
   server: {
     port: 8108,
+    allowedHosts: ["clangg.kr", "www.clangg.kr"],
   },
   css: {
     preprocessorOptions: {
