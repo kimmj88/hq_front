@@ -177,11 +177,27 @@
               >
             </div>
 
-            <div class="room-info">
-              <span
-                ><v-icon size="17">mdi-clock-outline</v-icon
-                >{{ scheduleLabel(room.scheduled_at) }}</span
+            <div :class="['schedule-panel', !room.scheduled_at && 'is-flexible']">
+              <div class="schedule-icon">
+                <v-icon size="23">{{ room.scheduled_at ? 'mdi-calendar-clock' : 'mdi-clock-question-outline' }}</v-icon>
+              </div>
+              <div class="schedule-copy">
+                <span>{{ room.scheduled_at ? '게임 예정 시간' : '게임 시간' }}</span>
+                <strong>{{ scheduleLabel(room.scheduled_at) }}</strong>
+              </div>
+              <v-chip
+                v-if="room.scheduled_at"
+                size="x-small"
+                color="primary"
+                variant="tonal"
+                class="schedule-state"
               >
+                {{ scheduleState(room.scheduled_at) }}
+              </v-chip>
+            </div>
+            <div class="room-created-at">
+              <v-icon size="14">mdi-plus-circle-outline</v-icon>
+              <span>생성 {{ createdAtLabel(room.created_at) }}</span>
             </div>
 
             <div class="member-head">
@@ -605,6 +621,7 @@ interface PartyRoom {
   max_members: number;
   member_count: number;
   scheduled_at: string | null;
+  created_at: string;
   discord_url: string | null;
   owner: { id: number; nickname: string; avatar: string | null };
   members: PartyMember[];
@@ -750,7 +767,26 @@ function waitlistName(waiter: PartyWaiter) {
 function scheduleLabel(value: string | null) {
   if (!value) return '시간 협의';
   return new Intl.DateTimeFormat('ko-KR', {
-    month: 'short',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Asia/Seoul',
+  }).format(new Date(value));
+}
+function scheduleState(value: string) {
+  const diff = new Date(value).getTime() - Date.now();
+  if (diff <= 0) return '예정 시간 경과';
+  const minutes = Math.ceil(diff / 60000);
+  if (minutes < 60) return `${minutes}분 후`;
+  const hours = Math.ceil(minutes / 60);
+  if (hours < 24) return `${hours}시간 후`;
+  return `${Math.ceil(hours / 24)}일 후`;
+}
+function createdAtLabel(value: string) {
+  return new Intl.DateTimeFormat('ko-KR', {
+    month: 'numeric',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
@@ -1325,19 +1361,58 @@ onMounted(loadRooms);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.room-info {
+.schedule-panel {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px 14px;
-  margin: 13px 0 17px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid rgba(var(--v-border-color), 0.13);
+  align-items: center;
+  gap: 11px;
+  margin-top: 13px;
+  padding: 12px 13px;
+  border: 1px solid rgba(var(--v-theme-primary), 0.24);
+  border-radius: 14px;
+  background: linear-gradient(100deg, rgba(var(--v-theme-primary), 0.14), rgba(var(--v-theme-primary), 0.035));
 }
-.room-info span {
+.schedule-panel.is-flexible {
+  border-color: rgba(148, 163, 184, 0.2);
+  background: rgba(148, 163, 184, 0.07);
+}
+.schedule-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  border-radius: 11px;
+  color: rgb(var(--v-theme-primary));
+  background: rgba(var(--v-theme-primary), 0.15);
+}
+.schedule-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+.schedule-copy span {
+  color: rgba(var(--v-theme-on-surface), 0.5);
+  font-size: 10px;
+  font-weight: 700;
+}
+.schedule-copy strong {
+  margin-top: 2px;
+  font-size: 14px;
+  letter-spacing: -0.02em;
+}
+.schedule-state {
+  margin-left: auto;
+  font-weight: 800;
+}
+.room-created-at {
   display: flex;
   align-items: center;
   gap: 5px;
-  color: rgba(var(--v-theme-on-surface), 0.57);
+  margin: 8px 0 17px;
+  padding: 0 3px 14px;
+  border-bottom: 1px solid rgba(var(--v-border-color), 0.13);
+  color: rgba(var(--v-theme-on-surface), 0.42);
   font-size: 12px;
 }
 .member-head {
