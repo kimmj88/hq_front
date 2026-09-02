@@ -14,7 +14,7 @@
         size="large"
         rounded="xl"
         prepend-icon="mdi-plus"
-        @click="createDialog = true"
+        @click="openCreate"
       >
         파티 만들기
       </v-btn>
@@ -151,9 +151,28 @@
                 <v-icon start size="15">{{ typeMeta(room.type).icon }}</v-icon
                 >{{ typeMeta(room.type).label }}
               </v-chip>
-              <span :class="['status', statusMeta(room.status).className]">
-                <i />{{ statusMeta(room.status).label }}
-              </span>
+              <div class="card-top-actions">
+                <v-tooltip
+                  v-if="room.status !== 'CLOSED' && (room.is_owner || canParty('CLAN-SET-PARTY-U'))"
+                  text="파티 수정"
+                  location="top"
+                >
+                  <template #activator="{ props }">
+                    <v-btn
+                      v-bind="props"
+                      class="card-edit-button"
+                      icon="mdi-pencil-outline"
+                      size="small"
+                      variant="tonal"
+                      color="primary"
+                      @click="openEdit(room)"
+                    />
+                  </template>
+                </v-tooltip>
+                <span :class="['status', statusMeta(room.status).className]">
+                  <i />{{ statusMeta(room.status).label }}
+                </span>
+              </div>
             </div>
 
             <h2>{{ room.title }}</h2>
@@ -263,7 +282,7 @@
                 <v-tooltip
                   v-if="
                     room.status !== 'CLOSED' &&
-                    room.is_owner &&
+                    (room.is_owner || canParty('CLAN-SET-PARTY-U')) &&
                     member.account.id !== room.owner.id
                   "
                   text="파티장 위임"
@@ -440,7 +459,9 @@
 
     <v-dialog v-model="createDialog" max-width="620">
       <v-card rounded="xl">
-        <v-card-title class="pa-6 pb-2 text-h6 font-weight-bold">새 파티 만들기</v-card-title>
+        <v-card-title class="pa-6 pb-2 text-h6 font-weight-bold">
+          {{ editingRoom ? '파티 수정' : '새 파티 만들기' }}
+        </v-card-title>
         <v-card-text class="pa-6 pt-3">
           <v-select
             v-model="form.type"
@@ -449,6 +470,7 @@
             item-value="value"
             label="게임 종류"
             variant="outlined"
+            :disabled="!!editingRoom"
           />
           <v-text-field
             v-model="form.title"
@@ -503,8 +525,8 @@
             color="primary"
             :loading="saving"
             :disabled="!form.title.trim()"
-            @click="createRoom"
-            >파티 만들기</v-btn
+            @click="saveRoom"
+            >{{ editingRoom ? '수정 저장' : '파티 만들기' }}</v-btn
           >
         </v-card-actions>
       </v-card>
@@ -658,6 +680,7 @@ const loading = ref(false);
 const saving = ref(false);
 const selectedType = ref<'ALL' | 'DUO' | 'NORMAL_FLEX' | 'INHOUSE' | 'CLOSED'>('ALL');
 const createDialog = ref(false);
+const editingRoom = ref<PartyRoom | null>(null);
 const joinDialog = ref(false);
 const noteDialog = ref(false);
 const joiningRoom = ref<PartyRoom | null>(null);
@@ -927,6 +950,71 @@ async function createRoom() {
     notify('파티방을 만들었습니다.');
   } catch (error: any) {
     notify(error?.response?.data?.message ?? '파티방을 만들지 못했습니다.', 'error');
+  } finally {
+    saving.value = false;
+  }
+}
+function resetRoomForm() {
+  Object.assign(form, {
+    type: 'DUO_RANK',
+    title: '',
+    description: '',
+    position: null,
+    scheduledAt: '',
+    discordUrl: '',
+  });
+}
+function openCreate() {
+  editingRoom.value = null;
+  resetRoomForm();
+  createDialog.value = true;
+}
+function toKoreanDateTimeInput(value: string | null) {
+  if (!value) return '';
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+    timeZone: 'Asia/Seoul',
+  }).formatToParts(new Date(value));
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((item) => item.type === type)?.value ?? '';
+  return `${part('year')}-${part('month')}-${part('day')}T${part('hour')}:${part('minute')}`;
+}
+function openEdit(room: PartyRoom) {
+  editingRoom.value = room;
+  const ownerMember = room.members.find((member) => member.account.id === room.owner.id);
+  Object.assign(form, {
+    type: room.type,
+    title: room.title,
+    description: room.description ?? '',
+    position: ownerMember?.position ?? null,
+    scheduledAt: toKoreanDateTimeInput(room.scheduled_at),
+    discordUrl: room.discord_url ?? '',
+  });
+  createDialog.value = true;
+}
+async function saveRoom() {
+  if (!editingRoom.value) {
+    await createRoom();
+    return;
+  }
+  try {
+    saving.value = true;
+    await api.post(`${getBaseUrl('DATA')}/party-room/update`, {
+      room_id: editingRoom.value.id,
+      title: form.title,
+      description: form.description,
+      position: form.position,
+      scheduled_at: koreanDateTimeToIso(form.scheduledAt),
+      discord_url: form.discordUrl.trim() || undefined,
+    });
+    createDialog.value = false;
+    editingRoom.value = null;
+    resetRoomForm();
+    await loadRooms();
+    notify('파티 정보를 수정했습니다.');
+  } catch (error: any) {
+    notify(error?.response?.data?.message ?? '파티 정보를 수정하지 못했습니다.', 'error');
   } finally {
     saving.value = false;
   }
@@ -1280,6 +1368,14 @@ onMounted(loadRooms);
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+.card-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-edit-button {
+  border: 1px solid rgba(var(--v-theme-primary), 0.2);
 }
 .status {
   display: inline-flex;
