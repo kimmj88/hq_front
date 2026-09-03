@@ -375,24 +375,38 @@ async function hydrateUser(accessToken: string) {
   auth.setTokens(accessToken);
   account.setAccount(me);
 
-  systemPermissionStore.clear();
-  clanPermissionStore.clear();
-  try {
-    if (me.systemrole?.id) {
+  if (me.systemrole?.id) {
+    try {
       const systemPermissions = await setSystemRole(me.systemrole.id);
       systemPermissionStore.setPermissions(systemPermissions);
+    } catch (error) {
+      console.warn('시스템 권한 정보를 불러오지 못했습니다.', error);
     }
-    if (me.clan?.id && me.clanrole?.id) {
+  } else {
+    systemPermissionStore.clear();
+  }
+
+  if (me.clan?.id && me.clanrole?.id) {
+    try {
       const clanPermissions = await setClanRole(me.clanrole.id);
       clanPermissionStore.setClanPermissions(clanPermissions);
+    } catch (error) {
+      console.warn('클랜 권한 정보를 불러오지 못했습니다.', error);
     }
-  } catch (error) {
-    console.warn('로그인은 유지하지만 권한 정보를 불러오지 못했습니다.', error);
+  } else {
+    clanPermissionStore.clear();
   }
 }
 
 async function ensureSession(): Promise<boolean> {
   const auth = useAuthStore();
+  const account = useAccountStore();
+
+  // 같은 SPA 세션에서 인증과 권한 로딩이 끝났다면 메뉴 이동마다 다시 초기화하지 않는다.
+  if (auth.accessToken && account.isLoggedIn && account.isReady) {
+    return true;
+  }
+
   const refreshToken = Cookies.get('refreshToken') ?? '';
   let accessToken = Cookies.get('accessToken') ?? '';
 
