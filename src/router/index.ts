@@ -321,6 +321,24 @@ const router = createRouter({
 let isRefreshing = false;
 let refreshPromise: Promise<string> | null = null;
 
+function authCookieOptions() {
+  const isProductionDomain = location.hostname === 'clangg.kr' || location.hostname.endsWith('.clangg.kr');
+  return {
+    path: '/',
+    sameSite: 'Lax' as const,
+    secure: location.protocol === 'https:',
+    ...(isProductionDomain ? { domain: '.clangg.kr' } : {}),
+  };
+}
+
+function removeAuthCookies() {
+  for (const name of ['idToken', 'accessToken', 'refreshToken']) {
+    Cookies.remove(name, { path: '/' });
+    Cookies.remove(name, { path: '/', domain: 'clangg.kr' });
+    Cookies.remove(name, { path: '/', domain: '.clangg.kr' });
+  }
+}
+
 async function refreshAccessToken(refreshToken: string): Promise<string> {
   if (!isRefreshing) {
     isRefreshing = true;
@@ -333,6 +351,7 @@ async function refreshAccessToken(refreshToken: string): Promise<string> {
       .then((res) => res.data.accessToken)
       .finally(() => {
         isRefreshing = false;
+        refreshPromise = null;
       });
   }
   // 이미 진행 중이면 같은 프라미스 대기
@@ -341,7 +360,7 @@ async function refreshAccessToken(refreshToken: string): Promise<string> {
 }
 
 async function hydrateUser(accessToken: string) {
-  // /auth/me 한 번만 호출해서 계정/권한 세팅
+  // 인증 정보부터 확정한 뒤 권한을 별도로 불러온다. 권한 조회 실패를 토큰 만료로 취급하지 않는다.
   const { data } = await axios.post(
     `${getBaseUrl('AUTH')}/auth/me`,
     { accessToken },
@@ -353,18 +372,23 @@ async function hydrateUser(accessToken: string) {
   const clanPermissionStore = useClanPermissionStore();
 
   const me = data.datas;
-  const systemPermissions = await setSystemRole(me.systemrole.id);
-
-  if (me.clan != null) {
-    const clanPermissions = await setClanRole(me.clanrole.id);
-    clanPermissionStore.setClanPermissions(clanPermissions);
-  } else {
-    clanPermissionStore.clear();
-  }
-
   auth.setTokens(accessToken);
   account.setAccount(me);
-  systemPermissionStore.setPermissions(systemPermissions);
+
+  systemPermissionStore.clear();
+  clanPermissionStore.clear();
+  try {
+    if (me.systemrole?.id) {
+      const systemPermissions = await setSystemRole(me.systemrole.id);
+      systemPermissionStore.setPermissions(systemPermissions);
+    }
+    if (me.clan?.id && me.clanrole?.id) {
+      const clanPermissions = await setClanRole(me.clanrole.id);
+      clanPermissionStore.setClanPermissions(clanPermissions);
+    }
+  } catch (error) {
+    console.warn('로그인은 유지하지만 권한 정보를 불러오지 못했습니다.', error);
+  }
 }
 
 async function ensureSession(): Promise<boolean> {
@@ -378,8 +402,10 @@ async function ensureSession(): Promise<boolean> {
       await hydrateUser(accessToken);
       return true;
     } catch (err: any) {
-      console.log(401);
-      // 401 등 실패 시 리프레시 시도
+      // 실제 인증 만료(401)일 때만 refresh를 시도한다.
+      if (err?.response?.status !== 401) return false;
+      Cookies.remove('accessToken', authCookieOptions());
+      accessToken = '';
     }
   }
 
@@ -388,7 +414,8 @@ async function ensureSession(): Promise<boolean> {
 
   try {
     const newAccess = await refreshAccessToken(refreshToken);
-    Cookies.set('accessToken', newAccess, { sameSite: 'Lax' }); // 필요 시 secure: true(HTTPS)
+    if (!newAccess) return false;
+    Cookies.set('accessToken', newAccess, authCookieOptions());
     await hydrateUser(newAccess);
     return true;
   } catch {
@@ -403,45 +430,56 @@ router.beforeEach(async (to, from, next) => {
   }
 
   const account = useAccountStore();
+  const auth = useAuthStore();
+  const permission = usePermissionStore();
+  const clanPermission = useClanPermissionStore();
   const isClanInvite = to.path.startsWith('/clan/invite/');
   const isPublicClanPage =
     to.path === '/clan' ||
     to.path === '/clan/' ||
     to.path.startsWith('/clan/explore/');
-  if (
-    to.path.startsWith('/clan/') &&
-    !isClanInvite &&
-    !isPublicClanPage &&
-    account.isClaned === false
-  ) {
-    await ensureSession();
-
-    const targetClan = String(to.params.name ?? '');
-
-    if (account.clan == null) {
-      return next('/forbidden');
-    }
-    if (account.clan.name != targetClan) {
-      return next('/forbidden');
-    }
-  }
-
   if (to.path === '/login') {
-    const hasRefresh = !!Cookies.get('refreshToken');
-    if (hasRefresh) return next('/home');
+    const ok = await ensureSession();
+    if (ok) return next('/home');
+    const hadToken = !!Cookies.get('accessToken') || !!Cookies.get('refreshToken');
+    if (hadToken) {
+      try {
+        await axios.post(`${getBaseUrl('AUTH')}/auth/logout`, {}, { withCredentials: true });
+      } catch {
+        // 서버 응답과 관계없이 로컬 인증 상태를 정리한다.
+      }
+    }
+    auth.clear();
+    account.clear();
+    permission.clear();
+    clanPermission.clear();
+    removeAuthCookies();
     return next();
   }
 
-  const auth = useAuthStore();
-  const permission = usePermissionStore();
   const ok = await ensureSession();
 
   if (!ok) {
-    auth.clear(); // 토큰/상태 초기화 메서드가 있다면 사용
+    const hadToken = !!Cookies.get('accessToken') || !!Cookies.get('refreshToken');
+    if (hadToken) {
+      try {
+        await axios.post(`${getBaseUrl('AUTH')}/auth/logout`, {}, { withCredentials: true });
+      } catch {
+        // 서버 쿠키 정리에 실패해도 브라우저에서 제거를 계속한다.
+      }
+    }
+    auth.clear();
     account.clear?.();
     permission.clear?.();
-    Cookies.remove('accessToken');
-    Cookies.remove('refreshToken');
+    clanPermission.clear?.();
+    removeAuthCookies();
+  }
+
+  if (to.path.startsWith('/clan/') && !isClanInvite && !isPublicClanPage) {
+    const targetClan = String(to.params.name ?? '');
+    if (!ok || account.clan == null || account.clan.name !== targetClan) {
+      return next('/forbidden');
+    }
   }
 
   let inviteRedirect = sessionStorage.getItem('clanInviteRedirect');
