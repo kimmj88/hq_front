@@ -173,10 +173,13 @@
           <v-card-title class="text-h6 font-weight-bold">클랜 탈퇴</v-card-title>
           <v-card-text class="text-body-2 text-medium-emphasis">
             {{ account.isClanMaster ? '클랜 마스터는 탈퇴할 수 없습니다. 다른 멤버에게 마스터를 위임해 주세요.' : '클랜을 탈퇴 하시겠습니까?' }}
+            <v-alert v-if="leaveError" class="mt-4" type="error" variant="tonal" density="compact">
+              {{ leaveError }}
+            </v-alert>
           </v-card-text>
           <v-card-actions class="justify-end">
             <v-btn variant="text" @click="leaveDialog = false">취소</v-btn>
-            <v-btn color="error" :disabled="account.isClanMaster" @click="leaveClan">나가기</v-btn>
+            <v-btn color="error" :disabled="account.isClanMaster" :loading="leaveLoading" @click="leaveClan">나가기</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -223,6 +226,8 @@ const clanPermissionStore = useClanPermissionStore();
 
 const leaveDialog = ref(false);
 const supportDialog = ref(false);
+const leaveLoading = ref(false);
+const leaveError = ref('');
 
 // ✅ Vuetify breakpoint
 const { smAndDown } = useDisplay();
@@ -246,18 +251,22 @@ function openSupport() {
 }
 
 async function leaveClan() {
-  if (account.isClanMaster) return;
-  await api.post(`${getBaseUrl('DATA')}/account/leave_clan`, {
-    id: account.id,
-    clan_id: null,
-    player_id: null,
-  });
-
+  if (account.isClanMaster || leaveLoading.value) return;
+  leaveLoading.value = true;
+  leaveError.value = '';
   leaveDialog.value = false;
-  account.clan = null;
-  account.clanrole = null;
-  clanPermissionStore.clear();
-  router.replace('/clan');
+  try {
+    await api.post(`${getBaseUrl('DATA')}/account/leave_clan`);
+    account.clan = null;
+    account.clanrole = null;
+    clanPermissionStore.clear();
+    window.location.replace('/clan');
+  } catch (error: any) {
+    leaveError.value = error?.response?.data?.message ?? '클랜을 탈퇴하지 못했습니다.';
+    leaveDialog.value = true;
+  } finally {
+    leaveLoading.value = false;
+  }
 }
 </script>
 

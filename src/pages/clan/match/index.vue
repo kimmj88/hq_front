@@ -1,5 +1,5 @@
 <template>
-  <v-container class="match-page py-8">
+  <v-container class="competition-list-page py-8">
     <section class="page-hero mb-6">
       <div>
         <div class="hero-eyebrow">
@@ -16,7 +16,7 @@
       </div>
     </section>
 
-    <v-card class="match-panel" rounded="xl" elevation="0">
+    <v-card class="competition-panel" rounded="xl" elevation="0">
       <div class="toolbar">
         <v-text-field
           v-model="search"
@@ -48,7 +48,7 @@
       </div>
 
       <server-data-table
-        class="match-table"
+        class="competition-table"
         :headers="headers"
         :items="serverItems"
         :items-length="totalItems"
@@ -62,8 +62,8 @@
         @update:options="loadItems"
       >
       <template #item.name="{ item }">
-        <router-link :to="CLAN_PATH.MATCH_VIEW(account.clan.name, item.id)" class="match-link">
-          <span class="match-icon"><v-icon size="18">mdi-gamepad-variant-outline</v-icon></span>
+        <router-link :to="CLAN_PATH.MATCH_VIEW(account.clan.name, item.id)" class="competition-link">
+          <span class="competition-icon"><v-icon size="18">mdi-gamepad-variant-outline</v-icon></span>
           <span>{{ item.name }}</span>
           <v-icon class="link-arrow" size="16">mdi-chevron-right</v-icon>
         </router-link>

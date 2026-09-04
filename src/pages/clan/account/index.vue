@@ -81,6 +81,7 @@
               variant="tonal"
               color="primary"
               prepend-icon="mdi-shield-account-outline"
+              :disabled="item.clanrole?.name?.toLowerCase() === 'master'"
               @click="openRoleDialog(item)"
             >
               권한 수정
@@ -161,7 +162,7 @@
 
         <v-autocomplete
           v-model="selectedClanRole"
-          :items="clanRoleList"
+          :items="assignableClanRoles"
           :loading="roleLoading"
           item-title="name"
           item-value="id"
@@ -178,6 +179,25 @@
           inset
           hide-details
         />
+
+        <div
+          v-if="canTransferMaster"
+          class="master-transfer mt-5"
+        >
+          <div class="master-transfer__copy">
+            <span><v-icon size="17">mdi-crown</v-icon> 클랜 마스터 위임</span>
+            <p>이 멤버를 새 클랜 마스터로 지정하고 내 권한을 현재 멤버의 권한으로 변경합니다.</p>
+          </div>
+          <v-btn
+            color="warning"
+            variant="tonal"
+            prepend-icon="mdi-account-switch-outline"
+            :loading="masterTransferring"
+            @click="transferMaster"
+          >
+            마스터 위임
+          </v-btn>
+        </div>
       </v-card-text>
       <v-card-actions>
         <v-spacer />
@@ -234,6 +254,7 @@ const selectedMember = ref<MemberAccount | null>(null);
 const roleDialog = ref(false);
 const roleLoading = ref(false);
 const roleSaving = ref(false);
+const masterTransferring = ref(false);
 const clanRoleList = ref<ClanRole[]>([]);
 const selectedClanRole = ref<ClanRole | null>(null);
 const selectedIsConfirm = ref(false);
@@ -241,6 +262,15 @@ const snackbar = ref({ show: false, message: '', color: 'success' });
 
 const canManageMembers = computed(
   () => account.isClanMaster || can('ACCOUNT', 'CLAN-SET-ACC-U'),
+);
+const canTransferMaster = computed(() =>
+  account.isClanMaster &&
+  !!selectedMember.value &&
+  selectedMember.value.id !== account.id &&
+  selectedMember.value.clanrole?.name?.toLowerCase() !== 'master'
+);
+const assignableClanRoles = computed(() =>
+  clanRoleList.value.filter((role) => role.name?.toLowerCase() !== 'master')
 );
 
 const headers: VDataTableServer['headers'] = [
@@ -369,6 +399,27 @@ async function saveRole() {
   }
 }
 
+async function transferMaster() {
+  if (!selectedMember.value || !canTransferMaster.value || masterTransferring.value) return;
+  const targetName = displayName(selectedMember.value);
+  if (!confirm(`${targetName} 님에게 클랜 마스터를 위임할까요?\n위임 즉시 내 마스터 권한은 해제됩니다.`)) return;
+
+  masterTransferring.value = true;
+  try {
+    await api.post(`${getBaseUrl('DATA')}/Clan/change_master`, {
+      before_master: account.id,
+      after_master: selectedMember.value.id,
+    });
+    roleDialog.value = false;
+    showMessage(`${targetName} 님에게 클랜 마스터를 위임했습니다.`, 'success');
+    window.setTimeout(() => window.location.reload(), 700);
+  } catch (error) {
+    showMessage(errorMessage(error, '클랜 마스터를 위임하지 못했습니다.'), 'error');
+  } finally {
+    masterTransferring.value = false;
+  }
+}
+
 async function confirmKick() {
   if (!selectedMember.value || kicking.value) return;
   kicking.value = true;
@@ -475,6 +526,10 @@ function showMessage(message: string, color: string) {
 .role-member { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 14px; background: rgba(var(--v-theme-primary), .07); }
 .role-member > div { display: flex; flex-direction: column; min-width: 0; }
 .role-member span { color: rgba(var(--v-theme-on-surface), .6); font-size: .8rem; }
+.master-transfer { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px; border: 1px solid rgba(245, 158, 11, .28); border-radius: 14px; background: rgba(245, 158, 11, .08); }
+.master-transfer__copy { min-width: 0; }
+.master-transfer__copy span { display: flex; align-items: center; gap: 6px; color: #fbbf24; font-size: .88rem; font-weight: 800; }
+.master-transfer__copy p { margin: 5px 0 0; color: rgba(var(--v-theme-on-surface), .58); font-size: .75rem; line-height: 1.45; }
 .empty-state { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 44px 16px; color: rgba(var(--v-theme-on-surface), .6); }
 :deep(.member-table table) { border-collapse: separate; border-spacing: 0 7px; padding: 0 16px 10px; }
 :deep(.member-table thead th) { height: 54px !important; border-bottom: 0 !important; font-size: .78rem; font-weight: 700 !important; text-transform: none; color: rgba(var(--v-theme-on-surface), .52); background: transparent; }

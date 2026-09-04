@@ -5,15 +5,24 @@
         <span class="eyebrow">CLAN DISCOVERY</span>
         <h1>클랜 엿보기</h1>
         <p>다른 클랜의 활동과 기록을 공개 대시보드로 살펴보세요.</p>
-        <v-btn
-          v-if="account.isLoggedIn && !account.isClaned"
-          class="mt-5"
-          color="deep-purple-accent-2"
-          prepend-icon="mdi-account-group"
-          @click="openCreateDialog"
-        >
-          클랜 만들기
-        </v-btn>
+        <div v-if="!account.isClaned" class="hero-actions mt-5">
+          <v-btn
+            color="deep-purple-accent-2"
+            prepend-icon="mdi-account-plus-outline"
+            @click="openJoinDialog"
+          >
+            클랜 가입하기
+          </v-btn>
+          <v-btn
+            v-if="account.isLoggedIn"
+            variant="tonal"
+            color="deep-purple-accent-2"
+            prepend-icon="mdi-account-group"
+            @click="openCreateDialog"
+          >
+            클랜 만들기
+          </v-btn>
+        </div>
       </div>
       <v-text-field
         v-model="keyword"
@@ -67,6 +76,51 @@
       rounded="circle"
       @update:model-value="loadClans"
     />
+
+    <v-dialog v-model="joinDialog" max-width="520">
+      <v-card rounded="xl">
+        <v-card-title class="d-flex align-center px-6 pt-6">
+          <v-avatar color="primary" variant="tonal" class="mr-3">
+            <v-icon>mdi-account-plus-outline</v-icon>
+          </v-avatar>
+          <div>
+            <div class="text-h6 font-weight-bold">클랜 가입하기</div>
+            <div class="text-caption text-medium-emphasis">전달받은 초대코드 또는 초대 링크를 입력하세요.</div>
+          </div>
+        </v-card-title>
+        <v-card-text class="px-6 pt-5">
+          <v-alert v-if="!account.isLoggedIn" type="info" variant="tonal" class="mb-4">
+            클랜에 가입하려면 먼저 로그인해야 합니다.
+          </v-alert>
+          <v-alert v-else-if="!account.isPlayerLinked" type="warning" variant="tonal" class="mb-4">
+            클랜에 가입하려면 리그 오브 레전드 계정을 먼저 연동해야 합니다.
+          </v-alert>
+          <v-text-field
+            v-model="inviteInput"
+            label="초대코드 또는 초대 링크"
+            placeholder="예: abcd1234 또는 https://clangg.kr/clan/invite/abcd1234"
+            prepend-inner-icon="mdi-link-variant"
+            variant="outlined"
+            :disabled="joiningClan || !account.isLoggedIn || !account.isPlayerLinked"
+            :error-messages="joinError"
+            @keyup.enter="joinClan"
+          />
+        </v-card-text>
+        <v-card-actions class="px-6 pb-6 justify-end">
+          <v-btn variant="text" :disabled="joiningClan" @click="joinDialog = false">취소</v-btn>
+          <v-btn v-if="!account.isLoggedIn" color="primary" @click="goLogin">로그인하기</v-btn>
+          <v-btn v-else-if="!account.isPlayerLinked" color="primary" @click="goPlayerLink">롤 계정 연동</v-btn>
+          <v-btn
+            v-else
+            color="primary"
+            prepend-icon="mdi-check"
+            :loading="joiningClan"
+            :disabled="!inviteInput.trim()"
+            @click="joinClan"
+          >가입하기</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <v-dialog v-model="dashboardDialog" max-width="1080" scrollable>
       <v-card class="dashboard-dialog" rounded="xl">
@@ -208,6 +262,10 @@ const route = useRoute();
 const router = useRouter();
 const account = useAccountStore();
 const createDialog = ref(false);
+const joinDialog = ref(false);
+const joiningClan = ref(false);
+const inviteInput = ref('');
+const joinError = ref('');
 const creating = ref(false);
 const createNameError = ref('');
 const createForm = ref({ name: '', description: '' });
@@ -283,9 +341,46 @@ function openCreateDialog() {
   createNameError.value = '';
   createDialog.value = true;
 }
+function openJoinDialog() {
+  inviteInput.value = '';
+  joinError.value = '';
+  joinDialog.value = true;
+}
+function goLogin() {
+  joinDialog.value = false;
+  router.push('/login');
+}
 function goPlayerLink() {
+  joinDialog.value = false;
   createDialog.value = false;
   router.push(CONFIG_ACCOUNT_PATH.VIEW(account.id));
+}
+function inviteCode(value: string) {
+  const normalized = value.trim().replace(/\/+$/, '');
+  const marker = '/clan/invite/';
+  const markerIndex = normalized.toLowerCase().lastIndexOf(marker);
+  return decodeURIComponent(markerIndex >= 0 ? normalized.slice(markerIndex + marker.length) : normalized);
+}
+async function joinClan() {
+  if (joiningClan.value || !account.isLoggedIn || !account.isPlayerLinked) return;
+  const code = inviteCode(inviteInput.value);
+  if (!code) {
+    joinError.value = '초대코드 또는 초대 링크를 입력해 주세요.';
+    return;
+  }
+  joiningClan.value = true;
+  joinError.value = '';
+  try {
+    const response = await api.post(`${getBaseUrl('DATA')}/clan-invite/join`, { code });
+    const joined = response.data?.datas;
+    if (!joined?.clan?.name) throw new Error('가입한 클랜 정보를 받지 못했습니다.');
+    joinDialog.value = false;
+    window.location.href = CLAN_PATH.VIEW(joined.clan.name);
+  } catch (error: any) {
+    joinError.value = error?.response?.data?.message ?? '클랜에 가입하지 못했습니다.';
+  } finally {
+    joiningClan.value = false;
+  }
 }
 async function createClan() {
   if (creating.value || !account.isPlayerLinked) return;
@@ -332,6 +427,7 @@ onMounted(async () => {
 .explore-hero h1 { margin:5px 0; font-size:30px; }
 .explore-hero p { margin:0; color:rgba(255,255,255,.62); }
 .explore-search { max-width:390px; }
+.hero-actions { display:flex; flex-wrap:wrap; gap:10px; }
 .clan-preview { height:100%; overflow:hidden; border:1px solid rgba(255,255,255,.1); transition:.2s ease; cursor:pointer; }
 .clan-preview:hover { transform:translateY(-4px); border-color:rgba(167,139,250,.7); box-shadow:0 16px 40px rgba(0,0,0,.25); }
 .clan-preview__banner { height:135px; padding:14px; display:flex; justify-content:flex-end; background:linear-gradient(135deg,#312e81,#6d28d9); background-size:cover; background-position:center; }

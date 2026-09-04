@@ -9,6 +9,7 @@ import { registerPlugins } from '@/plugins';
 
 // Components
 import App from './App.vue';
+import '@/styles/clan-competition-list.css';
 
 // Composables
 import { createApp } from 'vue';

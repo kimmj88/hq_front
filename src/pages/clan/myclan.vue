@@ -759,17 +759,17 @@ function reject(p: Pending) {
 
 async function leaveClan() {
   if (account.isClanMaster) return;
-  await api.post(`${getBaseUrl('DATA')}/account/update`, {
-    id: account.id,
-    clan_id: null,
-  });
-
   leaveDialog.value = false;
-  account.clan = null;
-  account.clanrole = null;
-  clanPermissionStore.clear();
-  toast('클랜 탈퇴');
-  router.replace('/clan');
+  try {
+    await api.post(`${getBaseUrl('DATA')}/account/leave_clan`);
+    account.clan = null;
+    account.clanrole = null;
+    clanPermissionStore.clear();
+    window.location.replace('/clan');
+  } catch (error: any) {
+    toast(error?.response?.data?.message ?? '클랜을 탈퇴하지 못했습니다.');
+    leaveDialog.value = true;
+  }
 }
 
 function formatDate(iso: string) {
