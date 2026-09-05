@@ -14,14 +14,13 @@
     "
     @update:options="(newOptions) => emits('update:options', newOptions)"
   >
-    <template v-for="(_, name) in slots" #[name]="slotData" :key="name">
-      <slot :name="name" v-bind="slotData" />
+    <template v-for="(_, name) in $slots" #[name]="slotData">
+      <slot :name="name" v-bind="slotData || {}" />
     </template>
   </v-data-table-server>
 </template>
 
 <script lang="ts" setup>
-import { useSlots } from "vue";
 import type { VDataTableServer } from "vuetify/components";
 
 defineProps<{
@@ -37,7 +36,6 @@ defineProps<{
 
 const emits = defineEmits(["update:options", "update:itemsPerPage", "update:page"]);
 
-const slots = useSlots();
 </script>
 
 <style scoped>

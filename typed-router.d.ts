@@ -54,7 +54,6 @@ declare module 'vue-router/auto-routes' {
     '/config/account/view': RouteRecordInfo<'/config/account/view', '/config/account/view', Record<never, never>, Record<never, never>>,
     '/config/permission/clan/': RouteRecordInfo<'/config/permission/clan/', '/config/permission/clan', Record<never, never>, Record<never, never>>,
     '/config/permission/system/': RouteRecordInfo<'/config/permission/system/', '/config/permission/system', Record<never, never>, Record<never, never>>,
-    '/config/player/': RouteRecordInfo<'/config/player/', '/config/player', Record<never, never>, Record<never, never>>,
     '/config/profile/': RouteRecordInfo<'/config/profile/', '/config/profile', Record<never, never>, Record<never, never>>,
     '/config/tier/': RouteRecordInfo<'/config/tier/', '/config/tier', Record<never, never>, Record<never, never>>,
     '/cup/': RouteRecordInfo<'/cup/', '/cup', Record<never, never>, Record<never, never>>,

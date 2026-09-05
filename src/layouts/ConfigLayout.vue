@@ -61,14 +61,6 @@ const menuItems = computed(() => {
     });
   }
 
-  if (can('PLAYER', 'SYS-SET-PLAYER-R')) {
-    items.push({
-      title: 'Player',
-      icon: 'mdi-gamepad-variant',
-      to: '/config/player',
-    });
-  }
-
   if (can('TIER', 'SYS-SET-TIER-R')) {
     items.push({
       title: 'Tier',

@@ -7,7 +7,9 @@ export interface Player {
   nickname: string;
   tagname: string;
   point: number;
-  create_at: string;
+  created_at: string;
+  /** 이전 응답 호환용 */
+  create_at?: string;
   tier: Tier | null;
   custom_tier: Tier | null;
   positions: Position[];

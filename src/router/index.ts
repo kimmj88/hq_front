@@ -8,7 +8,6 @@ import api from '@/@core/composable/useAxios';
 
 import {
   CONFIG_ACCOUNT_PATH,
-  CONFIG_PLAYER_PATH,
   CONFIG_TIER_PATH,
   CONFIG_PROFILE_PATH,
 } from '@/router/config/type';
@@ -21,7 +20,6 @@ import Config from '@/pages/config/index.vue';
 import Account from '@/pages/config/account/index.vue';
 import AccountView from '@/pages/config/account/view.vue';
 
-import Player from '@/pages/config/player/index.vue';
 import Tier from '@/pages/config/tier/index.vue';
 import Profile from '@/pages/config/profile/index.vue';
 
@@ -167,7 +165,6 @@ const router = createRouter({
           component: AccountView,
           props: true,
         },
-        { path: CONFIG_PLAYER_PATH.BASE, component: Player },
         { path: CONFIG_TIER_PATH.BASE, component: Tier },
         { path: CONFIG_PROFILE_PATH.BASE, component: Profile },
         { path: CONFIG_PERMISSION_SYSTEM_PATH.BASE, component: SystemPermission },
