@@ -12,6 +12,7 @@ export interface Account {
   created_at: string;
   updated_at: string;
   avatar: string;
+  shop_coin?: number;
   systemrole: SystemRole;
   is_confirm: boolean;
   player: Player;

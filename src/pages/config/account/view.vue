@@ -47,10 +47,10 @@
           <v-btn
             v-if="props.id === String(accountStore.id)"
             variant="tonal"
-            prepend-icon="mdi-account-edit"
-            @click="openNicknameDialog"
+            prepend-icon="mdi-storefront-outline"
+            @click="goShop"
           >
-            닉네임 변경
+            상점에서 닉네임 변경
           </v-btn>
 
           <v-btn
@@ -137,18 +137,28 @@
 
             <div class="d-flex flex-wrap justify-end" style="gap: 8px">
               <AccountPlayerMemberDialog
-                v-if="props.id === String(accountStore.id)"
+                v-if="!player && props.id === String(accountStore.id)"
                 v-model="playerDialog"
+                button-text="LoL 계정 최초 연동"
                 @added="handleAdd"
               />
 
               <v-btn
                 v-if="player && props.id === String(accountStore.id)"
                 variant="tonal"
-                prepend-icon="mdi-map-marker"
-                @click="openPositionDialog"
+                prepend-icon="mdi-link-variant"
+                @click="goShop"
               >
-                희망 포지션 선택
+                LoL 계정 변경
+              </v-btn>
+
+              <v-btn
+                v-if="player && props.id === String(accountStore.id)"
+                variant="tonal"
+                prepend-icon="mdi-storefront-outline"
+                @click="goShop"
+              >
+                포지션 변경
               </v-btn>
             </div>
           </div>
@@ -236,6 +246,35 @@
                       선택한 희망 포지션이 없습니다.
                     </span>
                   </div>
+                </v-card>
+              </v-col>
+
+              <v-col v-if="canViewPlayerHistory" cols="12">
+                <v-card variant="outlined" class="link-history-card pa-4" rounded="lg">
+                  <div class="d-flex align-center justify-space-between mb-3">
+                    <div>
+                      <div class="text-subtitle-2 font-weight-bold">LoL 계정 연동 이력</div>
+                      <div class="text-caption text-medium-emphasis">이 계정에 연결되었던 Riot ID 기록입니다.</div>
+                    </div>
+                    <v-chip size="small" variant="tonal">{{ playerHistory.length }}건</v-chip>
+                  </div>
+
+                  <div v-if="playerHistoryLoading" class="d-flex justify-center py-5">
+                    <v-progress-circular indeterminate size="24" color="primary" />
+                  </div>
+                  <div v-else-if="playerHistory.length" class="link-history-list">
+                    <div v-for="history in playerHistory" :key="history.id" class="link-history-item">
+                      <v-avatar size="36" color="primary" variant="tonal">
+                        {{ getInitials(history.player.nickname) }}
+                      </v-avatar>
+                      <div class="link-history-name">
+                        <strong>{{ history.player.nickname }}<span v-if="history.player.tagname">#{{ history.player.tagname }}</span></strong>
+                        <span>{{ formatLinkedAt(history.linked_at) }}</span>
+                      </div>
+                      <v-chip v-if="history.player.id === player?.id" size="x-small" color="success" variant="tonal">현재 연동</v-chip>
+                    </div>
+                  </div>
+                  <div v-else class="text-body-2 text-medium-emphasis py-3">저장된 연동 이력이 없습니다.</div>
                 </v-card>
               </v-col>
             </v-row>
@@ -534,6 +573,9 @@ const props = withDefaults(defineProps<{ id: string; profileOnly?: boolean }>(),
 const router = useRouter();
 const route = useRoute();
 const accountStore = useAccountStore();
+function goShop() {
+  router.push('/shop');
+}
 const profileTab = ref<'game' | 'awards' | 'activity' | 'settings'>('game');
 const activityLoading = ref(false);
 const clanRoleDialog = ref(false);
@@ -578,6 +620,15 @@ const avatarPreview = ref('');
 const avatarError = ref('');
 const positionDialog = ref(false);
 const positionLoading = ref(false);
+const playerHistoryLoading = ref(false);
+const playerHistory = ref<Array<{
+  id: number;
+  linked_at: string;
+  player: { id: number; nickname: string; tagname: string };
+}>>([]);
+const canViewPlayerHistory = computed(
+  () => props.id === String(accountStore.id) || can('ACCOUNT', 'SYS-SET-ACC-R'),
+);
 
 const selectedSystemRole = ref<SystemRole | null>(null);
 const systemRoleList = ref<SystemRole[]>([]);
@@ -763,10 +814,37 @@ async function fetchAccount() {
       const roleRes = await api.get(`${getBaseUrl('DATA')}/systemrole/all`);
       systemRoleList.value = roleRes.data.datas;
     }
-    await fetchActivity();
+    await Promise.all([
+      fetchActivity(),
+      canViewPlayerHistory.value ? fetchPlayerHistory() : Promise.resolve(),
+    ]);
   } catch (error) {
     console.error('계정 정보 불러오기 실패:', error);
   }
+}
+
+async function fetchPlayerHistory() {
+  playerHistoryLoading.value = true;
+  try {
+    const response = await api.get(`${getBaseUrl('DATA')}/playerhistory/account/${props.id}`);
+    playerHistory.value = response.data?.datas ?? [];
+  } catch (error) {
+    console.error('플레이어 연동 이력 불러오기 실패:', error);
+    playerHistory.value = [];
+  } finally {
+    playerHistoryLoading.value = false;
+  }
+}
+
+function formatLinkedAt(value: string) {
+  if (!value) return '-';
+  return new Intl.DateTimeFormat('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value));
 }
 
 const canSubmitNickname = computed(() => {
@@ -939,6 +1017,37 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.link-history-list {
+  display: grid;
+  gap: 8px;
+}
+
+.link-history-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px;
+  border-radius: 12px;
+  background: rgba(var(--v-theme-on-surface), 0.035);
+}
+
+.link-history-name {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.link-history-name strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.link-history-name span {
+  color: rgba(var(--v-theme-on-surface), 0.52);
+  font-size: 0.72rem;
+}
 .account-detail-card {
   min-height: 420px;
 }

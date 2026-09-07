@@ -61,6 +61,7 @@ import Login from '@/pages/login/index.vue';
 
 //SelfScore
 import SelfScore from '@/pages/selfscore.vue';
+import Shop from '@/pages/shop/index.vue';
 
 //Exception
 import Exception from '@/pages/exception/Exception.vue';
@@ -138,6 +139,7 @@ import type { ClanRole } from '@/data/types/clanrole';
 import Step1 from '@/pages/sample/step1.vue';
 import Step2 from '@/pages/sample/step2.vue';
 import Step3 from '@/pages/sample/step3.vue';
+import CustomGameSample from '@/pages/sample/custom-game.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -150,6 +152,7 @@ const router = createRouter({
     { path: '/step1', component: Step1 },
     { path: '/step2', component: Step2 },
     { path: '/step3', component: Step3 },
+    { path: '/sample/custom-game', component: CustomGameSample },
     {
       path: '/login',
       component: Login,
@@ -306,6 +309,11 @@ const router = createRouter({
         { path: '/home', component: Home },
         { path: '', component: SelfScore },
       ],
+    },
+    {
+      path: '/shop',
+      component: DefaultLayout,
+      children: [{ path: '', component: Shop }],
     },
 
     {
