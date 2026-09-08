@@ -4,6 +4,7 @@ import type { Tier } from './tier';
 export interface Player {
   id: number;
   avatar?: string | null;
+  match_avatar_effect_enabled?: boolean;
   nickname: string;
   tagname: string;
   point: number;

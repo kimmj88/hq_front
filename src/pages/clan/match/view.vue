@@ -115,7 +115,8 @@
           <div class="player-identity player-identity-left">
             <v-avatar
               v-if="team1[i - 1]?.player?.nickname"
-              size="42"
+              :class="{ 'match-avatar-motion': team1[i - 1].player.match_avatar_effect_enabled }"
+              size="64"
               color="blue-grey-darken-2"
             >
               <v-img
@@ -207,7 +208,8 @@
           <div class="player-identity">
             <v-avatar
               v-if="team2[i - 1]?.player?.nickname"
-              size="42"
+              :class="{ 'match-avatar-motion': team2[i - 1].player.match_avatar_effect_enabled }"
+              size="64"
               color="blue-grey-darken-2"
             >
               <v-img
@@ -1101,14 +1103,42 @@ onMounted(fetch);
 }
 
 .player-card {
-  min-height: 132px;
-  padding: 18px;
-  border-radius: 24px;
+  min-height: 116px;
+  padding: 13px 15px;
+  border-radius: 20px;
   cursor: pointer;
   transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
   overflow: hidden;
   position: relative;
   isolation: isolate;
+}
+
+.match-avatar-motion {
+  border: 2px solid rgba(202, 163, 255, 0.85);
+  animation:
+    match-avatar-float 2.4s ease-in-out infinite,
+    match-avatar-glow 1.6s ease-in-out infinite alternate;
+  transform-origin: 50% 85%;
+  will-change: transform, filter, box-shadow;
+}
+
+.match-avatar-motion :deep(.v-img) {
+  animation: match-avatar-image 3.2s ease-in-out infinite;
+}
+
+@keyframes match-avatar-float {
+  0%, 100% { transform: translateY(0) rotate(-1deg) scale(1); }
+  50% { transform: translateY(-6px) rotate(2deg) scale(1.06); }
+}
+
+@keyframes match-avatar-glow {
+  from { box-shadow: 0 2px 8px rgba(116, 66, 190, 0.25); filter: brightness(1); }
+  to { box-shadow: 0 6px 20px rgba(185, 125, 255, 0.75); filter: brightness(1.16) saturate(1.18); }
+}
+
+@keyframes match-avatar-image {
+  0%, 100% { transform: scale(1.02); }
+  50% { transform: scale(1.13) translateX(-1px); }
 }
 
 .match-winner-border::before,

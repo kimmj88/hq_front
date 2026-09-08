@@ -181,7 +181,7 @@
             </p>
 
             <div class="owner-highlight">
-              <v-avatar size="40" color="amber-darken-3">
+              <v-avatar :class="{ 'party-avatar-motion': room.owner.avatar_effect_enabled }" size="40" color="amber-darken-3">
                 <v-img v-if="room.owner.avatar" :src="avatarUrl(room.owner.avatar)" cover />
                 <span v-else class="text-caption font-weight-bold">{{
                   initial(room.owner.nickname)
@@ -230,7 +230,7 @@
                 class="member"
                 :title="memberName(member)"
               >
-                <v-avatar size="38" color="blue-grey-darken-2">
+                <v-avatar :class="{ 'party-avatar-motion': member.account.avatar_effect_enabled }" size="38" color="blue-grey-darken-2">
                   <v-img
                     v-if="member.account.avatar"
                     :src="avatarUrl(member.account.avatar)"
@@ -623,7 +623,7 @@ interface PartyMember {
   id: number;
   position: string | null;
   note: string | null;
-  account: { id: number; nickname: string; avatar: string | null };
+  account: { id: number; nickname: string; avatar: string | null; avatar_effect_enabled: boolean };
   player: { nickname: string; tagname: string; tier: string | null } | null;
 }
 interface PartyWaiter {
@@ -631,7 +631,7 @@ interface PartyWaiter {
   order: number;
   position: string | null;
   note: string | null;
-  account: { id: number; nickname: string; avatar: string | null };
+  account: { id: number; nickname: string; avatar: string | null; avatar_effect_enabled: boolean };
   player: { nickname: string; tagname: string } | null;
 }
 interface PartyRoom {
@@ -645,7 +645,7 @@ interface PartyRoom {
   scheduled_at: string | null;
   created_at: string;
   discord_url: string | null;
-  owner: { id: number; nickname: string; avatar: string | null };
+  owner: { id: number; nickname: string; avatar: string | null; avatar_effect_enabled: boolean };
   members: PartyMember[];
   waitlist: PartyWaiter[];
   waitlist_count: number;
@@ -1436,6 +1436,29 @@ onMounted(loadRooms);
 }
 .owner-highlight .v-avatar {
   box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.13);
+}
+.party-avatar-motion {
+  border: 2px solid rgba(202, 163, 255, 0.85);
+  animation:
+    party-avatar-float 2.4s ease-in-out infinite,
+    party-avatar-glow 1.6s ease-in-out infinite alternate;
+  transform-origin: 50% 85%;
+  will-change: transform, filter, box-shadow;
+}
+.party-avatar-motion :deep(.v-img) {
+  animation: party-avatar-image 3.2s ease-in-out infinite;
+}
+@keyframes party-avatar-float {
+  0%, 100% { transform: translateY(0) rotate(-1deg) scale(1); }
+  50% { transform: translateY(-5px) rotate(2deg) scale(1.07); }
+}
+@keyframes party-avatar-glow {
+  from { box-shadow: 0 2px 8px rgba(116, 66, 190, 0.25); filter: brightness(1); }
+  to { box-shadow: 0 6px 18px rgba(185, 125, 255, 0.78); filter: brightness(1.16) saturate(1.18); }
+}
+@keyframes party-avatar-image {
+  0%, 100% { transform: scale(1.02); }
+  50% { transform: scale(1.13) translateX(-1px); }
 }
 .owner-copy {
   display: flex;

@@ -13,6 +13,9 @@ export interface Account {
   updated_at: string;
   avatar: string;
   shop_coin?: number;
+  auction_avatar_effect_expires_at?: string | null;
+  match_avatar_effect_expires_at?: string | null;
+  party_avatar_effect_expires_at?: string | null;
   systemrole: SystemRole;
   is_confirm: boolean;
   player: Player;

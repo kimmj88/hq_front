@@ -16,8 +16,12 @@
         <article v-for="product in overview.products" :key="product.id" :class="['product-card', product.code.toLowerCase()]">
           <div class="product-icon"><v-icon size="34">{{ productMeta(product.code).icon }}</v-icon></div>
           <div class="product-copy"><span>{{ productMeta(product.code).label }}</span><h3>{{ product.name }}</h3><p>{{ product.description }}</p></div>
-          <div class="product-footer"><strong>{{ product.price.toLocaleString() }} C</strong><v-btn color="primary" variant="flat" rounded="lg" :loading="workingId === product.id" :disabled="overview.balance < product.price" @click="purchase(product)">구매</v-btn></div>
-          <div class="product-owned">
+          <div class="product-footer"><strong>{{ product.price.toLocaleString() }} C</strong><v-btn color="primary" variant="flat" rounded="lg" :loading="workingId === product.id" :disabled="overview.balance < product.price" @click="purchase(product)">{{ isUnlocked(product) ? '1개월 연장' : '구매' }}</v-btn></div>
+          <div v-if="isPermanent(product)" class="product-owned">
+            <div><span>30-DAY EFFECT</span><strong>{{ isUnlocked(product) ? `${formatExpiry(expiryFor(product))}까지` : '미사용' }}</strong></div>
+            <v-chip :color="isUnlocked(product) ? 'success' : 'default'" variant="tonal" size="small">{{ isUnlocked(product) ? '이용 중' : '만료' }}</v-chip>
+          </div>
+          <div v-else class="product-owned">
             <div>
               <span>MY ITEM</span>
               <strong>보유 {{ inventoryFor(product).quantity }}개</strong>
@@ -75,14 +79,14 @@ import api from '@/@core/composable/useAxios';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import { useAccountStore } from '@/stores/useAccountStore';
 
-type ProductCode = 'NICKNAME_CHANGE' | 'LOL_ACCOUNT_CHANGE' | 'POSITION_CHANGE';
+type ProductCode = 'NICKNAME_CHANGE' | 'LOL_ACCOUNT_CHANGE' | 'POSITION_CHANGE' | 'AUCTION_AVATAR_EFFECT' | 'MATCH_AVATAR_EFFECT' | 'PARTY_AVATAR_EFFECT';
 interface Product { id: number; code: ProductCode; name: string; description: string; price: number }
 interface InventoryItem { id: number; quantity: number; product: Product }
 interface ShopTransaction { id: number; type: string; coin_change: number; description: string; created_at: string }
 interface PositionOption { name: string; code: string }
 const account = useAccountStore();
 const loading = ref(true); const workingId = ref(0); const purchasing = ref(false); const usingItem = ref(false);
-const overview = ref<{ balance: number; products: Product[]; inventory: InventoryItem[]; transactions: ShopTransaction[] }>({ balance: 0, products: [], inventory: [], transactions: [] });
+const overview = ref<{ balance: number; products: Product[]; inventory: InventoryItem[]; transactions: ShopTransaction[]; unlocks: { auctionAvatarEffect: boolean; matchAvatarEffect: boolean; partyAvatarEffect: boolean; auctionAvatarEffectExpiresAt: string | null; matchAvatarEffectExpiresAt: string | null; partyAvatarEffectExpiresAt: string | null } }>({ balance: 0, products: [], inventory: [], transactions: [], unlocks: { auctionAvatarEffect: false, matchAvatarEffect: false, partyAvatarEffect: false, auctionAvatarEffectExpiresAt: null, matchAvatarEffectExpiresAt: null, partyAvatarEffectExpiresAt: null } });
 const purchaseDialog = ref(false); const selectedProduct = ref<Product | null>(null); const useDialog = ref(false); const selectedItem = ref<InventoryItem | null>(null);
 const nickname = ref(''); const riotName = ref(''); const riotTag = ref(''); const positionCodes = ref<string[]>([]); const positions = ref<PositionOption[]>([]);
 const snackbar = ref({ show: false, message: '', color: 'success' });
@@ -92,8 +96,28 @@ const metas: Record<ProductCode, { icon: string; label: string }> = {
   NICKNAME_CHANGE: { icon: 'mdi-card-account-details-outline', label: 'PROFILE' },
   LOL_ACCOUNT_CHANGE: { icon: 'mdi-link-variant', label: 'RIOT ACCOUNT' },
   POSITION_CHANGE: { icon: 'mdi-map-marker-path', label: 'POSITION' },
+  AUCTION_AVATAR_EFFECT: { icon: 'mdi-gavel', label: 'AUCTION EFFECT' },
+  MATCH_AVATAR_EFFECT: { icon: 'mdi-sword-cross', label: 'MATCH EFFECT' },
+  PARTY_AVATAR_EFFECT: { icon: 'mdi-account-group', label: 'PARTY EFFECT' },
 };
 function productMeta(code: ProductCode) { return metas[code] ?? { icon: 'mdi-ticket', label: 'ITEM' }; }
+function isPermanent(product: Product) { return product.code === 'AUCTION_AVATAR_EFFECT' || product.code === 'MATCH_AVATAR_EFFECT' || product.code === 'PARTY_AVATAR_EFFECT'; }
+function isUnlocked(product: Product) {
+  if (product.code === 'AUCTION_AVATAR_EFFECT') return overview.value.unlocks.auctionAvatarEffect;
+  if (product.code === 'MATCH_AVATAR_EFFECT') return overview.value.unlocks.matchAvatarEffect;
+  if (product.code === 'PARTY_AVATAR_EFFECT') return overview.value.unlocks.partyAvatarEffect;
+  return false;
+}
+function expiryFor(product: Product) {
+  if (product.code === 'AUCTION_AVATAR_EFFECT') return overview.value.unlocks.auctionAvatarEffectExpiresAt;
+  if (product.code === 'MATCH_AVATAR_EFFECT') return overview.value.unlocks.matchAvatarEffectExpiresAt;
+  if (product.code === 'PARTY_AVATAR_EFFECT') return overview.value.unlocks.partyAvatarEffectExpiresAt;
+  return null;
+}
+function formatExpiry(value: string | null) {
+  if (!value) return '-';
+  return new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(value));
+}
 function inventoryFor(product: Product): InventoryItem {
   return overview.value.inventory.find((item) => item.product.id === product.id)
     ?? { id: 0, quantity: 0, product };

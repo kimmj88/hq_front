@@ -335,6 +335,7 @@
             positions: participant.player?.positions || [],
             cupCount: participant.player?.cupCount || 0,
             subCupCount: participant.player?.subCupCount || 0,
+            avatarEffectEnabled: participant.player?.avatarEffectEnabled || false,
             teamCaptainAccountId: participant.teamCaptainAccountId,
             winningBid: participant.winningBid,
             isUnsold: participant.isUnsold,

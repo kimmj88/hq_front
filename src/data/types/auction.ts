@@ -18,6 +18,7 @@ export interface AuctionParticipant {
     positions: string[];
     cupCount: number;
     subCupCount: number;
+    avatarEffectEnabled: boolean;
   } | null;
   teamCaptainAccountId: number | null;
   winningBid: number | null;

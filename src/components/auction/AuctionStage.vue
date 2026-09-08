@@ -52,7 +52,11 @@
                   @click="openFowProfile(currentPlayer)"
                   @keydown.enter="openFowProfile(currentPlayer)"
                 >
-                  <v-avatar size="96" :color="positionColor(currentPlayer.position)">
+                  <v-avatar
+                    :class="{ 'animated-avatar-demo': currentPlayer.avatarEffectEnabled }"
+                    size="96"
+                    :color="positionColor(currentPlayer.position)"
+                  >
                     <v-img
                       v-if="!blindActive && currentPlayer.avatar"
                       :src="avatarUrl(currentPlayer.avatar)"
@@ -648,6 +652,7 @@ interface AuctionPlayer {
   accountId?: number;
   id: number;
   avatar?: string | null;
+  avatarEffectEnabled?: boolean;
   nickname: string;
   tag: string;
   position: Position;
@@ -1379,6 +1384,50 @@ onBeforeUnmount(() => {
     linear-gradient(145deg, rgba(var(--tier-rgb), 0.2), rgba(var(--tier-rgb), 0.055) 72%),
     rgba(255, 255, 255, 0.025);
   box-shadow: inset 0 0 30px rgba(var(--tier-rgb), 0.08);
+}
+
+.animated-avatar-demo {
+  position: relative;
+  overflow: hidden;
+  border: 3px solid rgba(202, 163, 255, 0.82);
+  animation:
+    avatar-demo-float 2.4s ease-in-out infinite,
+    avatar-demo-glow 1.6s ease-in-out infinite alternate;
+  transform-origin: 50% 85%;
+  will-change: transform, filter, box-shadow;
+}
+
+.animated-avatar-demo :deep(.v-img) {
+  animation: avatar-demo-image 3.2s ease-in-out infinite;
+}
+
+@keyframes avatar-demo-float {
+  0%, 100% {
+    transform: translateY(0) rotate(-1deg) scale(1);
+  }
+  50% {
+    transform: translateY(-9px) rotate(2deg) scale(1.045);
+  }
+}
+
+@keyframes avatar-demo-glow {
+  from {
+    box-shadow: 0 4px 12px rgba(116, 66, 190, 0.28), 0 0 0 rgba(185, 125, 255, 0);
+    filter: brightness(1);
+  }
+  to {
+    box-shadow: 0 10px 24px rgba(116, 66, 190, 0.5), 0 0 25px rgba(185, 125, 255, 0.78);
+    filter: brightness(1.16) saturate(1.18);
+  }
+}
+
+@keyframes avatar-demo-image {
+  0%, 100% {
+    transform: scale(1.02) translateX(0);
+  }
+  50% {
+    transform: scale(1.12) translateX(-2px);
+  }
 }
 
 .winner-spotlight {
