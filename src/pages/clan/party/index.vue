@@ -169,7 +169,27 @@
                     />
                   </template>
                 </v-tooltip>
-                <span :class="['status', statusMeta(room.status).className]">
+                <button
+                  v-if="
+                    room.type === 'INHOUSE' &&
+                    room.status === 'FULL' &&
+                    (room.is_owner || canParty('CLAN-SET-PARTY-U'))
+                  "
+                  type="button"
+                  :class="['status', 'full', 'status-action', room.created_match_id && 'created']"
+                  :disabled="creatingMatchRoomId === room.id"
+                  @click="createOrOpenInhouseMatch(room)"
+                >
+                  <v-progress-circular
+                    v-if="creatingMatchRoomId === room.id"
+                    indeterminate
+                    size="15"
+                    width="2"
+                  />
+                  <v-icon v-else size="18">{{ room.created_match_id ? 'mdi-arrow-right-circle' : 'mdi-gamepad-variant' }}</v-icon>
+                  {{ room.created_match_id ? '내전 이동' : '내전 생성' }}
+                </button>
+                <span v-else :class="['status', statusMeta(room.status).className]">
                   <i />{{ statusMeta(room.status).label }}
                 </span>
               </div>
@@ -612,6 +632,7 @@ import api from '@/@core/composable/useAxios';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import { useAccountStore } from '@/stores/useAccountStore';
 import { can } from '@/stores/useClanPermissionStore';
+import { CLAN_PATH } from '@/router/clan/type';
 import topIcon from '@/assets/positions/top.svg';
 import jugIcon from '@/assets/positions/jug.svg';
 import midIcon from '@/assets/positions/mid.svg';
@@ -653,6 +674,7 @@ interface PartyRoom {
   is_joined: boolean;
   is_waiting: boolean;
   waitlist_order: number | null;
+  created_match_id: number | null;
 }
 interface HistoryResult {
   account: { id: number; nickname: string; avatar: string | null };
@@ -678,6 +700,7 @@ function canParty(code: string) {
 const rooms = ref<PartyRoom[]>([]);
 const loading = ref(false);
 const saving = ref(false);
+const creatingMatchRoomId = ref<number | null>(null);
 const selectedType = ref<'ALL' | 'DUO' | 'NORMAL_FLEX' | 'INHOUSE' | 'CLOSED'>('ALL');
 const createDialog = ref(false);
 const editingRoom = ref<PartyRoom | null>(null);
@@ -871,6 +894,30 @@ async function loadRooms() {
     notify(error?.response?.data?.message ?? '파티 목록을 불러오지 못했습니다.', 'error');
   } finally {
     loading.value = false;
+  }
+}
+
+async function createOrOpenInhouseMatch(room: PartyRoom) {
+  if (room.created_match_id) {
+    await router.push(CLAN_PATH.MATCH_VIEW(String(route.params.name), room.created_match_id));
+    return;
+  }
+
+  try {
+    creatingMatchRoomId.value = room.id;
+    const { data } = await api.post(`${getBaseUrl('DATA')}/party-room/create-inhouse-match`, {
+      room_id: room.id,
+    });
+    const matchId = Number(data?.datas?.id);
+    if (!matchId) throw new Error('생성된 내전 매치 번호가 없습니다.');
+
+    room.created_match_id = matchId;
+    notify('내전 매치를 만들었습니다. 초기 배치를 확인해주세요.');
+    await router.push(CLAN_PATH.MATCH_VIEW(String(route.params.name), matchId));
+  } catch (error: any) {
+    notify(error?.response?.data?.message ?? error?.message ?? '내전 매치를 만들지 못했습니다.', 'error');
+  } finally {
+    creatingMatchRoomId.value = null;
   }
 }
 
@@ -1411,6 +1458,32 @@ onMounted(loadRooms);
 }
 .status.closed i {
   box-shadow: none;
+}
+.status-action {
+  appearance: none;
+  color: #fff4dc !important;
+  border: 1px solid rgba(255, 184, 77, 0.72) !important;
+  background: linear-gradient(135deg, #f08a24 0%, #8b4de8 100%) !important;
+  box-shadow: 0 5px 18px rgba(139, 77, 232, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  font-family: inherit;
+  transition: box-shadow 0.18s ease, filter 0.18s ease, transform 0.18s ease;
+}
+.status-action:hover:not(:disabled) {
+  color: #fff !important;
+  filter: brightness(1.1);
+  box-shadow: 0 7px 23px rgba(139, 77, 232, 0.42), 0 0 14px rgba(240, 138, 36, 0.25);
+  transform: translateY(-1px);
+}
+.status-action.created {
+  color: #eafff3 !important;
+  border-color: rgba(67, 231, 143, 0.6) !important;
+  background: linear-gradient(135deg, #178d59 0%, #2465b5 100%) !important;
+  box-shadow: 0 5px 18px rgba(23, 141, 89, 0.28);
+}
+.status-action:disabled {
+  cursor: wait;
+  opacity: 0.7;
 }
 .party-card h2 {
   margin: 18px 0 7px;

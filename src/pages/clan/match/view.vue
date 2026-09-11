@@ -695,7 +695,7 @@ async function fetch() {
   });
 
   if (match.value?.type === 'POSITION') {
-    if (truthy(match.value?.is_confirm)) {
+    if (truthy(match.value?.is_confirm) || members.length >= 10) {
       team1.value = members.slice(0, 5);
       team2.value = members.slice(5, 10);
 
