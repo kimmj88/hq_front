@@ -2,6 +2,9 @@
   <v-container>
     <!-- 제목 영역 -->
     <v-card class="pa-4 mb-4">
+      <v-chip size="small" :color="noticeTypeMeta.color" variant="tonal" class="mb-3 font-weight-bold">
+        {{ noticeTypeMeta.label }}
+      </v-chip>
       <h2 class="text-h6 mb-2">{{ notice.title }}</h2>
       <div class="text-caption text-grey-darken-1">
         작성자: {{ notice.writer }} · 등록일: {{ formatDateTime(notice.createdAt) }} · 조회수:
@@ -83,7 +86,7 @@
 
 <script setup lang="ts">
 import { getBaseUrl } from '@/@core/composable/createUrl';
-import { ref, onMounted } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '@/@core/composable/useAxios';
 import { CLAN_PATH } from '@/router/clan/type';
@@ -102,6 +105,7 @@ interface NoticeDetail {
   viewCount: number;
   content: string;
   comments: Comment[];
+  noticeType: 'URGENT' | 'EVENT' | 'GENERAL' | 'PATCH_NOTE';
 }
 
 const route = useRoute();
@@ -115,6 +119,14 @@ const notice = ref<NoticeDetail>({
   viewCount: 0,
   content: '',
   comments: [],
+  noticeType: 'GENERAL',
+});
+
+const noticeTypeMeta = computed(() => {
+  if (notice.value.noticeType === 'URGENT') return { label: '긴급', color: 'error' };
+  if (notice.value.noticeType === 'EVENT') return { label: '이벤트', color: 'success' };
+  if (notice.value.noticeType === 'PATCH_NOTE') return { label: '패치노트', color: 'deep-purple' };
+  return { label: '일반', color: 'blue-grey' };
 });
 
 // 게시글 로딩 (샘플 데이터)
@@ -130,6 +142,7 @@ const loadNotice = async () => {
     viewCount: 0,
     content: data.datas.description,
     comments: data.datas.comments,
+    noticeType: data.datas.notice_type || 'GENERAL',
   };
 };
 

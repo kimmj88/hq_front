@@ -5,6 +5,7 @@ export interface Board {
   title: string;
   description: Text;
   type: string;
+  notice_type?: 'URGENT' | 'EVENT' | 'GENERAL' | 'PATCH_NOTE';
   account: Account;
   created_at: string;
   updated_at: string;

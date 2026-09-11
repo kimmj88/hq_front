@@ -13,6 +13,17 @@
     <v-card class="pa-6" elevation="1">
       <v-form ref="formRef" v-model="isValid" lazy-validation>
         <v-row dense>
+          <v-col cols="12" md="5">
+            <v-select
+              v-model="form.notice_type"
+              :items="noticeTypes"
+              item-title="label"
+              item-value="value"
+              label="공지 유형"
+              variant="outlined"
+              hide-details
+            />
+          </v-col>
           <!-- 상단 고정 -->
           <v-col cols="12" md="3">
             <v-switch v-model="form.is_pin" label="상단 고정" color="success" inset hide-details />
@@ -101,7 +112,15 @@ const form = ref<Board>({
   // Board 타입에 isPinned 없으면 타입에 추가하거나 any로
   // @ts-ignore
   is_pin: false,
+  notice_type: 'GENERAL',
 });
+
+const noticeTypes = [
+  { label: '긴급', value: 'URGENT' },
+  { label: '이벤트', value: 'EVENT' },
+  { label: '일반', value: 'GENERAL' },
+  { label: '패치노트', value: 'PATCH_NOTE' },
+];
 
 const rules = {
   required: (v: string) => (!!v && v.trim().length > 0) || '필수 입력 항목입니다.',
@@ -117,6 +136,7 @@ onMounted(async () => {
     form.value.title = data.datas.title;
     form.value.description = data.datas.description;
     form.value.is_pin = data.datas.is_pin;
+    form.value.notice_type = data.datas.notice_type || 'GENERAL';
     // const data = res.data as Board;
 
     // form.value = {
@@ -188,6 +208,7 @@ const onSubmit = async () => {
         description: form.value.description,
         account_id: account.id,
         type: form.value.type,
+        notice_type: form.value.notice_type,
         // @ts-ignore
         is_pin: form.value.is_pin,
       });
@@ -197,6 +218,7 @@ const onSubmit = async () => {
         description: form.value.description,
         account_id: account.id,
         type: form.value.type,
+        notice_type: form.value.notice_type,
         // @ts-ignore
         is_pin: form.value.is_pin,
         clan: account.clan,
