@@ -32,6 +32,17 @@
               counter="300"
             />
 
+            <v-text-field
+              v-model="discordUrl"
+              :disabled="!isClanMaster"
+              label="클랜 디스코드 초대 링크"
+              placeholder="https://discord.gg/..."
+              prepend-inner-icon="mdi-discord"
+              variant="outlined"
+              density="compact"
+              clearable
+            />
+
             <div class="text-caption text-medium-emphasis mb-2">클랜 배너 이미지</div>
 
             <v-file-input
@@ -185,6 +196,7 @@ const isClanMaster = computed(() => {
 });
 
 const description = ref<string>(account.clan.description ?? '');
+const discordUrl = ref<string>(account.clan.discord_url ?? '');
 const bannerFile = ref<File | null>(null);
 const previewUrl = ref<string | null>(account.clan?.banner_url ? assetUrl(account.clan.banner_url) : null);
 const bannerError = ref('');
@@ -293,7 +305,27 @@ async function revokeInvite(id: number) {
   await loadInvites();
 }
 
-onMounted(loadInvites);
+async function loadClanSettings() {
+  if (!account.clan?.id) return;
+  try {
+    const { data } = await api.get(`${getBaseUrl('DATA')}/clan/find`, {
+      params: { id: account.clan.id },
+    });
+    const clan = data?.datas;
+    if (!clan) return;
+
+    description.value = clan.description ?? '';
+    discordUrl.value = clan.discord_url ?? '';
+    account.clan.description = clan.description ?? '';
+    account.clan.discord_url = clan.discord_url ?? null;
+    if (clan.banner_url) account.clan.banner_url = clan.banner_url;
+    previewUrl.value = clan.banner_url ? assetUrl(clan.banner_url) : null;
+  } catch (error) {
+    console.error('클랜 설정을 불러오지 못했습니다.', error);
+  }
+}
+
+onMounted(() => Promise.all([loadInvites(), loadClanSettings()]));
 
 /** 파일 선택 시 미리보기 */
 watch(bannerFile, (file) => {
@@ -329,6 +361,7 @@ function validateBanner(value: File | File[] | null) {
 /** 되돌리기 */
 function resetForm() {
   description.value = account.clan.description ?? '';
+  discordUrl.value = account.clan.discord_url ?? '';
   bannerFile.value = null;
   bannerError.value = '';
   previewUrl.value = account.clan?.banner_url ? assetUrl(account.clan.banner_url) : null;
@@ -343,6 +376,7 @@ async function onSubmit() {
     const formData = new FormData();
     formData.append('id', String(account.clan.id));
     formData.append('description', description.value);
+    formData.append('discord_url', discordUrl.value.trim());
 
     if (bannerFile.value) {
       formData.append('file', bannerFile.value);
@@ -356,7 +390,12 @@ async function onSubmit() {
 
     // 성공 시 로컬 상태 반영
     account.clan.description = description.value;
+    account.clan.discord_url = discordUrl.value.trim() || null;
     const savedClan = data?.rows;
+    if (savedClan) {
+      discordUrl.value = savedClan.discord_url ?? '';
+      account.clan.discord_url = savedClan.discord_url ?? null;
+    }
     if (savedClan?.banner_url) {
       account.clan.banner_url = savedClan.banner_url;
       previewUrl.value = assetUrl(savedClan.banner_url);

@@ -10,6 +10,7 @@ declare module 'vue' {
     AccountPlayerMemberDialog: typeof import('./src/components/dialogs/AccountPlayerMemberDialog.vue')['default']
     AuctionStage: typeof import('./src/components/auction/AuctionStage.vue')['default']
     CupMemberDialog: typeof import('./src/components/dialogs/CupMemberDialog.vue')['default']
+    DiscordIcon: typeof import('./src/components/icons/DiscordIcon.vue')['default']
     Header: typeof import('./src/components/header/Header.vue')['default']
     HeaderNav: typeof import('./src/components/header/HeaderNav.vue')['default']
     PlayerMemberDialog: typeof import('./src/components/dialogs/PlayerMemberDialog.vue')['default']

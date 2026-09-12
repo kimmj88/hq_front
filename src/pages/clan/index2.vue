@@ -7,6 +7,18 @@
         <p>클랜의 내전 기록과 멤버 활동을 한눈에 확인하세요.</p>
       </div>
       <div class="hero-actions">
+        <v-btn
+          v-if="account.clan.discord_url"
+          :href="account.clan.discord_url"
+          target="_blank"
+          rel="noopener noreferrer"
+          color="indigo-lighten-1"
+          variant="tonal"
+          rounded="lg"
+          prepend-icon="mdi-discord"
+        >
+          디스코드
+        </v-btn>
         <v-chip color="primary" variant="tonal" prepend-icon="mdi-shield-account-outline">
           {{ account.clanrole.name }}
         </v-chip>

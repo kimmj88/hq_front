@@ -458,9 +458,10 @@
                 variant="tonal"
                 rounded="lg"
                 prepend-icon="mdi-timer-sand"
+                :disabled="hasOtherWaitlistOfSameType(room)"
                 @click="openWaitlist(room)"
               >
-                대기하기
+                {{ hasOtherWaitlistOfSameType(room) ? '동일 타입 대기 중' : '대기하기' }}
               </v-btn>
               <v-btn
                 v-if="room.status !== 'CLOSED' && room.is_waiting"
@@ -1075,11 +1076,25 @@ function openJoin(room: PartyRoom) {
   joinDialog.value = true;
 }
 function openWaitlist(room: PartyRoom) {
+  if (hasOtherWaitlistOfSameType(room)) {
+    notify(`이미 다른 ${typeMeta(room.type).label} 파티에서 대기 중입니다.`, 'warning');
+    return;
+  }
   joiningRoom.value = room;
   joinPosition.value = null;
   joinNote.value = '';
   joinMode.value = 'WAITLIST';
   joinDialog.value = true;
+}
+
+function hasOtherWaitlistOfSameType(room: PartyRoom) {
+  return rooms.value.some(
+    (item) =>
+      item.id !== room.id &&
+      item.type === room.type &&
+      item.status !== 'CLOSED' &&
+      item.is_waiting
+  );
 }
 async function joinRoom() {
   if (!joiningRoom.value) return;
