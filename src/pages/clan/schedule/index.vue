@@ -170,4 +170,32 @@ watch(currentMonth,loadEvents);onMounted(loadEvents);
 .event-pill{position:relative;z-index:1}
 .event-pill.joins-previous{margin-left:-11px;padding-left:11px;border-top-left-radius:0;border-bottom-left-radius:0}
 .event-pill.joins-next{margin-right:-11px;padding-right:11px;border-top-right-radius:0;border-bottom-right-radius:0}
+
+/* 넓은 화면에서는 달력의 정보 밀도를 낮추고 각 일정을 크게 표시합니다. */
+.schedule-page{width:100%;max-width:1800px;margin:0 auto;padding:32px 36px!important}
+.calendar-layout{grid-template-columns:minmax(0,1fr) 390px;gap:22px}
+.calendar-day{min-height:150px;padding:13px}
+.day-number{width:31px;height:31px;font-size:14px}
+.day-events{gap:6px;margin-top:9px}
+.event-pill{min-height:25px;padding:5px 8px;font-size:12px;line-height:15px}
+.event-pill.joins-previous{margin-left:-14px;padding-left:14px}
+.event-pill.joins-next{margin-right:-14px;padding-right:14px}
+.agenda-panel{padding:22px}
+.agenda-card{padding:16px}
+.agenda-card>i{height:54px}
+.agenda-content>span,.agenda-content>small{font-size:12px}
+.agenda-content>strong{font-size:16px}
+
+@media(max-width:1000px){
+  .schedule-page{padding:22px!important}
+  .calendar-layout{grid-template-columns:1fr}
+  .calendar-day{min-height:125px}
+}
+
+@media(max-width:650px){
+  .schedule-page{padding:16px!important}
+  .weekdays,.calendar-grid{min-width:780px}
+  .calendar-day{min-height:115px}
+  .event-pill{max-width:none}
+}
 </style>
