@@ -181,10 +181,11 @@ watch(currentMonth,loadEvents);onMounted(loadEvents);
 .event-pill.joins-previous{margin-left:-14px;padding-left:14px}
 .event-pill.joins-next{margin-right:-14px;padding-right:14px}
 .agenda-panel{padding:22px}
-.agenda-card{padding:16px}
-.agenda-card>i{height:54px}
+.agenda-card{align-items:flex-start;padding:16px}
+.agenda-card>i{flex:none;height:54px}
+.agenda-card>.v-icon{flex:none;margin-top:15px}
 .agenda-content>span,.agenda-content>small{font-size:12px}
-.agenda-content>strong{font-size:16px}
+.agenda-content>strong{overflow:visible;font-size:16px;line-height:1.45;white-space:normal;word-break:keep-all;overflow-wrap:anywhere}
 
 @media(max-width:1000px){
   .schedule-page{padding:22px!important}
