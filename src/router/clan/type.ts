@@ -8,6 +8,7 @@ export const CLAN_PATH = {
   ACCOUNT_VIEW: (name: string | number = ':name', id: string | number = ':id') =>
     `/clan/${name}/account/view/${id}`,
   PARTY: (name: string | number = ':name') => `/clan/${name}/party`,
+  SCHEDULE: (name: string | number = ':name') => `/clan/${name}/schedule`,
   PERMISSION: (name: string | number = ':name') => `/clan/${name}/permission`,
   NOTICE: (name: string | number = ':name') => `/clan/${name}/notice`,
   NOTICE_ADD: (name: string | number = ':name') => `/clan/${name}/notice/add`,

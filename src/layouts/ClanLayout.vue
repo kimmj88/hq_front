@@ -50,12 +50,13 @@
             @click="section = 'home'"
           />
           <v-list-item
-            :active="section === 'explore'"
-            prepend-icon="mdi-telescope"
-            title="클랜 엿보기"
-            :to="CLAN_PATH.BASE"
-            @click="section = 'explore'"
+            :active="section === 'schedule'"
+            prepend-icon="mdi-calendar-month-outline"
+            title="클랜 일정"
+            :to="CLAN_PATH.SCHEDULE(account.clan.name)"
+            @click="section = 'schedule'"
           />
+
           <v-list-item
             :active="section === 'notice'"
             prepend-icon="mdi-bullhorn-outline"
@@ -127,12 +128,10 @@
           />
 
           <v-list-item
-            v-if="account.clanrole.name == 'master'"
-            :active="section === 'setting'"
-            prepend-icon="mdi-cog-outline"
-            title="설정"
-            :to="CLAN_PATH.SETTING(account.clan.name)"
-            @click="section = 'setting'"
+            class="support-link"
+            prepend-icon="mdi-heart-outline"
+            title="서비스 후원"
+            @click="openSupport"
           />
         </v-list>
 
@@ -142,10 +141,12 @@
 
         <v-list nav density="compact">
           <v-list-item
-            class="support-link"
-            prepend-icon="mdi-heart-outline"
-            title="서비스 후원"
-            @click="openSupport"
+            v-if="account.clanrole.name == 'master'"
+            :active="section === 'setting'"
+            prepend-icon="mdi-cog-outline"
+            title="설정"
+            :to="CLAN_PATH.SETTING(account.clan.name)"
+            @click="section = 'setting'"
           />
           <v-list-item
             prepend-icon="mdi-account-search-outline"

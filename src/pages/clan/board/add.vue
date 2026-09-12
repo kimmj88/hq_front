@@ -40,6 +40,29 @@
           :rules="[rules.required]"
         />
 
+        <v-card class="calendar-link-card mt-2 mb-5" variant="tonal" rounded="lg">
+          <v-card-text>
+            <div class="d-flex align-center justify-space-between mb-3">
+              <div>
+                <strong class="d-block">클랜 달력에도 등록</strong>
+                <small class="text-medium-emphasis">공지와 연결된 일정을 자동으로 생성합니다.</small>
+              </div>
+              <v-switch v-model="form.calendar_enabled" color="primary" inset hide-details />
+            </div>
+            <template v-if="form.calendar_enabled">
+              <v-switch v-model="form.calendar_is_all_day" label="종일 일정" color="primary" inset hide-details class="mb-3" />
+              <v-row dense>
+                <v-col cols="12" sm="6">
+                  <v-text-field v-model="form.calendar_starts_at" :type="form.calendar_is_all_day ? 'date' : 'datetime-local'" label="일정 시작" variant="outlined" :rules="[rules.required]" />
+                </v-col>
+                <v-col cols="12" sm="6">
+                  <v-text-field v-model="form.calendar_ends_at" :type="form.calendar_is_all_day ? 'date' : 'datetime-local'" label="일정 종료 (선택)" variant="outlined" clearable />
+                </v-col>
+              </v-row>
+            </template>
+          </v-card-text>
+        </v-card>
+
         <!-- 🔥 Toast UI Editor 영역 -->
         <div class="mt-4">
           <label class="text-body-2 mb-1 d-block">내용</label>
@@ -113,7 +136,21 @@ const form = ref<Board>({
   // @ts-ignore
   is_pin: false,
   notice_type: 'GENERAL',
+  calendar_enabled: true,
+  calendar_starts_at: toInput(new Date()),
+  calendar_ends_at: '',
+  calendar_is_all_day: false,
 });
+
+function toInput(date: Date, allDay = false) {
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString();
+  return allDay ? local.slice(0, 10) : local.slice(0, 16);
+}
+
+function calendarIso(value?: string, allDay = false) {
+  if (!value) return undefined;
+  return new Date(allDay ? `${value}T00:00:00` : value).toISOString();
+}
 
 const noticeTypes = [
   { label: '긴급', value: 'URGENT' },
@@ -137,6 +174,15 @@ onMounted(async () => {
     form.value.description = data.datas.description;
     form.value.is_pin = data.datas.is_pin;
     form.value.notice_type = data.datas.notice_type || 'GENERAL';
+    const schedule = data.datas.calendar_schedule;
+    form.value.calendar_enabled = !!schedule;
+    if (schedule) {
+      form.value.calendar_is_all_day = !!schedule.is_all_day;
+      form.value.calendar_starts_at = toInput(new Date(schedule.starts_at), !!schedule.is_all_day);
+      form.value.calendar_ends_at = schedule.ends_at
+        ? toInput(new Date(schedule.ends_at), !!schedule.is_all_day)
+        : '';
+    }
     // const data = res.data as Board;
 
     // form.value = {
@@ -209,6 +255,10 @@ const onSubmit = async () => {
         account_id: account.id,
         type: form.value.type,
         notice_type: form.value.notice_type,
+        calendar_enabled: form.value.calendar_enabled,
+        calendar_starts_at: calendarIso(form.value.calendar_starts_at, form.value.calendar_is_all_day),
+        calendar_ends_at: calendarIso(form.value.calendar_ends_at, form.value.calendar_is_all_day),
+        calendar_is_all_day: form.value.calendar_is_all_day,
         // @ts-ignore
         is_pin: form.value.is_pin,
       });
@@ -219,6 +269,10 @@ const onSubmit = async () => {
         account_id: account.id,
         type: form.value.type,
         notice_type: form.value.notice_type,
+        calendar_enabled: form.value.calendar_enabled,
+        calendar_starts_at: calendarIso(form.value.calendar_starts_at, form.value.calendar_is_all_day),
+        calendar_ends_at: calendarIso(form.value.calendar_ends_at, form.value.calendar_is_all_day),
+        calendar_is_all_day: form.value.calendar_is_all_day,
         // @ts-ignore
         is_pin: form.value.is_pin,
         clan: account.clan,
@@ -234,3 +288,7 @@ const onSubmit = async () => {
   }
 };
 </script>
+
+<style scoped>
+.calendar-link-card { border: 1px solid rgba(var(--v-theme-primary), .18); }
+</style>
