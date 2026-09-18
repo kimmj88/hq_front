@@ -355,30 +355,41 @@
                 <strong>{{ room.waitlist_count }}명</strong>
               </div>
               <div class="waitlist-people">
-                <v-chip
+                <div
                   v-for="waiter in room.waitlist"
                   :key="waiter.id"
-                  size="small"
-                  :color="waiter.account.id === account.id ? 'warning' : 'default'"
-                  variant="tonal"
+                  class="waitlist-person"
+                  :class="{ 'waitlist-person-self': waiter.account.id === account.id }"
                 >
-                  {{ waiter.order }}. {{ waitlistName(waiter) }}
-                  <v-tooltip v-if="waiter.note" :text="waiter.note" location="top">
-                    <template #activator="{ props }">
-                      <v-icon v-bind="props" class="ml-1" size="14"
-                        >mdi-message-text-outline</v-icon
-                      >
-                    </template>
-                  </v-tooltip>
+                  <div class="waitlist-person-copy">
+                    <div class="waitlist-person-name">
+                      <strong>{{ waiter.order }}. {{ waitlistName(waiter) }}</strong>
+                      <span class="waitlist-position" :title="positionLabel(waiter.position)">
+                        <img
+                          v-if="positionIcon(waiter.position)"
+                          :src="positionIcon(waiter.position)!"
+                          :alt="positionLabel(waiter.position)"
+                          width="18"
+                          height="18"
+                        />
+                        <v-icon v-else size="18" role="img" aria-label="포지션 무관">mdi-all-inclusive</v-icon>
+                      </span>
+                    </div>
+                    <div v-if="waiter.note" class="waitlist-person-note">
+                      <v-icon size="14">mdi-message-text-outline</v-icon>
+                      <span>{{ waiter.note }}</span>
+                    </div>
+                  </div>
                   <v-btn
                     v-if="room.status !== 'CLOSED' && waiter.account.id === account.id"
                     class="ml-1"
                     icon="mdi-pencil-outline"
                     size="x-small"
                     variant="text"
+                    aria-label="내 참여 정보 수정"
                     @click.stop="openNoteEdit(room, waiter.note, waiter.position)"
                   />
-                </v-chip>
+                </div>
               </div>
             </div>
 
@@ -1666,10 +1677,44 @@ onMounted(loadRooms);
   font-weight: 850;
 }
 .waitlist-people {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: 6px;
 }
+.waitlist-person {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(var(--v-theme-on-surface), 0.04);
+}
+.waitlist-person-self {
+  background: rgba(var(--v-theme-warning), 0.12);
+  box-shadow: inset 3px 0 rgb(var(--v-theme-warning));
+}
+.waitlist-person-copy { flex: 1; min-width: 0; }
+.waitlist-person-name {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.waitlist-person-name > span { color: rgba(var(--v-theme-on-surface), 0.65); }
+.waitlist-position { display: inline-flex; align-items: center; flex-shrink: 0; }
+.waitlist-position img { display: block; object-fit: contain; }
+.waitlist-person-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.waitlist-person-note .v-icon { flex-shrink: 0; margin-top: 3px; }
 .member,
 .empty-member {
   display: flex;
