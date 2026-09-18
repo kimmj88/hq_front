@@ -286,7 +286,7 @@
                 </div>
                 <v-tooltip
                   v-if="room.status !== 'CLOSED' && member.account.id === account.id"
-                  text="내 메모 수정"
+                  text="내 참여 정보 수정"
                 >
                   <template #activator="{ props }">
                     <v-btn
@@ -295,7 +295,7 @@
                       size="x-small"
                       variant="text"
                       color="primary"
-                      @click="openNoteEdit(room, member.note)"
+                      @click="openNoteEdit(room, member.note, member.position)"
                     />
                   </template>
                 </v-tooltip>
@@ -376,7 +376,7 @@
                     icon="mdi-pencil-outline"
                     size="x-small"
                     variant="text"
-                    @click.stop="openNoteEdit(room, waiter.note)"
+                    @click.stop="openNoteEdit(room, waiter.note, waiter.position)"
                   />
                 </v-chip>
               </div>
@@ -599,9 +599,20 @@
 
     <v-dialog v-model="noteDialog" max-width="430">
       <v-card rounded="xl">
-        <v-card-title class="pa-6 pb-2 text-h6 font-weight-bold">내 메모 수정</v-card-title>
+        <v-card-title class="pa-6 pb-2 text-h6 font-weight-bold">내 참여 정보 수정</v-card-title>
         <v-card-text class="pa-6 pt-3">
           <p class="text-body-2 text-medium-emphasis mb-4">{{ noteRoom?.title }}</p>
+          <v-select
+            v-model="editingPosition"
+            :items="positions"
+            item-title="label"
+            item-value="value"
+            label="포지션"
+            variant="outlined"
+            clearable
+            hide-details="auto"
+            class="mb-4"
+          />
           <v-textarea
             v-model="editingNote"
             label="메모"
@@ -713,6 +724,7 @@ const joinPosition = ref<string | null>(null);
 const joinNote = ref('');
 const joinMode = ref<'JOIN' | 'WAITLIST'>('JOIN');
 const editingNote = ref('');
+const editingPosition = ref<string | null>(null);
 const snackbar = ref({ show: false, message: '', color: 'success' });
 const historyKeyword = ref('');
 const historyLoading = ref(false);
@@ -748,7 +760,7 @@ const filteredRooms = computed(() =>
     }
     if (selectedType.value === 'INHOUSE') return room.type === 'INHOUSE';
     return true;
-  })
+  }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime() || b.id - a.id)
 );
 const groupedRooms = computed(() =>
   (['DUO_RANK', 'INHOUSE', 'FLEX_RANK', 'NORMAL'] as RoomType[])
@@ -899,11 +911,7 @@ async function loadRooms() {
 }
 
 async function createOrOpenInhouseMatch(room: PartyRoom) {
-  if (room.created_match_id) {
-    await router.push(CLAN_PATH.MATCH_VIEW(String(route.params.name), room.created_match_id));
-    return;
-  }
-
+  const alreadyCreated = !!room.created_match_id;
   try {
     creatingMatchRoomId.value = room.id;
     const { data } = await api.post(`${getBaseUrl('DATA')}/party-room/create-inhouse-match`, {
@@ -913,10 +921,10 @@ async function createOrOpenInhouseMatch(room: PartyRoom) {
     if (!matchId) throw new Error('생성된 내전 매치 번호가 없습니다.');
 
     room.created_match_id = matchId;
-    notify('내전 매치를 만들었습니다. 초기 배치를 확인해주세요.');
+    if (!alreadyCreated) notify('내전 매치를 만들었습니다. 초기 배치를 확인해주세요.');
     await router.push(CLAN_PATH.MATCH_VIEW(String(route.params.name), matchId));
   } catch (error: any) {
-    notify(error?.response?.data?.message ?? error?.message ?? '내전 매치를 만들지 못했습니다.', 'error');
+    notify(error?.response?.data?.message ?? error?.message ?? '내전 매치를 준비하지 못했습니다.', 'error');
   } finally {
     creatingMatchRoomId.value = null;
   }
@@ -1121,9 +1129,10 @@ async function joinRoom() {
     saving.value = false;
   }
 }
-function openNoteEdit(room: PartyRoom, note: string | null) {
+function openNoteEdit(room: PartyRoom, note: string | null, position: string | null) {
   noteRoom.value = room;
   editingNote.value = note ?? '';
+  editingPosition.value = position;
   noteDialog.value = true;
 }
 async function saveMyNote() {
@@ -1133,12 +1142,13 @@ async function saveMyNote() {
     await api.post(`${getBaseUrl('DATA')}/party-room/member/note`, {
       room_id: noteRoom.value.id,
       note: editingNote.value.trim(),
+      position: editingPosition.value,
     });
     noteDialog.value = false;
     await loadRooms();
-    notify(editingNote.value.trim() ? '메모를 수정했습니다.' : '메모를 삭제했습니다.');
+    notify('참여 정보를 수정했습니다.');
   } catch (error: any) {
-    notify(error?.response?.data?.message ?? '메모를 수정하지 못했습니다.', 'error');
+    notify(error?.response?.data?.message ?? '참여 정보를 수정하지 못했습니다.', 'error');
   } finally {
     saving.value = false;
   }
