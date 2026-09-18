@@ -59,6 +59,7 @@ const menuItems = computed(() => {
       icon: 'mdi-account-supervisor-circle',
       to: '/config/account',
     });
+    items.push({ title: '시즌 · 휘장', icon: 'mdi-shield-star-outline', to: '/config/badge' });
   }
 
   if (can('TIER', 'SYS-SET-TIER-R')) {

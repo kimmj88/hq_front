@@ -78,7 +78,7 @@
     <v-card class="profile-tabs mt-4" rounded="xl" elevation="0">
       <v-tabs v-model="profileTab" color="primary" grow show-arrows>
         <v-tab value="game" prepend-icon="mdi-gamepad-variant-outline">게임 프로필</v-tab>
-        <v-tab value="awards" prepend-icon="mdi-trophy-outline">우승 기록</v-tab>
+        <v-tab value="awards" prepend-icon="mdi-trophy-outline">수상 기록</v-tab>
         <v-tab value="activity" prepend-icon="mdi-history">활동 기록</v-tab>
         <v-tab v-if="!props.profileOnly" value="settings" prepend-icon="mdi-cog-outline">계정 설정</v-tab>
       </v-tabs>
@@ -284,6 +284,7 @@
     </v-row>
 
     <v-row v-if="profileTab === 'awards'" class="mt-4" dense>
+      <v-col cols="12"><AccountBadges :account-id="Number(props.id)" /></v-col>
       <v-col cols="12" md="6">
         <v-card class="award-card award-card--main pa-6" rounded="xl" elevation="2">
           <v-icon size="42" color="amber">mdi-trophy</v-icon>
@@ -562,6 +563,7 @@ import { can as canClan } from '@/stores/useClanPermissionStore';
 import type { SystemRole } from '@/data/types/systemrole';
 import type { Player } from '@/data/types/player';
 import { useAccountStore } from '@/stores/useAccountStore';
+import AccountBadges from '@/components/badges/AccountBadges.vue';
 import AccountPlayerMemberDialog from '@/components/dialogs/AccountPlayerMemberDialog.vue';
 import type { Position } from '@/data/types/position';
 import type { ClanRole } from '@/data/types/clanrole';

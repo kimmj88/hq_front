@@ -21,6 +21,7 @@ import Account from '@/pages/config/account/index.vue';
 import AccountView from '@/pages/config/account/view.vue';
 
 import Tier from '@/pages/config/tier/index.vue';
+import BadgeManagement from '@/pages/config/badge/index.vue';
 import Profile from '@/pages/config/profile/index.vue';
 
 //Config Permission System
@@ -170,6 +171,7 @@ const router = createRouter({
           props: true,
         },
         { path: CONFIG_TIER_PATH.BASE, component: Tier },
+        { path: '/config/badge', component: BadgeManagement },
         { path: CONFIG_PROFILE_PATH.BASE, component: Profile },
         { path: CONFIG_PERMISSION_SYSTEM_PATH.BASE, component: SystemPermission },
         { path: CONFIG_PERMISSION_CLAN_PATH.BASE, component: ClanPermission },

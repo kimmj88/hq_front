@@ -7,8 +7,11 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AccountBadges: typeof import('./src/components/badges/AccountBadges.vue')['default']
     AccountPlayerMemberDialog: typeof import('./src/components/dialogs/AccountPlayerMemberDialog.vue')['default']
     AuctionStage: typeof import('./src/components/auction/AuctionStage.vue')['default']
+    BadgeFrame: typeof import('./src/components/badges/BadgeFrame.vue')['default']
+    BadgePreview: typeof import('./src/components/badges/BadgePreview.vue')['default']
     CupMemberDialog: typeof import('./src/components/dialogs/CupMemberDialog.vue')['default']
     DiscordIcon: typeof import('./src/components/icons/DiscordIcon.vue')['default']
     Header: typeof import('./src/components/header/Header.vue')['default']

@@ -1,9 +1,11 @@
+import type { EquippedBadge } from './badge';
 import type { Position } from './position';
 import type { Tier } from './tier';
 
 export interface Player {
   id: number;
   avatar?: string | null;
+  equipped_badge?: EquippedBadge | null;
   match_avatar_effect_enabled?: boolean;
   nickname: string;
   tagname: string;

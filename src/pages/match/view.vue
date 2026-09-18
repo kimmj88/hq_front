@@ -152,6 +152,12 @@
               </div>
             </td>
             <td>
+              <div
+                :class="{ 'player-badge-card': !!team1[i - 1]?.player?.equipped_badge }"
+                :style="playerBadgeStyle(team1[i - 1]?.player)"
+                :title="team1[i - 1]?.player?.equipped_badge?.name"
+              >
+                <BadgeFrame v-if="team1[i - 1]?.player?.equipped_badge" :badge="team1[i - 1].player.equipped_badge!" />
               <v-btn
                 color="indigo"
                 small
@@ -178,6 +184,7 @@
                 :icon="['far', 'star']"
                 class="star-full"
               />
+              </div>
             </td>
             <td>{{ team1[i - 1]?.player.point }}</td>
             <td>{{ team1[i - 1]?.player.tier.point }}</td>
@@ -204,6 +211,12 @@
             <td>{{ team2[i - 1]?.player?.tier.point }}</td>
             <td>{{ team2[i - 1]?.player?.point }}</td>
             <td>
+              <div
+                :class="{ 'player-badge-card': !!team2[i - 1]?.player?.equipped_badge }"
+                :style="playerBadgeStyle(team2[i - 1]?.player)"
+                :title="team2[i - 1]?.player?.equipped_badge?.name"
+              >
+                <BadgeFrame v-if="team2[i - 1]?.player?.equipped_badge" :badge="team2[i - 1].player.equipped_badge!" />
               <v-btn
                 color="indigo"
                 small
@@ -230,6 +243,7 @@
                 :icon="['far', 'star']"
                 class="star-full"
               />
+              </div>
             </td>
 
             <td v-if="match?.type === 'POSITION'">
@@ -330,8 +344,16 @@ import { getBaseUrl } from '@/@core/composable/createUrl';
 import { computed, onMounted, ref } from 'vue';
 import api from '@/@core/composable/useAxios';
 import { useRoute } from 'vue-router';
+import BadgeFrame from '@/components/badges/BadgeFrame.vue';
+import type { Player } from '@/data/types/player';
 import type { Match, MatchMember } from '@/data/types/match';
 const route = useRoute();
+
+function playerBadgeStyle(player?: Player) {
+  if (!player?.equipped_badge) return undefined;
+  const width = Math.max(1, Math.min(48, Number(player.equipped_badge.frame_width) || 24));
+  return { padding: `${width + 4}px` };
+}
 
 const team1 = ref<MatchMember[]>([]);
 const team2 = ref<MatchMember[]>([]);
@@ -707,6 +729,15 @@ onMounted(fetch);
 </script>
 
 <style scoped>
+.player-badge-card {
+  position: relative;
+  isolation: isolate;
+  min-width: 170px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #5b6472, #434c5a);
+  color: #f8fafc;
+}
+
 .text-center {
   text-align: center;
 }

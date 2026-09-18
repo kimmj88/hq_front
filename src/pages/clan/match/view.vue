@@ -100,8 +100,11 @@
         <div
           class="player-card player-card-blue player-card-left"
           :class="getPlayerButtonClass(team1[i - 1]?.player)"
+          :style="playerFrameStyle(team1[i - 1]?.player)"
+          :title="team1[i - 1]?.player?.equipped_badge ? `${team1[i - 1].player.equipped_badge?.season_name} · ${team1[i - 1].player.equipped_badge?.name}` : undefined"
           @click="openPlayerPicker('t1', i - 1)"
         >
+          <BadgeFrame v-if="team1[i - 1]?.player?.equipped_badge" :badge="team1[i - 1].player.equipped_badge!" />
           <div class="player-top">
             <span class="team-badge">1팀</span>
             <span
@@ -193,8 +196,11 @@
         <div
           class="player-card player-card-red"
           :class="getPlayerButtonClass(team2[i - 1]?.player)"
+          :style="playerFrameStyle(team2[i - 1]?.player)"
+          :title="team2[i - 1]?.player?.equipped_badge ? `${team2[i - 1].player.equipped_badge?.season_name} · ${team2[i - 1].player.equipped_badge?.name}` : undefined"
           @click="openPlayerPicker('t2', i - 1)"
         >
+          <BadgeFrame v-if="team2[i - 1]?.player?.equipped_badge" :badge="team2[i - 1].player.equipped_badge!" />
           <div class="player-top">
             <span
               class="tier-text"
@@ -401,6 +407,8 @@ import { getBaseUrl } from '@/@core/composable/createUrl';
 import { computed, onMounted, ref } from 'vue';
 import api from '@/@core/composable/useAxios';
 import { useRoute } from 'vue-router';
+import BadgeFrame from '@/components/badges/BadgeFrame.vue';
+import type { Player } from '@/data/types/player';
 import type { Match, MatchMember } from '@/data/types/match';
 import { useAccountStore } from '@/stores/useAccountStore';
 
@@ -443,14 +451,23 @@ const picker = ref<{
 let POSITIONS: any[] = [];
 const ROW_POSITIONS = ['TOP', 'JUG', 'MID', 'ADC', 'SUP'] as const;
 
-function getPlayerButtonClass(player?: any) {
+function getPlayerButtonClass(player?: Player) {
   const cupCount = Number(player?.cup_count ?? 0);
   const subCupCount = Number(player?.sub_cup_count ?? 0);
-
   return [
     'player-default',
-    { 'match-winner-border': cupCount > 0, 'match-subcup-border': subCupCount >= 5 },
+    {
+      'player-card-equipped': !!player?.equipped_badge,
+      'match-winner-border': cupCount > 0,
+      'match-subcup-border': subCupCount >= 5,
+    },
   ];
+}
+
+function playerFrameStyle(player?: Player) {
+  if (!player?.equipped_badge) return undefined;
+  const width = Math.max(1, Math.min(48, Number(player.equipped_badge.frame_width) || 24));
+  return { padding: `${Math.max(22, width + 2)}px ${Math.max(26, width + 4)}px` };
 }
 
 function updateTotals() {
@@ -1150,99 +1167,39 @@ onMounted(fetch);
   pointer-events: none;
   content: '';
   border-radius: inherit;
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
 }
 
 .match-winner-border::before {
-  background: conic-gradient(
-    from var(--match-winner-angle),
-    transparent 0deg,
-    transparent 245deg,
-    rgba(255, 152, 0, 0.45) 274deg,
-    #ffca28 303deg,
-    #fff3b0 326deg,
-    #ffffff 337deg,
-    #ffd54f 350deg,
-    transparent 360deg
-  );
+  background: conic-gradient(from var(--match-winner-angle), transparent 0deg, transparent 245deg, rgba(255, 152, 0, .45) 274deg, #ffca28 303deg, #fff3b0 326deg, #fff 337deg, #ffd54f 350deg, transparent 360deg);
   animation: match-winner-border-turn 1.9s linear infinite;
-  filter: drop-shadow(0 0 4px #ffc107) drop-shadow(0 0 11px rgba(255, 152, 0, 0.95));
+  filter: drop-shadow(0 0 4px #ffc107) drop-shadow(0 0 11px rgba(255, 152, 0, .95));
 }
 
 .match-subcup-border::after {
   z-index: 4;
   inset: 3px;
   padding: 4px;
-  background: conic-gradient(
-    from var(--match-subcup-angle),
-    transparent 0deg,
-    transparent 255deg,
-    rgba(156, 39, 176, 0.42) 282deg,
-    #ba68c8 308deg,
-    #e1bee7 328deg,
-    #ffffff 339deg,
-    #b388ff 352deg,
-    transparent 360deg
-  );
+  background: conic-gradient(from var(--match-subcup-angle), transparent 0deg, transparent 255deg, rgba(156, 39, 176, .42) 282deg, #ba68c8 308deg, #e1bee7 328deg, #fff 339deg, #b388ff 352deg, transparent 360deg);
   animation: match-subcup-border-turn 2.35s linear infinite reverse;
-  filter: drop-shadow(0 0 4px #b388ff) drop-shadow(0 0 10px rgba(126, 87, 194, 0.95));
+  filter: drop-shadow(0 0 4px #b388ff) drop-shadow(0 0 10px rgba(126, 87, 194, .95));
 }
 
-.player-card.match-winner-border {
-  box-shadow:
-    0 0 18px rgba(255, 193, 7, 0.28),
-    inset 0 0 18px rgba(255, 193, 7, 0.12);
-}
+.player-card.match-winner-border { box-shadow: 0 0 18px rgba(255, 193, 7, .28), inset 0 0 18px rgba(255, 193, 7, .12); }
+.player-card.match-subcup-border { box-shadow: 0 0 18px rgba(179, 136, 255, .28), inset 0 0 18px rgba(179, 136, 255, .12); }
+.player-card.match-winner-border.match-subcup-border { box-shadow: 0 0 20px rgba(255, 193, 7, .28), 0 0 32px rgba(179, 136, 255, .2), inset 0 0 22px rgba(255, 255, 255, .1); }
 
-.player-card.match-subcup-border {
-  box-shadow:
-    0 0 18px rgba(179, 136, 255, 0.28),
-    inset 0 0 18px rgba(179, 136, 255, 0.12);
-}
+@property --match-winner-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+@property --match-subcup-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+@keyframes match-winner-border-turn { to { --match-winner-angle: 360deg; } }
+@keyframes match-subcup-border-turn { to { --match-subcup-angle: 360deg; } }
+@media (prefers-reduced-motion: reduce) { .match-winner-border::before, .match-subcup-border::after { animation: none; } }
 
-.player-card.match-winner-border.match-subcup-border {
-  box-shadow:
-    0 0 20px rgba(255, 193, 7, 0.28),
-    0 0 32px rgba(179, 136, 255, 0.2),
-    inset 0 0 22px rgba(255, 255, 255, 0.1);
-}
-
-@property --match-winner-angle {
-  syntax: '<angle>';
-  initial-value: 0deg;
-  inherits: false;
-}
-
-@property --match-subcup-angle {
-  syntax: '<angle>';
-  initial-value: 0deg;
-  inherits: false;
-}
-
-@keyframes match-winner-border-turn {
-  to {
-    --match-winner-angle: 360deg;
-  }
-}
-
-@keyframes match-subcup-border-turn {
-  to {
-    --match-subcup-angle: 360deg;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .match-winner-border::before,
-  .match-subcup-border::after {
-    animation: none;
-  }
+.player-card-equipped {
+  border-radius: 8px;
 }
 
 .player-card:hover {
