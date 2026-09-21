@@ -109,7 +109,8 @@
             <div class="d-flex flex-column">
               <span class="text-body-2 font-weight-medium"> {{ p.nickname }}#{{ p.tagname }} </span>
               <span class="text-caption text-medium-emphasis">
-                {{ p.clan_tier?.name }} · {{ getPlayerPoint(p) }}pt
+                {{ p.clan_tier?.name }} · {{ getPlayerPoint(p, pos) }}pt
+                <span v-if="getPositionAdjustment(p, pos)">(포지션 보정 {{ getPositionAdjustment(p, pos) }})</span>
               </span>
             </div>
 
@@ -223,7 +224,8 @@
 
                 <div class="text-caption text-medium-emphasis">
                   {{ slot.player.clan_tier?.name || slot.player.tier?.name }} ·
-                  {{ getPlayerPoint(slot.player) }}pt
+                  {{ getPlayerPoint(slot.player, slot.position) }}pt
+                  <span v-if="getPositionAdjustment(slot.player, slot.position)">(포지션 보정 {{ getPositionAdjustment(slot.player, slot.position) }})</span>
                 </div>
               </div>
 
@@ -281,6 +283,7 @@ const route = useRoute();
 
 const account = useAccountStore();
 
+import { getPositionAdjustment, getPositionAdjustedPoint } from '@/utils/positionBalance';
 import topIcon from '@/assets/positions/top.svg';
 import jugIcon from '@/assets/positions/jug.svg';
 import midIcon from '@/assets/positions/mid.svg';
@@ -352,11 +355,11 @@ function onClickSwapSlot(teamIndex: number, position: string) {
 
   // 팀 점수 다시 계산
   prevTeam.totalPoint = prevTeam.slots.reduce((sum, s) => {
-    return sum + (s.player ? getPlayerPoint(s.player) : 0);
+    return sum + (s.player ? getPlayerPoint(s.player, s.position) : 0);
   }, 0);
 
   team.totalPoint = team.slots.reduce((sum, s) => {
-    return sum + (s.player ? getPlayerPoint(s.player) : 0);
+    return sum + (s.player ? getPlayerPoint(s.player, s.position) : 0);
   }, 0);
 
   // 선택 초기화
@@ -462,9 +465,9 @@ async function confirmWinner() {
 }
 
 /* 유틸: 점수 계산 */
-function getPlayerPoint(p: Player): number {
-  const tierPoint = p.clan_tier?.point ?? p.tier?.point;
-  return (Number(tierPoint) || 0) + (Number(p.point) || 0);
+function getPlayerPoint(p: Player, position: string): number {
+  const tierPoint = p.clan_tier?.point ?? p.custom_tier?.point ?? p.tier?.point;
+  return (Number(tierPoint) || 0) + getPositionAdjustedPoint(p, position);
 }
 
 function getExcludeIdsForEdit(position: string, playerId: number) {
@@ -583,7 +586,7 @@ function onShot() {
     }));
 
     const totalPoint = slots.reduce((sum, slot) => {
-      return slot.player ? sum + getPlayerPoint(slot.player) : sum;
+      return slot.player ? sum + getPlayerPoint(slot.player, slot.position) : sum;
     }, 0);
 
     frames.push({
@@ -694,7 +697,7 @@ async function fetch() {
 
     // 팀 점수 합산
     frames[i].totalPoint = frames[i].slots.reduce((sum, slot) => {
-      return sum + (slot.player ? getPlayerPoint(slot.player) : 0);
+      return sum + (slot.player ? getPlayerPoint(slot.player, slot.position) : 0);
     }, 0);
   }
 

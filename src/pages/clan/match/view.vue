@@ -143,9 +143,10 @@
           <div class="player-score player-score-left">
             <span>
               Total
-              {{ (team1[i - 1]?.player?.tier?.point ?? 0) + (team1[i - 1]?.player?.point ?? 0) }}
+              {{ getMemberTotal(team1[i - 1]) }}
             </span>
-            <span>Point {{ team1[i - 1]?.player?.point ?? 0 }}</span>
+            <span>Point {{ getPositionAdjustedPoint(team1[i - 1]?.player, team1[i - 1]?.position) }}</span>
+            <span v-if="getPositionAdjustment(team1[i - 1]?.player, team1[i - 1]?.position)">포지션 보정 {{ getPositionAdjustment(team1[i - 1]?.player, team1[i - 1]?.position) }}</span>
           </div>
 
           <div
@@ -237,10 +238,11 @@
           </div>
 
           <div class="player-score">
-            <span>Point {{ team2[i - 1]?.player?.point ?? 0 }}</span>
+            <span>Point {{ getPositionAdjustedPoint(team2[i - 1]?.player, team2[i - 1]?.position) }}</span>
+            <span v-if="getPositionAdjustment(team2[i - 1]?.player, team2[i - 1]?.position)">포지션 보정 {{ getPositionAdjustment(team2[i - 1]?.player, team2[i - 1]?.position) }}</span>
             <span>
               Total
-              {{ (team2[i - 1]?.player?.tier?.point ?? 0) + (team2[i - 1]?.player?.point ?? 0) }}
+              {{ getMemberTotal(team2[i - 1]) }}
             </span>
           </div>
 
@@ -409,6 +411,7 @@ import api from '@/@core/composable/useAxios';
 import { useRoute } from 'vue-router';
 import BadgeFrame from '@/components/badges/BadgeFrame.vue';
 import type { Player } from '@/data/types/player';
+import { getPositionAdjustment, getPositionAdjustedPoint } from '@/utils/positionBalance';
 import type { Match, MatchMember } from '@/data/types/match';
 import { useAccountStore } from '@/stores/useAccountStore';
 
@@ -470,6 +473,18 @@ function playerFrameStyle(player?: Player) {
   return { padding: `${Math.max(22, width + 2)}px ${Math.max(26, width + 4)}px` };
 }
 
+function getMemberTierPoint(member?: MatchMember): number {
+  if (!member?.player?.id) return 0;
+  const tier = member.player.clan_tier ?? member.player.custom_tier ?? member.player.tier;
+  return match.value?.type === 'POSITION'
+    ? Number(getTierPositionPoint(tier?.name ?? '', member.position)) || 0
+    : Number(tier?.point) || 0;
+}
+
+function getMemberTotal(member?: MatchMember): number {
+  return getMemberTierPoint(member) + getPositionAdjustedPoint(member?.player, member?.position ?? '');
+}
+
 function updateTotals() {
   t1Point.value = 0;
   t1Tier.value = 0;
@@ -479,13 +494,13 @@ function updateTotals() {
   t2Total.value = 0;
 
   for (let i = 0; i < Math.min(5, team1.value.length); i++) {
-    t1Point.value += Number(team1.value[i]?.player?.point || 0);
-    t1Tier.value += Number(team1.value[i]?.player?.tier?.point || 0);
+    t1Point.value += getPositionAdjustedPoint(team1.value[i]?.player, team1.value[i]?.position);
+    t1Tier.value += getMemberTierPoint(team1.value[i]);
   }
 
   for (let i = 0; i < Math.min(5, team2.value.length); i++) {
-    t2Point.value += Number(team2.value[i]?.player?.point || 0);
-    t2Tier.value += Number(team2.value[i]?.player?.tier?.point || 0);
+    t2Point.value += getPositionAdjustedPoint(team2.value[i]?.player, team2.value[i]?.position);
+    t2Tier.value += getMemberTierPoint(team2.value[i]);
   }
 
   t1Total.value = t1Point.value + t1Tier.value;
@@ -658,8 +673,6 @@ function swapLinePlayers(index: number) {
   left.player = right.player;
   right.player = leftPlayer;
 
-  left.player.tier.point = getTierPositionPoint(left.player.tier.name, left.position);
-  right.player.tier.point = getTierPositionPoint(right.player.tier.name, right.position);
   updateTotals();
 
   snackbar.value = {
@@ -715,14 +728,6 @@ async function fetch() {
     if (truthy(match.value?.is_confirm) || members.length >= 10) {
       team1.value = members.slice(0, 5);
       team2.value = members.slice(5, 10);
-
-      for (const item of team1.value) {
-        item.player.tier.point = getTierPositionPoint(item.player.tier.name, item.position);
-      }
-
-      for (const item of team2.value) {
-        item.player.tier.point = getTierPositionPoint(item.player.tier.name, item.position);
-      }
     } else {
       team1.value = POSITIONS.map((p) => emptyMemberWithPos(p));
       team2.value = POSITIONS.map((p) => emptyMemberWithPos(p));
@@ -891,8 +896,6 @@ function applyPickedPlayer() {
 
   const keepPos = oldSlot.position;
   const chosen = picker.value.selected;
-
-  chosen.player.tier.point = getTierPositionPoint(chosen.player.tier.name, keepPos);
 
   slotArr[picker.value.id] = {
     ...chosen,
@@ -1265,6 +1268,7 @@ onMounted(fetch);
 
 .player-score {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 10px;
   margin-top: 12px;
