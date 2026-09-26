@@ -25,7 +25,7 @@
           v-if="isOwner"
           color="deep-purple-accent-2"
           prepend-icon="mdi-gavel"
-          :disabled="availablePlayers.length === 0 || isRunning"
+          :disabled="unassignedPlayerCount === 0 || isRunning"
           @click="nominateNext"
         >
           랜덤 선수 지명
@@ -35,7 +35,7 @@
 
     <v-row>
       <v-col cols="12" lg="8">
-        <v-card class="auction-stage overflow-hidden" rounded="xl" elevation="4">
+        <v-card ref="stageCard" class="auction-stage overflow-hidden" rounded="xl" elevation="4">
           <div v-if="currentPlayer" class="pa-5">
             <v-row align="center">
               <v-col cols="12" md="5">
@@ -347,7 +347,7 @@
                 유찰 매물
               </div>
               <div class="text-caption text-medium-emphasis">
-                1차 경매가 끝나면 이 명단에서 랜덤으로 재경매합니다.
+                방장은 선수를 클릭해 재경매할 수 있습니다. 1차 경매 후에는 랜덤으로도 재경매합니다.
               </div>
             </div>
             <v-chip color="warning" variant="tonal">{{ unsoldPlayers.length }}명</v-chip>
@@ -357,11 +357,17 @@
             <v-col v-for="player in unsoldPlayers" :key="`unsold-${player.id}`" cols="12" sm="6" md="4">
               <div
                 class="pool-player unsold-player"
-                :class="{ 'profile-clickable': !blindActive }"
+                :style="tierCardStyle(player.tier)"
+                :class="{
+                  selected: currentPlayer?.id === player.id,
+                  disabled: isRunning || !isOwner,
+                }"
                 role="button"
-                tabindex="0"
-                @click="openFowProfile(player)"
-                @keydown.enter="openFowProfile(player)"
+                :tabindex="isRunning || !isOwner ? -1 : 0"
+                :aria-disabled="isRunning || !isOwner"
+                @click="selectUnsoldPlayer(player)"
+                @keydown.enter.self="selectUnsoldPlayer(player)"
+                @keydown.space.self.prevent="selectUnsoldPlayer(player)"
               >
                 <v-tooltip activator="parent" location="top">
                   {{ positionLabel(player.position) }} · {{ player.tier }}
@@ -381,6 +387,23 @@
                   </small>
                 </span>
                 <v-chip size="x-small" color="warning">유찰</v-chip>
+                <v-btn
+                  v-if="isOwner"
+                  size="small"
+                  color="warning"
+                  variant="tonal"
+                  @click.stop="selectUnsoldPlayer(player)"
+                >재경매 선택</v-btn>
+                <v-btn
+                  v-if="!blindActive"
+                  icon
+                  size="x-small"
+                  variant="text"
+                  aria-label="선수 전적 보기"
+                  @click.stop="openFowProfile(player)"
+                >
+                  <v-icon size="18">mdi-card-account-details-outline</v-icon>
+                </v-btn>
               </div>
             </v-col>
           </v-row>
@@ -572,7 +595,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import topIcon from '@/assets/positions/top.svg';
 import jugIcon from '@/assets/positions/jug.svg';
 import midIcon from '@/assets/positions/mid.svg';
@@ -953,8 +976,30 @@ function showSnack(message: string, color = 'success') {
   snackbar.value = { show: true, message, color };
 }
 
+const stageCard = ref<{ $el: HTMLElement } | null>(null);
+
+async function selectUnsoldPlayer(player: AuctionPlayer) {
+  if (!props.isOwner) {
+    showSnack('방장만 재경매 선수를 선택할 수 있습니다.', 'warning');
+    return;
+  }
+  if (isRunning.value) {
+    showSnack(
+      isPaused.value
+        ? '일시정지 중인 경매를 마친 후 재경매 선수를 선택해 주세요.'
+        : '현재 경매를 마친 후 재경매 선수를 선택해 주세요.',
+      'warning'
+    );
+    return;
+  }
+  nominate(player);
+  await nextTick();
+  stageCard.value?.$el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  showSnack('재경매 선수를 선택했습니다. 경매 시작 버튼을 눌러 주세요.');
+}
+
 function nominate(player: AuctionPlayer) {
-  if (isRunning.value) return;
+  if (isRunning.value || !props.isOwner) return;
   if (liveConnected.value && props.isOwner && player.accountId) {
     sendLive('select-player', {
       auctionId: props.auctionId,
@@ -968,7 +1013,6 @@ function nominate(player: AuctionPlayer) {
 
 function applyNomination(player: AuctionPlayer) {
   resultDialog.value = false;
-  unsoldPlayers.value = unsoldPlayers.value.filter((item) => item.id !== player.id);
   currentPlayer.value = player;
   currentBid.value = startBid;
   highestTeamId.value = null;
@@ -1252,12 +1296,13 @@ function applyAward(team: AuctionTeam, player: AuctionPlayer, winningBid: number
 }
 
 function applyUnsold(player: AuctionPlayer) {
-  if (unsoldPlayers.value.some((item) => item.id === player.id)) return;
+  const alreadyUnsold = unsoldPlayers.value.some((item) => item.id === player.id);
+  if (alreadyUnsold && currentPlayer.value?.id !== player.id) return;
 
   clearTimer();
   addLog(`${playerDisplayName(player)} 선수가 유찰되었습니다.`);
   players.value = players.value.filter((item) => item.id !== player.id);
-  unsoldPlayers.value.push(player);
+  if (!alreadyUnsold) unsoldPlayers.value.push(player);
   if (currentPlayer.value?.id === player.id) {
     currentPlayer.value = null;
     highestTeamId.value = null;
@@ -1706,7 +1751,6 @@ onBeforeUnmount(() => {
 
 .unsold-player {
   border-color: rgba(255, 171, 0, 0.28);
-  cursor: default;
 }
 
 .auction-log {
