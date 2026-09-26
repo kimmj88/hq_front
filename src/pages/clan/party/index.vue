@@ -72,8 +72,7 @@
               <span v-else class="font-weight-bold">{{ initial(historyPlayerName(result)) }}</span>
             </v-avatar>
             <div>
-              <strong>{{ historyPlayerName(result) }}</strong
-              ><small>{{ result.account.nickname }}</small>
+              <strong>{{ historyPlayerName(result) }}</strong>
             </div>
           </div>
           <div class="history-stats">
@@ -204,12 +203,12 @@
               <v-avatar :class="{ 'party-avatar-motion': room.owner.avatar_effect_enabled }" size="40" color="amber-darken-3">
                 <v-img v-if="room.owner.avatar" :src="avatarUrl(room.owner.avatar)" cover />
                 <span v-else class="text-caption font-weight-bold">{{
-                  initial(room.owner.nickname)
+                  initial(ownerName(room))
                 }}</span>
               </v-avatar>
               <div class="owner-copy">
                 <span><v-icon size="14">mdi-crown</v-icon> 파티장</span>
-                <strong>{{ room.owner.nickname }}</strong>
+                <strong>{{ ownerName(room) }}</strong>
               </div>
               <v-chip size="x-small" color="amber" variant="tonal" class="ml-auto font-weight-bold"
                 >HOST</v-chip
@@ -828,6 +827,10 @@ function memberName(member: PartyMember) {
   return member.player
     ? `${member.player.nickname}#${member.player.tagname}`
     : member.account.nickname;
+}
+function ownerName(room: PartyRoom) {
+  const owner = room.members.find((member) => member.account.id === room.owner.id);
+  return owner ? memberName(owner) : room.owner.nickname;
 }
 function waitlistName(waiter: PartyWaiter) {
   return waiter.player

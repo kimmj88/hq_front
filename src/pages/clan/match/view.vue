@@ -412,6 +412,7 @@ import { useRoute } from 'vue-router';
 import BadgeFrame from '@/components/badges/BadgeFrame.vue';
 import type { Player } from '@/data/types/player';
 import { getPositionAdjustment, getPositionAdjustedPoint } from '@/utils/positionBalance';
+import { getMasterTierLp, getMasterTierBonus } from '@/utils/masterTier';
 import type { Match, MatchMember } from '@/data/types/match';
 import { useAccountStore } from '@/stores/useAccountStore';
 
@@ -876,7 +877,8 @@ const POSITION_SCORE_KEY = {
 };
 
 function getTierPositionPoint(tierName: string, position: string) {
-  const row = TIER_SCORE_MASTER.find((v) => v.tier === tierName);
+  const masterLp = getMasterTierLp(tierName);
+  const row = TIER_SCORE_MASTER.find((v) => v.tier === (masterLp === null ? tierName : 'MASTER'));
 
   if (!row) {
     return 0;
@@ -884,7 +886,8 @@ function getTierPositionPoint(tierName: string, position: string) {
 
   const key = POSITION_SCORE_KEY[position as keyof typeof POSITION_SCORE_KEY];
 
-  return row[key as keyof typeof row] ?? 0;
+  if (!key) return 0;
+  return Number(row[key as keyof typeof row] ?? 0) + getMasterTierBonus(tierName);
 }
 
 function applyPickedPlayer() {

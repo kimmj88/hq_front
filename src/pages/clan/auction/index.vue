@@ -175,18 +175,18 @@ function formatDate(value: string) {
 }
 
 function openDeleteDialog(room: AuctionRoom) {
+  if (!can('AUCTION', 'CLAN-SET-AUCTION-D')) return;
   selectedRoom.value = room;
   deleteDialog.value = true;
 }
 
 async function deleteRoom() {
-  if (!selectedRoom.value || selectedRoom.value.ownerId !== account.id || deleting.value) return;
+  if (!selectedRoom.value || !can('AUCTION', 'CLAN-SET-AUCTION-D') || deleting.value) return;
 
   deleting.value = true;
   try {
     await api.post(`${getBaseUrl('DATA')}/auction/delete`, {
       id: selectedRoom.value.id,
-      owner_id: account.id,
     });
     deleteDialog.value = false;
     selectedRoom.value = null;

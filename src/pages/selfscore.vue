@@ -374,11 +374,13 @@ function getGamePenalty(totalGames: number): number {
 
 function parseCustomTier(tierName: string): { tier: string; rank: string; lp: number } {
   const normalized = tierName.trim().toUpperCase().replace(/\s+/g, ' ');
-  const rankMatch = normalized.match(/(IV|III|II|I|[1-4])$/);
+  const lpMatch = normalized.match(/\s+(\d+)\s*(?:LP|점)$/);
+  const tierWithoutLp = lpMatch ? normalized.slice(0, lpMatch.index).trim() : normalized;
+  const rankMatch = tierWithoutLp.match(/(IV|III|II|I|[1-4])$/);
   const rawRank = rankMatch?.[1] ?? 'IV';
   const rankMap: Record<string, string> = { '1': 'I', '2': 'II', '3': 'III', '4': 'IV' };
   const rank = rankMap[rawRank] ?? rawRank;
-  const tierPart = rankMatch ? normalized.slice(0, rankMatch.index).trim() : normalized;
+  const tierPart = rankMatch ? tierWithoutLp.slice(0, rankMatch.index).trim() : tierWithoutLp;
   const tierAliases: Record<string, string> = {
     아이언: 'IRON', 브론즈: 'BRONZE', 실버: 'SILVER', 골드: 'GOLD',
     플래티넘: 'PLATINUM', 에메랄드: 'EMERALD', 다이아: 'DIAMOND',
@@ -386,7 +388,6 @@ function parseCustomTier(tierName: string): { tier: string; rank: string; lp: nu
     챌린저: 'CHALLENGER',
   };
   const tier = tierAliases[tierPart] ?? tierPart;
-  const lpMatch = normalized.match(/(\d{2,4})\s*LP/);
   return { tier, rank, lp: lpMatch ? Number(lpMatch[1]) : 0 };
 }
 
@@ -434,13 +435,13 @@ async function searchPlayer() {
       tagLine: form.tagLine.trim(),
       tier: player.custom_tier.name,
       rank: '',
-      lp: 0,
+      lp: parsedTier.lp,
       wins: 0,
       losses: 0,
       totalGames: 0,
       peakTier: player.custom_tier.name,
       peakRank: '',
-      peakLp: 0,
+      peakLp: parsedTier.lp,
       soloPanalty: 0,
       soloCountPanalty: 0,
       maincupPanalty: 0,

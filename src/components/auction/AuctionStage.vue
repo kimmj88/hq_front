@@ -808,7 +808,11 @@ const availablePlayers = computed(() =>
 );
 const filteredPlayers = computed(() =>
   availablePlayers.value.filter(
-    (player) => positionFilter.value === '전체' || player.position === positionFilter.value
+    (player) =>
+      positionFilter.value === '전체' ||
+      (player.positions?.length ? player.positions : [player.position]).some(
+        (position) => position === positionFilter.value
+      )
   )
 );
 const highestTeam = computed(
