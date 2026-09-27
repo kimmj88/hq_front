@@ -152,7 +152,7 @@
               </v-chip>
               <div class="card-top-actions">
                 <v-tooltip
-                  v-if="room.status !== 'CLOSED' && (room.is_owner || canParty('CLAN-SET-PARTY-U'))"
+                  v-if="room.status !== 'CLOSED' && canManageParty(room)"
                   text="파티 수정"
                   location="top"
                 >
@@ -172,7 +172,7 @@
                   v-if="
                     room.type === 'INHOUSE' &&
                     room.status === 'FULL' &&
-                    (room.is_owner || canParty('CLAN-SET-PARTY-U'))
+                    canManageParty(room)
                   "
                   type="button"
                   :class="['status', 'full', 'status-action', room.created_match_id && 'created']"
@@ -301,7 +301,7 @@
                 <v-tooltip
                   v-if="
                     room.status !== 'CLOSED' &&
-                    (room.is_owner || canParty('CLAN-SET-PARTY-U')) &&
+                    canManageParty(room) &&
                     member.account.id !== room.owner.id
                   "
                   text="파티장 위임"
@@ -320,7 +320,7 @@
                 <v-tooltip
                   v-if="
                     room.status !== 'CLOSED' &&
-                    (room.is_owner || canParty('CLAN-SET-PARTY-D')) &&
+                    canManageParty(room) &&
                     member.account.id !== room.owner.id &&
                     member.account.id !== account.id
                   "
@@ -423,7 +423,7 @@
                 >나가기</v-btn
               >
               <v-btn
-                v-if="room.status !== 'CLOSED' && (room.is_owner || canParty('CLAN-SET-PARTY-D'))"
+                v-if="room.status !== 'CLOSED' && canManageParty(room)"
                 color="error"
                 variant="tonal"
                 rounded="lg"
@@ -719,6 +719,9 @@ const router = useRouter();
 function canParty(code: string) {
   return account.isClanMaster || can('PARTY', code);
 }
+function canManageParty(room: PartyRoom) {
+  return room.is_owner || can('PARTY', 'CLAN-SET-PARTY-D');
+}
 const rooms = ref<PartyRoom[]>([]);
 const loading = ref(false);
 const saving = ref(false);
@@ -770,7 +773,11 @@ const filteredRooms = computed(() =>
     }
     if (selectedType.value === 'INHOUSE') return room.type === 'INHOUSE';
     return true;
-  }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime() || b.id - a.id)
+  }).sort((a, b) => {
+    const aScheduledAt = a.scheduled_at ? new Date(a.scheduled_at).getTime() : Infinity;
+    const bScheduledAt = b.scheduled_at ? new Date(b.scheduled_at).getTime() : Infinity;
+    return aScheduledAt - bScheduledAt || b.id - a.id;
+  })
 );
 const groupedRooms = computed(() =>
   (['DUO_RANK', 'INHOUSE', 'FLEX_RANK', 'NORMAL'] as RoomType[])
@@ -925,6 +932,10 @@ async function loadRooms() {
 }
 
 async function createOrOpenInhouseMatch(room: PartyRoom) {
+  if (!canManageParty(room)) {
+    notify('파티를 관리할 권한이 없습니다.', 'warning');
+    return;
+  }
   const alreadyCreated = !!room.created_match_id;
   try {
     creatingMatchRoomId.value = room.id;
@@ -1051,6 +1062,10 @@ function toKoreanDateTimeInput(value: string | null) {
   return `${part('year')}-${part('month')}-${part('day')}T${part('hour')}:${part('minute')}`;
 }
 function openEdit(room: PartyRoom) {
+  if (!canManageParty(room)) {
+    notify('파티를 관리할 권한이 없습니다.', 'warning');
+    return;
+  }
   editingRoom.value = room;
   const ownerMember = room.members.find((member) => member.account.id === room.owner.id);
   Object.assign(form, {
@@ -1066,6 +1081,10 @@ function openEdit(room: PartyRoom) {
 async function saveRoom() {
   if (!editingRoom.value) {
     await createRoom();
+    return;
+  }
+  if (!canManageParty(editingRoom.value)) {
+    notify('파티를 관리할 권한이 없습니다.', 'warning');
     return;
   }
   try {
@@ -1168,6 +1187,10 @@ async function saveMyNote() {
   }
 }
 async function transferOwner(room: PartyRoom, member: PartyMember) {
+  if (!canManageParty(room)) {
+    notify('파티를 관리할 권한이 없습니다.', 'warning');
+    return;
+  }
   const name = memberName(member);
   if (!confirm(`${name} 님에게 파티장을 위임할까요?\n위임 후에는 해당 참가자가 파티를 관리합니다.`)) {
     return;
@@ -1207,6 +1230,10 @@ async function leaveRoom(room: PartyRoom) {
   }
 }
 async function closeRoom(room: PartyRoom) {
+  if (!canManageParty(room)) {
+    notify('파티를 관리할 권한이 없습니다.', 'warning');
+    return;
+  }
   if (!confirm(`'${room.title}' 파티를 종료할까요?`)) return;
   try {
     await api.post(`${getBaseUrl('DATA')}/party-room/close`, { room_id: room.id });
@@ -1217,6 +1244,10 @@ async function closeRoom(room: PartyRoom) {
   }
 }
 async function kickMember(room: PartyRoom, member: PartyMember) {
+  if (!canManageParty(room)) {
+    notify('파티를 관리할 권한이 없습니다.', 'warning');
+    return;
+  }
   if (!confirm(`${memberName(member)} 님을 파티에서 내보낼까요?`)) return;
   try {
     await api.post(`${getBaseUrl('DATA')}/party-room/kick`, {

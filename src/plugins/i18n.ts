@@ -122,7 +122,7 @@ const messages = {
       'CLAN-SET-PARTY-C': '파티방 생성',
       'CLAN-SET-PARTY-R': '파티 찾기 조회',
       'CLAN-SET-PARTY-U': '파티 참가 및 나가기',
-      'CLAN-SET-PARTY-D': '파티 종료 및 참가자 관리',
+      'CLAN-SET-PARTY-D': '파티 관리 (수정·종료·위임·내보내기·내전 생성)',
       'CLAN-SET-SCHEDULE-C': '클랜 일정 생성',
       'CLAN-SET-SCHEDULE-R': '클랜 일정 조회',
       'CLAN-SET-SCHEDULE-U': '클랜 일정 수정',
