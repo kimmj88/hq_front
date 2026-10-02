@@ -5,7 +5,7 @@
         <div>
           <div class="text-h4 font-weight-bold mb-2">롤 멸망전 점수 조회</div>
           <div class="text-body-1 text-medium-emphasis">
-            등록된 플레이어를 검색하면 커스텀 티어 기준 점수를 확인할 수 있습니다.
+            등록된 플레이어의 클랜 티어와 솔랭 판수 기준 점수를 확인할 수 있습니다.
           </div>
         </div>
 
@@ -84,12 +84,12 @@
           <v-card rounded="xl" elevation="2" class="pa-5 stat-card">
             <div class="d-flex align-center justify-space-between">
               <div>
-                <div class="text-caption text-medium-emphasis">커스텀 티어</div>
+                <div class="text-caption text-medium-emphasis">클랜 티어</div>
                 <div class="text-h5 font-weight-bold mt-1">{{ result.tier }}</div>
               </div>
               <v-icon size="34" icon="mdi-shield-sword" />
             </div>
-            <div class="mt-3 text-body-2">관리자가 설정한 커스텀 티어</div>
+            <div class="mt-3 text-body-2">관리자가 설정한 클랜 티어</div>
           </v-card>
         </v-col>
 
@@ -115,7 +115,7 @@
               </div>
               <v-icon size="38" icon="mdi-trophy" />
             </div>
-            <div class="mt-3 text-body-2">포지션별 멸망전 점수표</div>
+            <div class="mt-3 text-body-2">솔랭 판수 어드벤티지 적용 점수</div>
           </v-card>
         </v-col>
       </v-row>
@@ -143,8 +143,20 @@
               <span class="value">{{ result.lp }}</span>
             </div> -->
             <div class="info-row">
-              <span class="label">커스텀 티어</span>
+              <span class="label">클랜 티어</span>
               <span class="value">{{ result.tier }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">기본 점수</span>
+              <span class="value">{{ result.peakScore }}점</span>
+            </div>
+            <div class="info-row">
+              <span class="label">솔랭 판수</span>
+              <span class="value">{{ result.totalGames }}판 ({{ result.wins }}승 {{ result.losses }}패)</span>
+            </div>
+            <div class="info-row">
+              <span class="label">판수 어드벤티지</span>
+              <span class="value">{{ result.soloCountPanalty }}점</span>
             </div>
           </v-col>
 
@@ -175,11 +187,15 @@
       <v-list density="comfortable">
         <v-list-item>
           <template #prepend><v-icon icon="mdi-circle-small" /></template>
-          <v-list-item-title>Player 검색에 등록된 커스텀 티어를 사용합니다.</v-list-item-title>
+          <v-list-item-title class="text-wrap">등록된 플레이어의 클랜 티어를 사용합니다.</v-list-item-title>
         </v-list-item>
         <v-list-item>
           <template #prepend><v-icon icon="mdi-circle-small" /></template>
-          <v-list-item-title>커스텀 티어와 선택 포지션을 기존 멸망전 점수표에 적용합니다.</v-list-item-title>
+          <v-list-item-title class="text-wrap">클랜 티어와 선택 포지션으로 기본 점수를 산정합니다.</v-list-item-title>
+        </v-list-item>
+        <v-list-item>
+          <template #prepend><v-icon icon="mdi-circle-small" /></template>
+          <v-list-item-title class="text-wrap">현재 시즌 솔랭 승수와 패수를 합산해 100판 이상 1점, 200판 이상 1.3점, 300판 이상 1.7점, 400판 이상 2점을 차감합니다. 각 구간의 차감액은 최종 차감액입니다.</v-list-item-title>
         </v-list-item>
       </v-list>
     </v-card>
@@ -364,15 +380,14 @@ function getTierScore(tier: string, rank: string, lp: number, position: Position
 }
 
 function getGamePenalty(totalGames: number): number {
-  let score = 0;
-  if (totalGames >= 300) score += -0.8;
-  if (totalGames >= 200) score += -0.6;
-  if (totalGames >= 100) score += -0.3;
-
-  return score;
+  if (totalGames >= 400) return -2;
+  if (totalGames >= 300) return -1.7;
+  if (totalGames >= 200) return -1.3;
+  if (totalGames >= 100) return -1;
+  return 0;
 }
 
-function parseCustomTier(tierName: string): { tier: string; rank: string; lp: number } {
+function parseClanTier(tierName: string): { tier: string; rank: string; lp: number } {
   const normalized = tierName.trim().toUpperCase().replace(/\s+/g, ' ');
   const lpMatch = normalized.match(/\s+(\d+)\s*(?:LP|점)$/);
   const tierWithoutLp = lpMatch ? normalized.slice(0, lpMatch.index).trim() : normalized;
@@ -392,16 +407,19 @@ function parseCustomTier(tierName: string): { tier: string; rank: string; lp: nu
 }
 
 async function searchPlayer() {
-  if (!canSearch.value) return;
+  if (loading.value || !canSearch.value) return;
 
   loading.value = true;
   errorMessage.value = '';
   result.value = null;
+  const position = selectedPosition.value;
+  const gameName = form.gameName.trim();
+  const tagLine = form.tagLine.trim();
 
   try {
     const response = await api.get(`${getBaseUrl('DATA')}/player/search`, {
       params: {
-        keyword: form.gameName.trim(),
+        keyword: gameName,
         page: 1,
         itemsPerPage: 100,
         sortBy: 'point',
@@ -410,53 +428,68 @@ async function searchPlayer() {
     });
     const player = (Array.isArray(response.data?.datas) ? response.data.datas : []).find(
       (item: any) =>
-        item.nickname?.trim().toLowerCase() === form.gameName.trim().toLowerCase() &&
-        item.tagname?.trim().toLowerCase() === form.tagLine.trim().toLowerCase()
+        item.nickname?.trim().toLowerCase() === gameName.toLowerCase() &&
+        item.tagname?.trim().toLowerCase() === tagLine.toLowerCase()
     );
     if (!player) {
       errorMessage.value = '등록된 플레이어를 찾을 수 없습니다.';
       return;
     }
-    if (!player.custom_tier) {
-      errorMessage.value = '커스텀 티어가 설정되지 않은 플레이어입니다.';
+    if (!player.clan_tier) {
+      errorMessage.value = '클랜 티어가 설정되지 않은 플레이어입니다.';
       return;
     }
-    const parsedTier = parseCustomTier(player.custom_tier.name);
+    const parsedTier = parseClanTier(player.clan_tier.name);
     const tierScore = getTierScore(
       parsedTier.tier,
       parsedTier.rank,
       parsedTier.lp,
-      selectedPosition.value
+      position
     );
-    const finalScore = Number(tierScore.toFixed(1));
+    const riotResponse = await api.get(`${getBaseUrl('DATA')}/riot/account`, {
+      params: { nickname: player.nickname, tagname: player.tagname },
+    });
+    const riotAccount = riotResponse.data?.datas;
+    const ranked = riotAccount?.ranked;
+    if (!riotAccount || ranked === undefined) {
+      throw new Error('솔랭 판수 응답이 올바르지 않습니다.');
+    }
+    const wins = ranked === null ? 0 : ranked.wins;
+    const losses = ranked === null ? 0 : ranked.losses;
+    if (!Number.isInteger(wins) || wins < 0 || !Number.isInteger(losses) || losses < 0) {
+      throw new Error('솔랭 승패 정보가 올바르지 않습니다.');
+    }
+    const totalGames = wins + losses;
+    const gamePenalty = getGamePenalty(totalGames);
+    const finalScore = Number((tierScore + gamePenalty).toFixed(1));
 
     result.value = {
-      gameName: form.gameName.trim(),
-      tagLine: form.tagLine.trim(),
-      tier: player.custom_tier.name,
+      gameName,
+      tagLine,
+      tier: player.clan_tier.name,
       rank: '',
       lp: parsedTier.lp,
-      wins: 0,
-      losses: 0,
-      totalGames: 0,
-      peakTier: player.custom_tier.name,
+      wins,
+      losses,
+      totalGames,
+      peakTier: player.clan_tier.name,
       peakRank: '',
       peakLp: parsedTier.lp,
       soloPanalty: 0,
-      soloCountPanalty: 0,
+      soloCountPanalty: gamePenalty,
       maincupPanalty: 0,
       subcupPanalty: 0,
       playerPoint: Number(player.point ?? 0),
       cupCount: Number(player.cup_count ?? 0),
       subCupCount: Number(player.sub_cup_count ?? 0),
-      positionLabel: getPositionLabel(selectedPosition.value),
-      peakScore: finalScore,
+      positionLabel: getPositionLabel(position),
+      peakScore: tierScore,
       meltdownScore: finalScore,
-      updatedAt: `${new Date().toLocaleString('ko-KR')} / ${getPositionLabel(selectedPosition.value)}`,
+      updatedAt: `${new Date().toLocaleString('ko-KR')} / ${getPositionLabel(position)}`,
     };
   } catch (e) {
     console.error('플레이어 조회 실패', e);
-    errorMessage.value = '플레이어 조회에 실패했습니다.';
+    errorMessage.value = '플레이어 또는 솔랭 판수 조회에 실패했습니다. 잠시 후 다시 시도해 주세요.';
   } finally {
     loading.value = false;
   }
