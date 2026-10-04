@@ -101,6 +101,7 @@
           />
 
           <v-list-item
+            v-if="can('CLANMATCH', 'CLAN-SET-CLANMATCH-R')"
             prepend-icon="mdi-shield-sword-outline"
             title="클랜전"
             :to="CLAN_MATCH_PATH.BASE"

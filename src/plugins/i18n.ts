@@ -111,6 +111,11 @@ const messages = {
       'CLAN-SET-MATCH-R': '매치 조회',
       'CLAN-SET-MATCH-D': '매치 삭제',
 
+      'CLAN-SET-CLANMATCH-C': '클랜전 생성',
+      'CLAN-SET-CLANMATCH-R': '클랜전 조회',
+      'CLAN-SET-CLANMATCH-U': '클랜전 수정·수락·결과 확정',
+      'CLAN-SET-CLANMATCH-D': '클랜전 삭제',
+
       'CLAN-SET-CUP-C': '컵 생성',
       'CLAN-SET-CUP-R': '컵 조회',
       'CLAN-SET-CUP-D': '컵 삭제',

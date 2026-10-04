@@ -236,6 +236,7 @@ import { useAccountStore } from '@/stores/useAccountStore';
 import type { Player } from '@/data/types/player';
 import type { ClanMatch } from '@/data/types/clanmatch';
 import { CLAN_MATCH_PATH } from '@/router/clanmatch';
+import { can } from '@/stores/useClanPermissionStore';
 
 const account = useAccountStore();
 const router = useRouter();
@@ -338,6 +339,7 @@ function resetLineup(team: 'host' | 'guest') {
 }
 
 const canSubmitCreate = computed(() => {
+  if (!can('CLANMATCH', 'CLAN-SET-CLANMATCH-C')) return false;
   if (!form.value.tier || !form.value.matchAt) return false;
   const v = form.value.hostLineup;
   return !!(v.TOP && v.JUG && v.MID && v.ADC && v.SUP);
@@ -346,6 +348,7 @@ const canSubmitCreate = computed(() => {
 const canSubmitGuest = computed(() => {
   const v = form.value.guestLineup;
   return (
+    can('CLANMATCH', 'CLAN-SET-CLANMATCH-U') &&
     isGuestMode.value &&
     !!(v.TOP && v.JUG && v.MID && v.ADC && v.SUP) &&
     new Set(Object.values(v)).size === 5
@@ -354,6 +357,11 @@ const canSubmitGuest = computed(() => {
 
 async function submitCreate() {
   errorMsg.value = '';
+
+  if (!can('CLANMATCH', 'CLAN-SET-CLANMATCH-C')) {
+    router.replace('/forbidden');
+    return;
+  }
 
   if (!account.clan?.id) {
     errorMsg.value = '클랜에 가입한 사용자만 클랜전을 생성할 수 있습니다.';
@@ -390,6 +398,10 @@ async function submitCreate() {
 async function submitAccept() {
   if (submitting.value || !canSubmitGuest.value) return;
   errorMsg.value = '';
+  if (!can('CLANMATCH', 'CLAN-SET-CLANMATCH-U')) {
+    router.replace('/forbidden');
+    return;
+  }
   if (!account.clan?.id) {
     errorMsg.value = '클랜에 가입한 사용자만 클랜전을 수락할 수 있습니다.';
     return;

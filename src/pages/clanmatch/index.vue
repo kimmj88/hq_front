@@ -10,7 +10,7 @@
 
       <div class="d-flex align-center" style="gap: 8px">
         <v-btn
-          v-if="account.clan?.id"
+          v-if="account.clan?.id && can('CLANMATCH', 'CLAN-SET-CLANMATCH-C')"
           color="primary"
           prepend-icon="mdi-plus"
           @click="$router.push(CLAN_MATCH_PATH.ADD)"
@@ -198,6 +198,7 @@ import api from '@/@core/composable/useAxios';
 import { CLAN_MATCH_PATH } from '@/router/clanmatch/index';
 import { formatDateTime } from '@/utils/date';
 import { useAccountStore } from '@/stores/useAccountStore';
+import { can } from '@/stores/useClanPermissionStore';
 
 import topIcon from '@/assets/positions/top.svg';
 import jugIcon from '@/assets/positions/jug.svg';
@@ -296,7 +297,12 @@ const filtered = computed(() => {
 
 function canAccept(m: ClanMatch) {
   const clanId = account.clan?.id;
-  return Boolean(clanId && m.status === 'WAITING' && m.host_clan?.id !== clanId);
+  return Boolean(
+    clanId &&
+      can('CLANMATCH', 'CLAN-SET-CLANMATCH-U') &&
+      m.status === 'WAITING' &&
+      m.host_clan?.id !== clanId,
+  );
 }
 
 function isMyClanMatch(m: ClanMatch) {
@@ -314,6 +320,7 @@ const acceptDialog = ref<{ open: boolean; match: ClanMatch | null }>({
 });
 
 function openAcceptDialog(m: ClanMatch) {
+  if (!canAccept(m)) return;
   acceptDialog.value.open = true;
   acceptDialog.value.match = m;
 }

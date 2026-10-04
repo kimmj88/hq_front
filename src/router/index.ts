@@ -133,7 +133,7 @@ import {
   CONFIG_PERMISSION_CLAN_PATH,
 } from './permission/system/type';
 import { usePermissionStore } from '@/stores/usePermissionStore';
-import { useClanPermissionStore } from '@/stores/useClanPermissionStore';
+import { can as canClan, useClanPermissionStore } from '@/stores/useClanPermissionStore';
 import type { SystemRole } from '@/data/types/systemrole';
 import { BOARD_PATH } from './board/type';
 import type { ClanRole } from '@/data/types/clanrole';
@@ -501,6 +501,21 @@ router.beforeEach(async (to, from, next) => {
   if (to.path.startsWith('/clan/') && !isClanInvite && !isPublicClanPage) {
     const targetClan = String(to.params.name ?? '');
     if (!ok || account.clan == null || account.clan.name !== targetClan) {
+      return next('/forbidden');
+    }
+  }
+
+  if (to.path === '/clanmatch' || to.path.startsWith('/clanmatch/')) {
+    const canReadClanMatch = canClan('CLANMATCH', 'CLAN-SET-CLANMATCH-R');
+    let canOpenPage = canReadClanMatch;
+    if (to.path === CLAN_MATCH_PATH.ADD) {
+      canOpenPage = canReadClanMatch && canClan('CLANMATCH', 'CLAN-SET-CLANMATCH-C');
+    }
+    if (to.path.startsWith('/clanmatch/accept/')) {
+      canOpenPage = canReadClanMatch && canClan('CLANMATCH', 'CLAN-SET-CLANMATCH-U');
+    }
+
+    if (!ok || !account.clan?.id || !canOpenPage) {
       return next('/forbidden');
     }
   }

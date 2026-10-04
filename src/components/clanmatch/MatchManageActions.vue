@@ -113,6 +113,7 @@ import { computed, ref } from 'vue';
 import api from '@/@core/composable/useAxios';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import { useAccountStore } from '@/stores/useAccountStore';
+import { can } from '@/stores/useClanPermissionStore';
 import type { ClanMini, MatchStatus, SlotKey } from '@/data/types/clanmatch';
 
 const props = defineProps<{
@@ -133,10 +134,16 @@ const editable = computed(
     ['WAITING', 'MATCHED'].includes(props.match.status),
 );
 const isHost = computed(() => !!account.clan?.id && account.clan.id === props.match.host_clan.id);
-const canDelete = computed(() => editable.value && isHost.value);
+const canDelete = computed(
+  () =>
+    editable.value &&
+    isHost.value &&
+    can('CLANMATCH', 'CLAN-SET-CLANMATCH-D'),
+);
 const canEdit = computed(
   () =>
     editable.value &&
+    can('CLANMATCH', 'CLAN-SET-CLANMATCH-U') &&
     !!account.clan?.id &&
     (isHost.value || account.clan.id === props.match.guest_clan?.id),
 );

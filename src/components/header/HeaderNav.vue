@@ -50,6 +50,7 @@
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { can } from '@/stores/usePermissionStore';
+import { can as canClan } from '@/stores/useClanPermissionStore';
 import { CLAN_PATH } from '@/router/clan/type';
 import { useAccountStore } from '@/stores/useAccountStore';
 
@@ -115,12 +116,14 @@ const menuItems = computed(() => {
     });
   }
 
-  items.push({
-    key: 'clanmatch',
-    title: '클랜전',
-    icon: 'mdi-sword-cross',
-    to: '/clanmatch',
-  });
+  if (account.clan != null && canClan('CLANMATCH', 'CLAN-SET-CLANMATCH-R')) {
+    items.push({
+      key: 'clanmatch',
+      title: '클랜전',
+      icon: 'mdi-sword-cross',
+      to: '/clanmatch',
+    });
+  }
 
   items.push({
     key: 'selfscore',
