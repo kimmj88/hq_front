@@ -4,7 +4,7 @@
       <div class="d-flex align-center justify-space-between mb-4">
         <div>
           <div class="text-h6 font-weight-bold">
-            {{ isCreate ? '클랜전 생성' : '클랜전 수락 (Step 2 입력 전 단계)' }}
+            {{ isCreate ? '클랜전 생성' : '클랜전 수락' }}
           </div>
           <div class="text-caption text-medium-emphasis">
             {{
@@ -55,7 +55,7 @@
           <div class="text-caption text-medium-emphasis mt-1">
             {{
               isCreate
-                ? '상대 클랜이 수락하면 라인업을 확정합니다.'
+                ? '등록 후에도 결과 확정 전까지 선수를 수정할 수 있습니다.'
                 : '시간/티어는 Host가 설정한 값입니다.'
             }}
           </div>
@@ -74,7 +74,7 @@
             auto-grow
             rows="3"
             prepend-inner-icon="mdi-text-box-outline"
-            :disabled="false"
+            :disabled="!isCreate"
             :counter="200"
           />
           <div class="text-caption text-medium-emphasis mt-1">
@@ -202,14 +202,17 @@
           prepend-icon="mdi-check"
           @click="submitCreate"
         >
-          등록 (Step1)
+          클랜전 등록
         </v-btn>
 
         <!-- Guest Accept -->
         <v-btn
           v-else-if="isGuestMode"
-          color="success"
-          :disabled="!canSubmitGuest"
+          color="#FBBF24"
+          variant="flat"
+          class="text-black font-weight-bold"
+          :loading="submitting"
+          :disabled="!canSubmitGuest || loading"
           prepend-icon="mdi-handshake"
           @click="submitAccept"
         >
@@ -269,6 +272,8 @@ const slots: { key: SlotKey; label: string; short: string; icon: string }[] = [
 ];
 
 const errorMsg = ref('');
+const submitting = ref(false);
+const loading = ref(true);
 const clanMatch = ref<ClanMatch>();
 
 const form = ref({
@@ -288,7 +293,7 @@ const form = ref({
 });
 
 const selectedTierDesc = computed(
-  () => tierOptions.find((x) => x.value === form.value.tier)?.desc ?? ''
+  () => tierOptions.find((x) => x.value === form.value.tier)?.desc ?? '',
 );
 
 const mode = computed(() => {
@@ -296,7 +301,10 @@ const mode = computed(() => {
   return clanMatch.value?.host_clan.id === account.clan?.id ? 'HOST_VIEW' : 'GUEST_ACCEPT';
 });
 
-const isGuestMode = computed(() => mode.value === 'GUEST_ACCEPT');
+const isGuestMode = computed(
+  () =>
+    mode.value === 'GUEST_ACCEPT' && !!account.clan?.id && clanMatch.value?.status === 'WAITING',
+);
 
 const modeChip = computed(() => {
   if (mode.value === 'CREATE') return { label: 'CREATE', color: 'primary' };
@@ -316,7 +324,7 @@ function availablePlayersFor(team: 'host' | 'guest', slotKey: SlotKey) {
   const picked = new Set<number>(
     Object.entries(lineup)
       .filter(([k, v]) => k !== slotKey && v != null)
-      .map(([, v]) => v as number)
+      .map(([, v]) => v as number),
   );
 
   return pool
@@ -337,7 +345,11 @@ const canSubmitCreate = computed(() => {
 
 const canSubmitGuest = computed(() => {
   const v = form.value.guestLineup;
-  return !!(v.TOP && v.JUG && v.MID && v.ADC && v.SUP);
+  return (
+    isGuestMode.value &&
+    !!(v.TOP && v.JUG && v.MID && v.ADC && v.SUP) &&
+    new Set(Object.values(v)).size === 5
+  );
 });
 
 async function submitCreate() {
@@ -376,14 +388,17 @@ async function submitCreate() {
 }
 
 async function submitAccept() {
+  if (submitting.value || !canSubmitGuest.value) return;
   errorMsg.value = '';
   if (!account.clan?.id) {
     errorMsg.value = '클랜에 가입한 사용자만 클랜전을 수락할 수 있습니다.';
     return;
   }
+  submitting.value = true;
   try {
     const payload = {
-      id: matchId.value,
+      id: Number(matchId.value),
+      account_id: account.id,
       status: 'MATCHED',
       guest_clan_id: account.clan.id,
       match_members: [
@@ -395,11 +410,14 @@ async function submitAccept() {
       ],
     };
 
-    await api.post(`${getBaseUrl('DATA')}/clanmatch/update`, payload);
+    const response = await api.post(`${getBaseUrl('DATA')}/clanmatch/update`, payload);
+    if (response.data.rows !== true) throw new Error('accept failed');
     router.push(CLAN_MATCH_PATH.VIEW(matchId.value));
   } catch (e) {
     console.error(e);
-    errorMsg.value = '수락에 실패했습니다.';
+    errorMsg.value = '수락에 실패했습니다. 매치 상태를 확인하고 다시 시도하세요.';
+  } finally {
+    submitting.value = false;
   }
 }
 
@@ -407,42 +425,55 @@ function toDatetimeLocal(iso: string) {
   const d = new Date(iso); // iso가 Z면 UTC로 파싱되고, getHours()는 로컬(KST)
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
-    d.getHours()
+    d.getHours(),
   )}:${pad(d.getMinutes())}`;
 }
 
 onMounted(async () => {
-  if (isEdit.value == true) {
-    const { data } = await api.get(`${getBaseUrl('DATA')}/clanmatch/find?id=${route.params.id}`);
-    clanMatch.value = data.datas;
+  try {
+    if (isEdit.value == true) {
+      const { data } = await api.get(`${getBaseUrl('DATA')}/clanmatch/find?id=${route.params.id}`);
+      clanMatch.value = data.datas;
 
-    form.value.hostLineup.TOP = clanMatch.value?.host_member.TOP?.id;
-    form.value.hostLineup.JUG = clanMatch.value?.host_member.JUG?.id;
-    form.value.hostLineup.MID = clanMatch.value?.host_member.MID?.id;
-    form.value.hostLineup.ADC = clanMatch.value?.host_member.ADC?.id;
-    form.value.hostLineup.SUP = clanMatch.value?.host_member.SUP?.id;
+      form.value.hostLineup.TOP = clanMatch.value?.host_member.TOP?.id ?? null;
+      form.value.hostLineup.JUG = clanMatch.value?.host_member.JUG?.id ?? null;
+      form.value.hostLineup.MID = clanMatch.value?.host_member.MID?.id ?? null;
+      form.value.hostLineup.ADC = clanMatch.value?.host_member.ADC?.id ?? null;
+      form.value.hostLineup.SUP = clanMatch.value?.host_member.SUP?.id ?? null;
 
-    form.value.tier = clanMatch.value?.tier;
+      form.value.tier = clanMatch.value?.tier ?? null;
+      form.value.description = data.datas.description ?? '';
+      if (!isGuestMode.value)
+        errorMsg.value = '현재 수락할 수 없는 매치입니다. 매치 상태와 소속 클랜을 확인하세요.';
 
-    form.value.matchAt = clanMatch.value?.match_at ? toDatetimeLocal(clanMatch.value.match_at) : '';
+      form.value.matchAt = clanMatch.value?.match_at
+        ? toDatetimeLocal(clanMatch.value.match_at)
+        : '';
 
-    //host players
-    const res = await api.post(`${getBaseUrl('DATA')}/player/list`, {
-      clan: clanMatch.value?.host_clan,
-    });
-    hostPlayers.value = res.data.datas;
+      //host players
+      const res = await api.post(`${getBaseUrl('DATA')}/player/list`, {
+        clan: clanMatch.value?.host_clan,
+      });
+      hostPlayers.value = res.data.datas;
 
-    //guest players
-    const res2 = await api.post(`${getBaseUrl('DATA')}/player/list`, {
-      clan: account.clan,
-    });
-    guestPlayers.value = res2.data.datas;
-  } else {
-    const res = await api.post(`${getBaseUrl('DATA')}/player/list`, {
-      clan: account.clan,
-    });
+      //guest players
+      if (!account.clan?.id) return;
+      const res2 = await api.post(`${getBaseUrl('DATA')}/player/list`, {
+        clan: account.clan,
+      });
+      guestPlayers.value = res2.data.datas;
+    } else {
+      if (!account.clan?.id) return;
+      const res = await api.post(`${getBaseUrl('DATA')}/player/list`, {
+        clan: account.clan,
+      });
 
-    hostPlayers.value = res.data.datas;
+      hostPlayers.value = res.data.datas;
+    }
+  } catch {
+    errorMsg.value = '매치와 선수 정보를 불러오지 못했습니다.';
+  } finally {
+    loading.value = false;
   }
 });
 </script>

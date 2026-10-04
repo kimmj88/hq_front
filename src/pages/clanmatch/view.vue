@@ -34,11 +34,38 @@
       </div>
     </v-card>
 
+    <div class="d-flex flex-wrap align-center justify-space-between ga-3 mb-4">
+      <v-btn variant="text" prepend-icon="mdi-arrow-left" @click="router.push(CLAN_MATCH_PATH.BASE)"
+        >목록</v-btn
+      >
+      <MatchManageActions
+        :match="match"
+        @updated="loadMatch"
+        @deleted="router.push(CLAN_MATCH_PATH.BASE)"
+      />
+    </div>
+
+    <v-alert
+      v-if="canSaveResult"
+      class="winner-guide mb-4"
+      color="primary"
+      icon="mdi-trophy-outline"
+      variant="tonal"
+    >
+      <div class="font-weight-bold">승리팀을 선택해 주세요</div>
+      <div class="text-body-2">이긴 팀의 버튼을 누른 뒤 결과를 저장하면 확정됩니다.</div>
+    </v-alert>
+
     <!-- 팀 카드 2개 -->
     <v-row dense>
       <!-- 우리팀 -->
       <v-col cols="12" md="6">
-        <v-card class="pa-4 team-card" rounded="xl" elevation="2">
+        <v-card
+          class="pa-4 team-card"
+          :class="{ 'team-card--winner': winner === 'HOME' }"
+          rounded="xl"
+          elevation="2"
+        >
           <div class="d-flex align-center justify-space-between mb-3">
             <div class="d-flex align-center" style="gap: 10px">
               <v-avatar size="36" color="indigo">
@@ -49,20 +76,24 @@
                 <div class="text-caption text-medium-emphasis">HOME</div>
               </div>
             </div>
-
-            <v-btn
-              size="small"
-              :disabled="match.is_confirm"
-              :variant="winner === 'HOME' ? 'flat' : 'tonal'"
-              color="success"
-              prepend-icon="mdi-trophy"
-              @click="pickWinner('HOME')"
-            >
-              승리
-            </v-btn>
           </div>
 
           <v-divider class="mb-3" />
+
+          <v-btn
+            block
+            class="winner-select-btn mb-4"
+            :class="{ 'winner-select-btn--selected': winner === 'HOME' }"
+            size="large"
+            :disabled="!canSaveResult"
+            :variant="winner === 'HOME' ? 'flat' : 'outlined'"
+            :color="winner === 'HOME' ? 'success' : 'primary'"
+            :prepend-icon="winner === 'HOME' ? 'mdi-check-circle' : 'mdi-trophy-outline'"
+            :aria-pressed="winner === 'HOME'"
+            @click="pickWinner('HOME')"
+          >
+            {{ winnerButtonLabel('HOME') }}
+          </v-btn>
 
           <div class="roster">
             <div v-for="slot in slots" :key="'H-' + slot.key" class="roster-row">
@@ -83,20 +114,20 @@
               >
                 <v-avatar size="28" color="deep-purple-darken-2" class="mr-2">
                   <span class="text-caption text-white">
-                    {{ initials(match.host_member[slot.key].nickname) }}
+                    {{ initials(match.host_member[slot.key]?.nickname) }}
                   </span>
                 </v-avatar>
 
                 <div class="player__name">
                   <div class="text-body-2 font-weight-medium">
-                    {{ match.host_member[slot.key].nickname }}
-                    <span class="text-caption" v-if="match.host_member[slot.key].tagname">
-                      #{{ match.host_member[slot.key].tagname }}
+                    {{ match.host_member[slot.key]?.nickname }}
+                    <span class="text-caption" v-if="match.host_member[slot.key]?.tagname">
+                      #{{ match.host_member[slot.key]?.tagname }}
                     </span>
                   </div>
                   <div class="text-caption text-medium-emphasis">
-                    {{ match.host_member[slot.key].tierName || '-' }} · Point
-                    {{ match.host_member[slot.key].point ?? 0 }}
+                    {{ match.host_member[slot.key]?.tierName || '-' }} · Point
+                    {{ match.host_member[slot.key]?.point ?? 0 }}
                   </div>
                 </div>
               </div>
@@ -112,7 +143,12 @@
 
       <!-- 상대팀 -->
       <v-col cols="12" md="6">
-        <v-card class="pa-4 team-card" rounded="xl" elevation="2">
+        <v-card
+          class="pa-4 team-card"
+          :class="{ 'team-card--winner': winner === 'AWAY' }"
+          rounded="xl"
+          elevation="2"
+        >
           <div class="d-flex align-center justify-space-between mb-3">
             <div class="d-flex align-center" style="gap: 10px">
               <v-avatar size="36" color="purple">
@@ -123,19 +159,24 @@
                 <div class="text-caption text-medium-emphasis">AWAY</div>
               </div>
             </div>
-
-            <v-btn
-              size="small"
-              :variant="winner === 'AWAY' ? 'flat' : 'tonal'"
-              color="success"
-              prepend-icon="mdi-trophy"
-              @click="pickWinner('AWAY')"
-            >
-              승리
-            </v-btn>
           </div>
 
           <v-divider class="mb-3" />
+
+          <v-btn
+            block
+            class="winner-select-btn mb-4"
+            :class="{ 'winner-select-btn--selected': winner === 'AWAY' }"
+            size="large"
+            :disabled="!canSaveResult"
+            :variant="winner === 'AWAY' ? 'flat' : 'outlined'"
+            :color="winner === 'AWAY' ? 'success' : 'primary'"
+            :prepend-icon="winner === 'AWAY' ? 'mdi-check-circle' : 'mdi-trophy-outline'"
+            :aria-pressed="winner === 'AWAY'"
+            @click="pickWinner('AWAY')"
+          >
+            {{ winnerButtonLabel('AWAY') }}
+          </v-btn>
 
           <div class="roster">
             <div v-for="slot in slots" :key="'A-' + slot.key" class="roster-row">
@@ -156,20 +197,20 @@
               >
                 <v-avatar size="28" color="deep-purple-darken-2" class="mr-2">
                   <span class="text-caption text-white">
-                    {{ initials(match.guest_member[slot.key].nickname) }}
+                    {{ initials(match.guest_member[slot.key]?.nickname) }}
                   </span>
                 </v-avatar>
 
                 <div class="player__name">
                   <div class="text-body-2 font-weight-medium">
-                    {{ match.guest_member[slot.key].nickname }}
-                    <span class="text-caption" v-if="match.guest_member[slot.key].tagname">
-                      #{{ match.guest_member[slot.key].tagname }}
+                    {{ match.guest_member[slot.key]?.nickname }}
+                    <span class="text-caption" v-if="match.guest_member[slot.key]?.tagname">
+                      #{{ match.guest_member[slot.key]?.tagname }}
                     </span>
                   </div>
                   <div class="text-caption text-medium-emphasis">
-                    {{ match.guest_member[slot.key].tierName || '-' }} · Point
-                    {{ match.guest_member[slot.key].point ?? 0 }}
+                    {{ match.guest_member[slot.key]?.tierName || '-' }} · Point
+                    {{ match.guest_member[slot.key]?.point ?? 0 }}
                   </div>
                 </div>
               </div>
@@ -188,13 +229,19 @@
     <v-card class="pa-4 mt-4" rounded="xl" elevation="2">
       <div class="d-flex flex-wrap align-center justify-space-between" style="gap: 12px">
         <div class="text-caption text-medium-emphasis">
-          승리팀을 선택하면 결과를 저장할 수 있어요.
+          {{
+            match.is_confirm
+              ? '결과가 확정된 경기입니다.'
+              : canSaveResult
+                ? '승리팀을 선택하면 결과를 저장할 수 있어요.'
+                : '매치 성사 후 참가 클랜에서 결과를 저장할 수 있습니다.'
+          }}
         </div>
 
         <div class="d-flex" style="gap: 8px">
           <!-- <v-btn variant="text" @click="winner = null">선택 해제</v-btn> -->
           <v-btn
-            v-if="!match.is_confirm"
+            v-if="canSaveResult"
             color="primary"
             :disabled="!winner"
             prepend-icon="mdi-content-save"
@@ -212,20 +259,18 @@
     </v-card>
 
     <!-- 확인 다이얼로그 -->
-    <v-dialog v-model="confirmDialog" max-width="420">
+    <v-dialog v-model="confirmDialog" max-width="420" :persistent="saving">
       <v-card>
         <v-card-title class="text-h6">승리팀 확정</v-card-title>
         <v-card-text class="text-body-2 text-medium-emphasis">
           승리팀을
           <b>{{ winner === 'HOME' ? match.host_clan?.name : match.guest_clan?.name }}</b> 로
           저장할까요?
-          <div class="text-caption mt-2">
-            (저장 후에는 운영 정책에 따라 수정 제한을 둘 수도 있어요.)
-          </div>
+          <div class="text-caption mt-2">저장 후에는 선수 수정과 클랜전 삭제가 제한됩니다.</div>
         </v-card-text>
         <v-card-actions class="justify-end">
-          <v-btn variant="text" @click="confirmDialog = false">취소</v-btn>
-          <v-btn color="primary" @click="saveResult">저장</v-btn>
+          <v-btn variant="text" :disabled="saving" @click="confirmDialog = false">취소</v-btn>
+          <v-btn color="primary" :loading="saving" @click="saveResult">저장</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -236,13 +281,18 @@
 
 <script setup lang="ts">
 import { getBaseUrl } from '@/@core/composable/createUrl';
-import { onMounted, ref } from 'vue';
+import MatchManageActions from '@/components/clanmatch/MatchManageActions.vue';
+import { useAccountStore } from '@/stores/useAccountStore';
+import { CLAN_MATCH_PATH } from '@/router/clanmatch';
+import { computed, onMounted, ref } from 'vue';
 import api from '@/@core/composable/useAxios';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import type { ClanMini, MatchStatus } from '@/data/types/clanmatch';
 import { formatDateTime } from '@/utils/date';
 
 const route = useRoute();
+const router = useRouter();
+const account = useAccountStore();
 
 type SlotKey = 'TOP' | 'JUG' | 'MID' | 'ADC' | 'SUP';
 type TeamSide = 'HOME' | 'AWAY';
@@ -271,7 +321,7 @@ function toast(msg: string) {
 
 type ClickablePlayer = {
   nickname: string;
-  tagname: string;
+  tagname?: string;
 };
 
 function openPlayer(p?: ClickablePlayer | null) {
@@ -289,45 +339,45 @@ function initials(name?: string) {
   return name.trim().slice(0, 2).toUpperCase();
 }
 
-function formatKST(iso: string) {
-  // iso가 "2026-01-01T20:00" 같은 형태여도 그냥 표시용으로만
-  return iso.replace('T', ' ');
-}
-
 const winner = ref<TeamSide | null>(null);
 const confirmDialog = ref(false);
 
 function pickWinner(side: TeamSide) {
-  winner.value = side;
+  if (canSaveResult.value) winner.value = side;
+}
+
+function winnerButtonLabel(side: TeamSide) {
+  if (winner.value !== side) return '이 팀을 승리팀으로 선택';
+  return match.value.is_confirm ? '최종 승리팀' : '승리팀으로 선택됨';
 }
 
 async function saveResult() {
-  confirmDialog.value = false;
+  if (!canSaveResult.value || !winner.value || saving.value) return;
+  saving.value = true;
 
   try {
-    // TODO: API 연결
-    // await api.post(`${getBaseUrl('DATA')}/clanmatch/set_winner`, {
-    //   match_id: match.value.id,
-    //   winner: winner.value, // 'HOME' | 'AWAY'
-    // });
-
     const payload = {
       id: match.value.id,
+      account_id: account.id,
       status: 'DONE',
       winner_team: winner.value == 'HOME' ? 1 : 2,
       is_confirm: true,
     };
 
-    await api.post(`${getBaseUrl('DATA')}/clanmatch/update`, payload);
+    const response = await api.post(`${getBaseUrl('DATA')}/clanmatch/update`, payload);
+    if (response.data.rows !== true) throw new Error('save failed');
+    confirmDialog.value = false;
+    await loadMatch();
 
     toast('결과가 저장되었습니다.');
   } catch (e) {
     console.error(e);
     toast('저장에 실패했습니다.');
+  } finally {
+    saving.value = false;
   }
 }
 
-// ✅ 샘플 매치 데이터 (서버 연결 전까지 임시)
 type ApiMember = {
   id: number;
   nickname: string;
@@ -386,48 +436,85 @@ const match = ref({
   } as Record<SlotKey, PlayerItem | null>,
 });
 
-onMounted(async () => {
-  const id = Number(route.params.id);
-  const { data } = await api.get(`${getBaseUrl('DATA')}/clanmatch/find?id=${id}`);
-  const cm: ApiClanMatchFind = data.datas;
+const saving = ref(false);
+const canSaveResult = computed(
+  () =>
+    match.value.status === 'MATCHED' &&
+    !match.value.is_confirm &&
+    !!account.clan?.id &&
+    [match.value.host_clan.id, match.value.guest_clan.id].includes(account.clan.id),
+);
+async function loadMatch() {
+  try {
+    const id = Number(route.params.id);
+    const { data } = await api.get(`${getBaseUrl('DATA')}/clanmatch/find?id=${id}`);
+    const cm: ApiClanMatchFind = data.datas;
 
-  if (cm.winner_team != null) {
-    winner.value = cm.winner_team == 1 ? 'HOME' : 'AWAY';
+    winner.value = cm.winner_team === 1 ? 'HOME' : cm.winner_team === 2 ? 'AWAY' : null;
+
+    match.value = {
+      id: cm.id,
+      status: cm.status,
+      tier: cm.tier,
+      match_at: cm.match_at,
+      is_confirm: cm.is_confirm,
+      description: cm.description ?? '', // ✅ 추가
+      host_clan: cm.host_clan,
+      guest_clan: cm.guest_clan ?? { id: 0, name: '상대 미정' },
+
+      host_member: {
+        TOP: toPlayerItem(cm.host_member.TOP),
+        JUG: toPlayerItem(cm.host_member.JUG),
+        MID: toPlayerItem(cm.host_member.MID),
+        ADC: toPlayerItem(cm.host_member.ADC),
+        SUP: toPlayerItem(cm.host_member.SUP),
+      },
+
+      guest_member: {
+        TOP: toPlayerItem(cm.guest_member.TOP),
+        JUG: toPlayerItem(cm.guest_member.JUG),
+        MID: toPlayerItem(cm.guest_member.MID),
+        ADC: toPlayerItem(cm.guest_member.ADC),
+        SUP: toPlayerItem(cm.guest_member.SUP),
+      },
+    };
+  } catch {
+    toast('매치 정보를 불러오지 못했습니다.');
   }
-
-  match.value = {
-    id: cm.id,
-    status: cm.status,
-    tier: cm.tier,
-    match_at: cm.match_at,
-    is_confirm: cm.is_confirm,
-    description: cm.description ?? '', // ✅ 추가
-    host_clan: cm.host_clan,
-    guest_clan: cm.guest_clan ?? { id: 0, name: '상대 미정' },
-
-    host_member: {
-      TOP: toPlayerItem(cm.host_member.TOP),
-      JUG: toPlayerItem(cm.host_member.JUG),
-      MID: toPlayerItem(cm.host_member.MID),
-      ADC: toPlayerItem(cm.host_member.ADC),
-      SUP: toPlayerItem(cm.host_member.SUP),
-    } as any,
-
-    guest_member: {
-      TOP: toPlayerItem(cm.guest_member.TOP),
-      JUG: toPlayerItem(cm.guest_member.JUG),
-      MID: toPlayerItem(cm.guest_member.MID),
-      ADC: toPlayerItem(cm.guest_member.ADC),
-      SUP: toPlayerItem(cm.guest_member.SUP),
-    } as any,
-  };
-});
+}
+onMounted(loadMatch);
 </script>
 
 <style scoped>
 .team-card {
   background: radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.2));
   border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.team-card--winner {
+  border-color: rgba(var(--v-theme-success), 0.72);
+  box-shadow: 0 0 0 1px rgba(var(--v-theme-success), 0.18),
+    0 14px 34px rgba(var(--v-theme-success), 0.12) !important;
+}
+
+.winner-guide {
+  border: 1px solid rgba(var(--v-theme-primary), 0.3);
+}
+
+.winner-select-btn {
+  min-height: 52px;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.winner-select-btn--selected {
+  box-shadow: 0 8px 20px rgba(var(--v-theme-success), 0.24);
+}
+
+.winner-select-btn--selected.v-btn--disabled {
+  opacity: 1;
 }
 
 .roster {

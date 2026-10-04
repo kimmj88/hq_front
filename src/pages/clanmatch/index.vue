@@ -1,10 +1,10 @@
 <template>
   <v-container class="py-6" style="max-width: 1100px">
-    <div class="d-flex align-center justify-space-between mb-4">
+    <div class="d-flex flex-wrap ga-3 align-center justify-space-between mb-4">
       <div>
         <div class="text-h6 font-weight-bold">클랜전 목록</div>
         <div class="text-caption text-medium-emphasis">
-          다른 클랜이 생성한 대기중 매치를 보고 “수락”하면 Step2로 진행합니다.
+          대기중인 매치를 선택하고 우리 클랜 선수를 등록해 매치를 잡아보세요.
         </div>
       </div>
 
@@ -65,6 +65,7 @@
       </v-row>
     </v-card>
 
+    <v-progress-linear v-if="loading" indeterminate class="mb-4" />
     <!-- 목록 -->
     <v-row dense>
       <v-col cols="12" v-if="filtered.length === 0">
@@ -75,7 +76,7 @@
 
       <v-col cols="12" v-for="m in filtered" :key="m.id">
         <v-card rounded="xl" elevation="2" class="pa-4">
-          <div class="d-flex align-center justify-space-between">
+          <div class="d-flex flex-wrap ga-2 align-center justify-space-between">
             <div class="d-flex align-center" style="gap: 10px; flex-wrap: wrap">
               <v-chip :color="statusColor(m.status)" variant="flat" size="small">
                 {{ statusLabel(m.status) }}
@@ -94,31 +95,15 @@
               </div>
             </div>
 
-            <div class="d-flex align-center" style="gap: 8px">
-              <v-btn variant="text" prepend-icon="mdi-eye-outline" @click="openDetail(m)">
-                상세
-              </v-btn>
-
-              <!-- ✅ 내 클랜이 만든 매치는 수락 버튼 숨김 -->
-              <v-btn
-                v-if="canAccept(m)"
-                color="primary"
-                prepend-icon="mdi-sword-cross"
-                @click="openAcceptDialog(m)"
-              >
-                수락(매치잡기)
-              </v-btn>
-
-              <v-chip v-else-if="isMyClanMatch(m)" variant="tonal" size="small" color="grey">
-                내가 만든 매치
-              </v-chip>
-            </div>
+            <v-chip v-if="isMyClanMatch(m)" variant="tonal" size="small" color="grey"
+              >우리 클랜 매치</v-chip
+            >
           </div>
 
           <v-divider class="my-3" />
 
           <!-- 우리팀(호스트) 라인업 -->
-          <div class="text-subtitle-2 font-weight-bold mb-2">호스트 라인업 (Step1 등록)</div>
+          <div class="text-subtitle-2 font-weight-bold mb-2">호스트 라인업</div>
 
           <v-row dense>
             <v-col cols="12" md="6" v-for="slot in slots" :key="slot.key">
@@ -134,13 +119,13 @@
 
                 <div class="mt-2 text-body-2">
                   <template v-if="m.host_member?.[slot.key]">
-                    <b>{{ m.host_member[slot.key].nickname }}</b>
-                    <span v-if="m.host_member[slot.key].tagname"
-                      >#{{ m.host_member[slot.key].tagname }}</span
+                    <b>{{ m.host_member[slot.key]?.nickname }}</b>
+                    <span v-if="m.host_member[slot.key]?.tagname"
+                      >#{{ m.host_member[slot.key]?.tagname }}</span
                     >
                     <span class="text-caption text-medium-emphasis">
-                      · {{ m.host_member[slot.key].tier || '-' }} · Point
-                      {{ m.host_member[slot.key].point ?? 0 }}
+                      · {{ m.host_member[slot.key]?.tier || '-' }} · Point
+                      {{ m.host_member[slot.key]?.point ?? 0 }}
                     </span>
                   </template>
                   <template v-else>
@@ -150,6 +135,25 @@
               </v-card>
             </v-col>
           </v-row>
+          <v-divider class="my-4" />
+          <div class="match-actions">
+            <MatchManageActions :match="m" @updated="handleSearch" @deleted="handleSearch" />
+            <div class="match-actions__main">
+              <v-btn variant="outlined" prepend-icon="mdi-eye-outline" @click="openDetail(m)"
+                >상세 보기</v-btn
+              >
+              <v-btn
+                v-if="canAccept(m)"
+                class="accept-button"
+                color="#FBBF24"
+                variant="flat"
+                size="large"
+                prepend-icon="mdi-sword-cross"
+                @click="openAcceptDialog(m)"
+                >매치 잡기 · 수락</v-btn
+              >
+            </div>
+          </div>
         </v-card>
       </v-col>
     </v-row>
@@ -160,16 +164,23 @@
         <v-card-title class="text-h6 font-weight-bold">클랜전 수락</v-card-title>
         <v-card-text class="text-body-2 text-medium-emphasis">
           <div>
-            <b>{{ acceptDialog.match?.hostClanName }}</b> 클랜이 생성한
-            <b>{{ tierTitle(acceptDialog.match?.tierLevel) }}</b> 매치를 수락할까요?
+            <b>{{ acceptDialog.match?.host_clan.name }}</b> 클랜이 생성한
+            <b>{{ tierTitle(acceptDialog.match?.tier) }}</b> 매치를 수락할까요?
           </div>
           <div class="mt-2">
-            수락하면 Step2에서 <b>상대(우리 클랜) 라인업 5명</b>을 입력하게 됩니다.
+            다음 화면에서 <b>우리 클랜 선수 5명</b>을 등록하면 수락이 완료됩니다.
           </div>
         </v-card-text>
         <v-card-actions class="justify-end">
           <v-btn variant="text" @click="acceptDialog.open = false">취소</v-btn>
-          <v-btn color="primary" @click="acceptMatch" prepend-icon="mdi-check">수락</v-btn>
+          <v-btn
+            color="#FBBF24"
+            variant="flat"
+            class="accept-button"
+            @click="acceptMatch"
+            prepend-icon="mdi-arrow-right"
+            >선수 등록하기</v-btn
+          >
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -179,6 +190,7 @@
 </template>
 
 <script setup lang="ts">
+import MatchManageActions from '@/components/clanmatch/MatchManageActions.vue';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -238,7 +250,7 @@ const filters = ref({
 
 function tierTitle(v?: number | null) {
   if (!v) return '-';
-  return `${v}티어`;
+  return v === 10 ? '무제한티어' : `${v}티어`;
 }
 function tierDesc(v?: number | null) {
   if (!v) return '';
@@ -267,7 +279,7 @@ const filtered = computed(() => {
     .filter((m) => (filters.value.status ? m.status === filters.value.status : true))
     .filter((m) => (filters.value.tier ? m.tier === filters.value.tier : true))
     .filter((m) => {
-      const k = filters.value.keyword.trim().toLowerCase();
+      const k = (filters.value.keyword ?? '').trim().toLowerCase();
       if (!k) return true;
       return (m.host_clan?.name ?? '').toLowerCase().includes(k);
     })
@@ -314,13 +326,9 @@ function toast(msg: string) {
 
 async function acceptMatch() {
   const m = acceptDialog.value.match;
-  if (!m) return;
-
-  // TODO: 실제 API 연결
-  // await api.post(`${getBaseUrl('DATA')}/clanmatch/accept`, { match_id: m.id, clan_id: myClanId.value })
+  if (!m || !canAccept(m)) return;
 
   acceptDialog.value.open = false;
-  toast('매치를 수락했습니다. Step2로 이동합니다.');
   router.push(CLAN_MATCH_PATH.ACCEPT(m.id));
 }
 
@@ -347,6 +355,7 @@ function handleSearch() {
 }
 
 async function loadItems(options: FetchParams) {
+  loading.value = true;
   try {
     const sortKey = options.sortBy[0]?.key || 'created_at';
     const sortOrder = options.sortBy[0]?.order || 'desc';
@@ -354,15 +363,15 @@ async function loadItems(options: FetchParams) {
     const response = await api.get(
       `${getBaseUrl('DATA')}/clanmatch/search?keyword=${search.value}&page=${
         options.page
-      }&itemsPerPage=${options.itemsPerPage}&sortBy=${sortKey}&orderBy=${sortOrder}`
+      }&itemsPerPage=${options.itemsPerPage}&sortBy=${sortKey}&orderBy=${sortOrder}`,
     );
 
-    loading.value = true;
     items.value = response.data.datas;
     totalItems.value = response.data.totalCount;
-    loading.value = false;
   } catch (error) {
-    console.error('기업 목록 불러오기 실패:', error);
+    toast('클랜전 목록을 불러오지 못했습니다.');
+  } finally {
+    loading.value = false;
   }
 }
 
@@ -370,7 +379,33 @@ onMounted(() => {
   handleSearch();
 });
 </script>
-<style>
+<style scoped>
+.match-actions,
+.match-actions__main {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.match-actions {
+  justify-content: space-between;
+}
+.match-actions__main {
+  margin-left: auto;
+}
+.accept-button {
+  color: #18181b !important;
+  font-weight: 800;
+}
+@media (max-width: 600px) {
+  .match-actions__main {
+    width: 100%;
+  }
+  .match-actions__main > .v-btn {
+    flex: 1;
+  }
+}
+
 .pos-icon {
   width: 22px;
   height: 22px;

@@ -16,6 +16,7 @@ declare module 'vue' {
     DiscordIcon: typeof import('./src/components/icons/DiscordIcon.vue')['default']
     Header: typeof import('./src/components/header/Header.vue')['default']
     HeaderNav: typeof import('./src/components/header/HeaderNav.vue')['default']
+    MatchManageActions: typeof import('./src/components/clanmatch/MatchManageActions.vue')['default']
     PlayerMemberDialog: typeof import('./src/components/dialogs/PlayerMemberDialog.vue')['default']
     ProjectMemberDialog: typeof import('./src/components/dialogs/ProjectMemberDialog.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']

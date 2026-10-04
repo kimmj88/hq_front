@@ -101,6 +101,12 @@
           />
 
           <v-list-item
+            prepend-icon="mdi-shield-sword-outline"
+            title="클랜전"
+            :to="CLAN_MATCH_PATH.BASE"
+          />
+
+          <v-list-item
             v-if="can('MATCH', 'CLAN-SET-MATCH-R')"
             :active="section === 'matches'"
             prepend-icon="mdi-sword-cross"
@@ -220,6 +226,7 @@ import { getBaseUrl } from '@/@core/composable/createUrl';
 import api from '@/@core/composable/useAxios';
 import { useRouter } from 'vue-router';
 import { CLAN_PATH } from '@/router/clan/type';
+import { CLAN_MATCH_PATH } from '@/router/clanmatch';
 
 const router = useRouter();
 const account = useAccountStore();
