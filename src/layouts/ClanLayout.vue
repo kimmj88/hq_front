@@ -104,7 +104,7 @@
             v-if="canReadClanMatchMenu"
             prepend-icon="mdi-shield-sword-outline"
             title="클랜전"
-            :to="CLAN_MATCH_PATH.BASE"
+            :to="CLAN_MATCH_PATH.BASE(account.clan.name)"
           />
 
           <v-list-item

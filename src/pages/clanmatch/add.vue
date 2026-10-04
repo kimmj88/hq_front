@@ -282,6 +282,7 @@ import {
 const account = useAccountStore();
 const router = useRouter();
 const route = useRoute();
+const clanName = computed(() => String(route.params.name ?? account.clan?.name ?? ''));
 
 // 수정인지 신규인지
 const isEdit = computed(() => !!route.params.id);
@@ -441,7 +442,7 @@ async function submitCreate() {
 
     await api.post(`${getBaseUrl('DATA')}/clanmatch/create`, payload);
 
-    router.push('/clanmatch');
+    router.push(CLAN_MATCH_PATH.BASE(clanName.value));
   } catch (e: any) {
     console.error(e);
     errorMsg.value = e?.response?.data?.message ?? '등록에 실패했습니다.';
@@ -523,7 +524,7 @@ async function submitAccept() {
 
     const response = await api.post(`${getBaseUrl('DATA')}/clanmatch/update`, payload);
     if (response.data.rows !== true) throw new Error('accept failed');
-    router.push(CLAN_MATCH_PATH.VIEW(matchId.value));
+    router.push(CLAN_MATCH_PATH.VIEW(clanName.value, matchId.value));
   } catch (e) {
     console.error(e);
     errorMsg.value = '수락에 실패했습니다. 매치 상태를 확인하고 다시 시도하세요.';

@@ -49,15 +49,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { usePermissionStore } from '@/stores/usePermissionStore';
-import { useClanPermissionStore } from '@/stores/useClanPermissionStore';
 import { CLAN_PATH } from '@/router/clan/type';
 import { useAccountStore } from '@/stores/useAccountStore';
-import { canReadClanMatch } from '@/utils/clanMatchPermission';
 
 const account = useAccountStore();
-const systemPermissionStore = usePermissionStore();
-const clanPermissionStore = useClanPermissionStore();
 
 const router = useRouter();
 
@@ -73,9 +68,6 @@ interface MenuItem {
 }
 
 const menuItems = computed(() => {
-  // 권한 스토어가 갱신되면 메뉴 목록도 즉시 다시 계산한다.
-  const permissionRuleCount =
-    systemPermissionStore.rules.length + clanPermissionStore.rules.length;
   const items: MenuItem[] = [];
 
   items.push({
@@ -119,15 +111,6 @@ const menuItems = computed(() => {
       title: '클랜',
       icon: 'mdi-account-group-outline',
       to: `/clan`,
-    });
-  }
-
-  if (permissionRuleCount > 0 && canReadClanMatch()) {
-    items.push({
-      key: 'clanmatch',
-      title: '클랜전',
-      icon: 'mdi-sword-cross',
-      to: '/clanmatch',
     });
   }
 

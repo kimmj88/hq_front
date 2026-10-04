@@ -13,7 +13,7 @@
           v-if="canCreateClanMatch()"
           color="primary"
           prepend-icon="mdi-plus"
-          @click="$router.push(CLAN_MATCH_PATH.ADD)"
+          @click="openCreate"
         >
           클랜전 생성
         </v-btn>
@@ -22,23 +22,10 @@
       </div>
     </div>
 
-    <!-- 필터 -->
+    <!-- 공통 필터 -->
     <v-card class="pa-4 mb-4" rounded="xl" elevation="2">
       <v-row dense>
-        <v-col cols="12" md="4">
-          <v-select
-            v-model="filters.status"
-            :items="statusOptions"
-            item-title="title"
-            item-value="value"
-            label="상태"
-            variant="outlined"
-            density="comfortable"
-            prepend-inner-icon="mdi-filter"
-          />
-        </v-col>
-
-        <v-col cols="12" md="4">
+        <v-col cols="12" md="6">
           <v-select
             v-model="filters.tier"
             :items="tierOptions"
@@ -52,7 +39,7 @@
           />
         </v-col>
 
-        <v-col cols="12" md="4">
+        <v-col cols="12" md="6">
           <v-text-field
             v-model="filters.keyword"
             label="클랜명 검색"
@@ -66,97 +53,152 @@
     </v-card>
 
     <v-progress-linear v-if="loading" indeterminate class="mb-4" />
-    <!-- 목록 -->
-    <v-row dense>
-      <v-col cols="12" v-if="filtered.length === 0">
-        <v-alert type="info" variant="tonal" density="compact">
-          조건에 맞는 클랜전이 없습니다.
-        </v-alert>
-      </v-col>
 
-      <v-col cols="12" v-for="m in filtered" :key="m.id">
-        <v-card rounded="xl" elevation="2" class="pa-4">
-          <div class="d-flex flex-wrap ga-2 align-center justify-space-between">
-            <div class="d-flex align-center" style="gap: 10px; flex-wrap: wrap">
-              <v-chip :color="statusColor(m.status)" variant="flat" size="small">
-                {{ statusLabel(m.status) }}
-              </v-chip>
-
-              <v-chip color="secondary" variant="tonal" size="small">
-                {{ tierTitle(m.tier) }} · {{ tierDesc(m.tier) }}
-              </v-chip>
-
-              <div class="text-subtitle-1 font-weight-bold">
-                {{ m.host_clan.name }}
-              </div>
-
-              <div class="text-caption text-medium-emphasis">
-                {{ formatDateTime(m.match_at) }}
+    <!-- 진행 중인 클랜전 보드 -->
+    <v-row class="match-board" align="stretch">
+      <v-col v-for="column in matchColumns" :key="column.status" cols="12" md="6">
+        <section class="match-column" :class="`match-column--${column.status.toLowerCase()}`">
+          <div class="match-column__header">
+            <div class="d-flex align-center ga-2">
+              <v-avatar :color="column.color" size="34" variant="tonal">
+                <v-icon :icon="column.icon" size="19" />
+              </v-avatar>
+              <div>
+                <div class="text-subtitle-1 font-weight-bold">{{ column.title }}</div>
+                <div class="text-caption text-medium-emphasis">{{ column.description }}</div>
               </div>
             </div>
-
-            <v-chip v-if="isMyClanMatch(m)" variant="tonal" size="small" color="grey"
-              >우리 클랜 매치</v-chip
-            >
+            <v-chip :color="column.color" variant="tonal" size="small">
+              {{ column.matches.length }}건
+            </v-chip>
           </div>
 
-          <v-divider class="my-3" />
+          <v-alert
+            v-if="!loading && column.matches.length === 0"
+            type="info"
+            variant="tonal"
+            density="compact"
+            class="ma-4"
+          >
+            {{ column.emptyMessage }}
+          </v-alert>
 
-          <!-- 우리팀(호스트) 라인업 -->
-          <div class="text-subtitle-2 font-weight-bold mb-2">호스트 라인업</div>
+          <div v-else class="match-column__list">
+            <v-card
+              v-for="m in column.matches"
+              :key="m.id"
+              rounded="xl"
+              elevation="1"
+              class="match-card pa-4"
+            >
+              <div class="d-flex ga-2 align-center justify-space-between">
+                <v-chip :color="column.color" variant="flat" size="small">
+                  {{ column.title }}
+                </v-chip>
+                <v-chip v-if="isMyClanMatch(m)" variant="tonal" size="small" color="grey">
+                  우리 클랜
+                </v-chip>
+              </div>
 
-          <v-row dense>
-            <v-col cols="12" md="6" v-for="slot in slots" :key="slot.key">
-              <v-card variant="tonal" rounded="lg" class="pa-3">
-                <div class="d-flex align-center" style="gap: 8px">
+              <div class="match-card__versus mt-3">
+                <strong>{{ m.host_clan.name }}</strong>
+                <span>VS</span>
+                <strong :class="{ 'text-medium-emphasis': !m.guest_clan }">
+                  {{ m.guest_clan?.name ?? '상대 클랜 대기' }}
+                </strong>
+              </div>
+
+              <div class="d-flex flex-wrap ga-2 mt-3">
+                <v-chip color="secondary" variant="tonal" size="small">
+                  {{ tierTitle(m.tier) }} · {{ tierDesc(m.tier) }}
+                </v-chip>
+                <v-chip prepend-icon="mdi-calendar-clock" variant="outlined" size="small">
+                  {{ formatDateTime(m.match_at) }}
+                </v-chip>
+              </div>
+
+              <v-divider class="my-3" />
+              <div class="text-caption font-weight-bold text-medium-emphasis mb-2">
+                HOST 라인업
+              </div>
+              <div class="lineup-list">
+                <div v-for="slot in slots" :key="slot.key" class="lineup-list__item">
                   <div class="pos-icon">
                     <v-img :src="slot.icon" width="18" height="18" contain />
                   </div>
-                  <div class="font-weight-bold">{{ slot.label }}</div>
-                  <v-spacer />
-                  <v-chip size="x-small" variant="flat" color="secondary">{{ slot.short }}</v-chip>
-                </div>
-
-                <div class="mt-2 text-body-2">
+                  <span class="lineup-list__position">{{ slot.short }}</span>
                   <template v-if="m.host_member?.[slot.key]">
-                    <b>{{ m.host_member[slot.key]?.nickname }}</b>
-                    <span v-if="m.host_member[slot.key]?.tagname"
-                      >#{{ m.host_member[slot.key]?.tagname }}</span
-                    >
-                    <span class="text-caption text-medium-emphasis">
-                      · {{ m.host_member[slot.key]?.tier || '-' }} · Point
-                      {{ m.host_member[slot.key]?.point ?? 0 }}
+                    <span class="lineup-list__player">
+                      {{ m.host_member[slot.key]?.nickname }}<template
+                        v-if="m.host_member[slot.key]?.tagname"
+                        >#{{ m.host_member[slot.key]?.tagname }}</template
+                      >
+                    </span>
+                    <span class="lineup-list__tier">
+                      {{ m.host_member[slot.key]?.tier || '-' }}
                     </span>
                   </template>
-                  <template v-else>
-                    <span class="text-caption text-medium-emphasis">미등록</span>
-                  </template>
+                  <span v-else class="lineup-list__player text-medium-emphasis">미등록</span>
                 </div>
-              </v-card>
-            </v-col>
-          </v-row>
-          <v-divider class="my-4" />
-          <div class="match-actions">
-            <MatchManageActions :match="m" @updated="handleSearch" @deleted="handleSearch" />
-            <div class="match-actions__main">
-              <v-btn variant="outlined" prepend-icon="mdi-eye-outline" @click="openDetail(m)"
-                >상세 보기</v-btn
-              >
-              <v-btn
-                v-if="canAccept(m)"
-                class="accept-button"
-                color="#FBBF24"
-                variant="flat"
-                size="large"
-                prepend-icon="mdi-sword-cross"
-                @click="openAcceptDialog(m)"
-                >매치 잡기 · 수락</v-btn
-              >
-            </div>
+              </div>
+
+              <v-divider class="my-3" />
+              <div class="match-actions">
+                <MatchManageActions :match="m" @updated="handleSearch" @deleted="handleSearch" />
+                <div class="match-actions__main">
+                  <v-btn
+                    variant="outlined"
+                    size="small"
+                    prepend-icon="mdi-eye-outline"
+                    @click="openDetail(m)"
+                  >
+                    상세 보기
+                  </v-btn>
+                  <v-btn
+                    v-if="canAccept(m)"
+                    class="accept-button"
+                    color="#FBBF24"
+                    variant="flat"
+                    prepend-icon="mdi-sword-cross"
+                    @click="openAcceptDialog(m)"
+                  >
+                    매치 잡기
+                  </v-btn>
+                </div>
+              </div>
+            </v-card>
           </div>
-        </v-card>
+        </section>
       </v-col>
     </v-row>
+
+    <v-expansion-panels v-if="archivedMatches.length" class="mt-4">
+      <v-expansion-panel rounded="xl">
+        <v-expansion-panel-title>
+          <div class="d-flex align-center ga-2 font-weight-bold">
+            <v-icon icon="mdi-archive-outline" />
+            종료된 클랜전
+            <v-chip size="x-small" variant="tonal">{{ archivedMatches.length }}건</v-chip>
+          </div>
+        </v-expansion-panel-title>
+        <v-expansion-panel-text>
+          <v-list lines="two">
+            <v-list-item
+              v-for="m in archivedMatches"
+              :key="m.id"
+              :title="`${m.host_clan.name} VS ${m.guest_clan?.name ?? '-'}`"
+              :subtitle="`${statusLabel(m.status)} · ${tierTitle(m.tier)} · ${formatDateTime(m.match_at)}`"
+              prepend-icon="mdi-sword-cross"
+              @click="openDetail(m)"
+            >
+              <template #append>
+                <v-btn icon="mdi-chevron-right" variant="text" size="small" />
+              </template>
+            </v-list-item>
+          </v-list>
+        </v-expansion-panel-text>
+      </v-expansion-panel>
+    </v-expansion-panels>
 
     <!-- 수락 다이얼로그 -->
     <v-dialog v-model="acceptDialog.open" max-width="520">
@@ -193,7 +235,7 @@
 import MatchManageActions from '@/components/clanmatch/MatchManageActions.vue';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import { computed, onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import api from '@/@core/composable/useAxios';
 import { CLAN_MATCH_PATH } from '@/router/clanmatch/index';
 import { formatDateTime } from '@/utils/date';
@@ -209,7 +251,9 @@ import supIcon from '@/assets/positions/sup.svg';
 import type { ClanMatch, MatchStatus, SlotKey } from '@/data/types/clanmatch';
 
 const router = useRouter();
+const route = useRoute();
 const account = useAccountStore();
+const clanName = computed(() => String(route.params.name ?? account.clan?.name ?? ''));
 
 const slots: { key: SlotKey; label: string; short: string; icon: string }[] = [
   { key: 'TOP', label: '탑', short: 'TOP', icon: topIcon },
@@ -232,20 +276,11 @@ const tierOptions = [
   { title: '1티어', value: 1, desc: '그랜드마스터 · 챌린저' },
 ] as const;
 
-const statusOptions = [
-  { title: '전체', value: null },
-  { title: '대기중', value: 'WAITING' },
-  { title: '매칭됨', value: 'MATCHED' },
-  { title: '완료', value: 'DONE' },
-  { title: '취소', value: 'CANCELLED' },
-] as const;
-
 // ✅ API host_member 형태 그대로
 
 const items = ref<ClanMatch[]>([]);
 
 const filters = ref({
-  status: null as MatchStatus | null, // ✅ 전체 기본값이면 null
   tier: null as number | null,
   keyword: '',
 });
@@ -260,41 +295,54 @@ function tierDesc(v?: number | null) {
 }
 
 function statusLabel(s: MatchStatus) {
-  return statusOptions.find((x) => x.value === s)?.title ?? s;
+  const labels: Record<MatchStatus, string> = {
+    WAITING: '대기중',
+    MATCHED: '매칭됨',
+    DONE: '완료',
+    CANCELLED: '취소',
+  };
+  return labels[s] ?? s;
 }
-function statusColor(s: MatchStatus) {
-  if (s === 'WAITING') return 'primary';
-  if (s === 'MATCHED') return 'success';
-  if (s === 'DONE') return 'grey';
-  return 'warning';
-}
-
-const statusRank: Record<MatchStatus, number> = {
-  WAITING: 0,
-  MATCHED: 1,
-  DONE: 2,
-  CANCELLED: 3,
-};
 
 const filtered = computed(() => {
   return items.value
-    .filter((m) => (filters.value.status ? m.status === filters.value.status : true))
     .filter((m) => (filters.value.tier ? m.tier === filters.value.tier : true))
     .filter((m) => {
       const k = (filters.value.keyword ?? '').trim().toLowerCase();
       if (!k) return true;
-      return (m.host_clan?.name ?? '').toLowerCase().includes(k);
+      return [m.host_clan?.name, m.guest_clan?.name].some((name) =>
+        (name ?? '').toLowerCase().includes(k),
+      );
     })
-    .sort((a, b) => {
-      // 1) 상태 우선 (WAITING 먼저)
-      const sa = statusRank[a.status] ?? 99;
-      const sb = statusRank[b.status] ?? 99;
-      if (sa !== sb) return sa - sb;
-
-      // 2) 같은 상태면 match_at 빠른 순
-      return a.match_at.localeCompare(b.match_at);
-    });
+    .sort((a, b) => a.match_at.localeCompare(b.match_at));
 });
+
+const matchColumns = computed(() => [
+  {
+    status: 'WAITING' as const,
+    title: '대기중',
+    description: '상대 클랜의 수락을 기다리는 경기',
+    emptyMessage: '현재 대기중인 클랜전이 없습니다.',
+    color: 'primary',
+    icon: 'mdi-clock-outline',
+    matches: filtered.value.filter((match) => match.status === 'WAITING'),
+  },
+  {
+    status: 'MATCHED' as const,
+    title: '매칭됨',
+    description: '상대가 정해져 진행 예정인 경기',
+    emptyMessage: '현재 매칭된 클랜전이 없습니다.',
+    color: 'success',
+    icon: 'mdi-handshake-outline',
+    matches: filtered.value.filter((match) => match.status === 'MATCHED'),
+  },
+]);
+
+const archivedMatches = computed(() =>
+  filtered.value
+    .filter((match) => match.status === 'DONE' || match.status === 'CANCELLED')
+    .sort((a, b) => b.match_at.localeCompare(a.match_at)),
+);
 
 function canAccept(m: ClanMatch) {
   const clanId = account.clan?.id;
@@ -312,7 +360,11 @@ function isMyClanMatch(m: ClanMatch) {
 }
 
 function openDetail(m: ClanMatch) {
-  router.push(CLAN_MATCH_PATH.VIEW(m.id));
+  router.push(CLAN_MATCH_PATH.VIEW(clanName.value, m.id));
+}
+
+function openCreate() {
+  router.push(CLAN_MATCH_PATH.ADD(clanName.value));
 }
 
 const acceptDialog = ref<{ open: boolean; match: ClanMatch | null }>({
@@ -337,7 +389,7 @@ async function acceptMatch() {
   if (!m || !canAccept(m)) return;
 
   acceptDialog.value.open = false;
-  router.push(CLAN_MATCH_PATH.ACCEPT(m.id));
+  router.push(CLAN_MATCH_PATH.ACCEPT(clanName.value, m.id));
 }
 
 interface FetchParams {
@@ -347,17 +399,14 @@ interface FetchParams {
   sortBy: { key: keyof ClanMatch; order: 'asc' | 'desc' }[];
 }
 
-const search = ref<string>('');
-const serverItems = ref<ClanMatch[]>([]);
 const loading = ref<boolean>(false);
-const totalItems = ref<number>(0);
-const itemsPerPage = ref<number>(10);
+const itemsPerPage = 200;
 
 function handleSearch() {
   loadItems({
-    keyword: search.value,
+    keyword: '',
     page: 1,
-    itemsPerPage: itemsPerPage.value,
+    itemsPerPage,
     sortBy: [],
   });
 }
@@ -368,14 +417,17 @@ async function loadItems(options: FetchParams) {
     const sortKey = options.sortBy[0]?.key || 'created_at';
     const sortOrder = options.sortBy[0]?.order || 'desc';
 
-    const response = await api.get(
-      `${getBaseUrl('DATA')}/clanmatch/search?keyword=${search.value}&page=${
-        options.page
-      }&itemsPerPage=${options.itemsPerPage}&sortBy=${sortKey}&orderBy=${sortOrder}`,
-    );
+    const response = await api.get(`${getBaseUrl('DATA')}/clanmatch/search`, {
+      params: {
+        keyword: options.keyword,
+        page: options.page,
+        itemsPerPage: options.itemsPerPage,
+        sortBy: sortKey,
+        orderBy: sortOrder,
+      },
+    });
 
     items.value = response.data.datas;
-    totalItems.value = response.data.totalCount;
   } catch (error) {
     toast('클랜전 목록을 불러오지 못했습니다.');
   } finally {
@@ -388,6 +440,86 @@ onMounted(() => {
 });
 </script>
 <style scoped>
+.match-board > .v-col {
+  display: flex;
+}
+.match-column {
+  width: 100%;
+  min-height: 360px;
+  overflow: hidden;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 20px;
+  background: rgba(var(--v-theme-surface-variant), 0.24);
+}
+.match-column--waiting {
+  border-top: 4px solid rgb(var(--v-theme-primary));
+}
+.match-column--matched {
+  border-top: 4px solid rgb(var(--v-theme-success));
+}
+.match-column__header {
+  min-height: 76px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  background: rgb(var(--v-theme-surface));
+}
+.match-column__list {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+.match-card {
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+.match-card__versus {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+.match-card__versus strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.match-card__versus > span {
+  color: rgb(var(--v-theme-primary));
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+.lineup-list {
+  display: grid;
+  gap: 5px;
+}
+.lineup-list__item {
+  min-width: 0;
+  min-height: 32px;
+  display: grid;
+  grid-template-columns: 24px 36px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 8px;
+  border-radius: 9px;
+  background: rgba(var(--v-theme-surface-variant), 0.4);
+}
+.lineup-list__position,
+.lineup-list__tier {
+  color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.lineup-list__player {
+  overflow: hidden;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .match-actions,
 .match-actions__main {
   display: flex;
@@ -406,6 +538,9 @@ onMounted(() => {
   font-weight: 800;
 }
 @media (max-width: 600px) {
+  .match-column__header {
+    align-items: flex-start;
+  }
   .match-actions__main {
     width: 100%;
   }

@@ -202,6 +202,16 @@ const router = createRouter({
         { path: CLAN_PATH.PARTY(':name'), component: ClanParty },
         { path: CLAN_PATH.SCHEDULE(':name'), component: ClanSchedule },
         { path: CLAN_PATH.PERMISSION(':name'), component: ClanPermission },
+        { path: CLAN_MATCH_PATH.BASE(':name'), component: ExternalClanMatch },
+        { path: CLAN_MATCH_PATH.ADD(':name'), component: ExternalClanMatchAdd },
+        {
+          path: CLAN_MATCH_PATH.ACCEPT(':name', ':id'),
+          component: ExternalClanMatchAdd,
+        },
+        {
+          path: CLAN_MATCH_PATH.VIEW(':name', ':id'),
+          component: ExternalClanMatchView,
+        },
         { path: CLAN_PATH.MATCH(':name'), component: ClanMatch },
         { path: CLAN_PATH.MATCH_ADD(':name'), component: ClanMatchAdd },
         { path: CLAN_PATH.MATCH_VIEW(':name', ':id'), component: ClanMatchView, props: true },
@@ -233,8 +243,8 @@ const router = createRouter({
         { path: '/home', component: Home },
         { path: '', component: ExternalClanMatch },
         { path: 'add', component: ExternalClanMatchAdd },
-        { path: CLAN_MATCH_PATH.ACCEPT(':id'), component: ExternalClanMatchAdd },
-        { path: CLAN_MATCH_PATH.VIEW(':id'), component: ExternalClanMatchView },
+        { path: 'accept/:id', component: ExternalClanMatchAdd },
+        { path: 'view/:id', component: ExternalClanMatchView },
       ],
     },
 
@@ -498,6 +508,19 @@ router.beforeEach(async (to, from, next) => {
     removeAuthCookies();
   }
 
+  const isLegacyClanMatchPage =
+    to.path === '/clanmatch' || to.path.startsWith('/clanmatch/');
+  if (isLegacyClanMatchPage) {
+    if (!ok || !account.clan?.name) return next('/forbidden');
+    const suffix = to.path.slice('/clanmatch'.length);
+    return next({
+      path: `${CLAN_MATCH_PATH.BASE(account.clan.name)}${suffix}`,
+      query: to.query,
+      hash: to.hash,
+      replace: true,
+    });
+  }
+
   if (to.path.startsWith('/clan/') && !isClanInvite && !isPublicClanPage) {
     const targetClan = String(to.params.name ?? '');
     if (!ok || account.clan == null || account.clan.name !== targetClan) {
@@ -505,18 +528,25 @@ router.beforeEach(async (to, from, next) => {
     }
   }
 
-  if (to.path === '/clanmatch' || to.path.startsWith('/clanmatch/')) {
+  const targetClanName = String(to.params.name ?? '');
+  const clanMatchBasePath = targetClanName
+    ? CLAN_MATCH_PATH.BASE(targetClanName)
+    : '';
+  const isClanMatchPage =
+    !!clanMatchBasePath &&
+    (to.path === clanMatchBasePath || to.path.startsWith(`${clanMatchBasePath}/`));
+  if (isClanMatchPage) {
     const hasClanRead = canClan('CLANMATCH', 'CLAN-SET-CLANMATCH-R');
     const hasSystemRead = canSystem('CLANMATCH', 'SYS-SET-CLANMATCH-R');
     const canReadClanMatch = hasClanRead || hasSystemRead;
     let canOpenPage = canReadClanMatch;
-    if (to.path === CLAN_MATCH_PATH.ADD) {
+    if (to.path === CLAN_MATCH_PATH.ADD(targetClanName)) {
       canOpenPage =
         canReadClanMatch &&
         (canClan('CLANMATCH', 'CLAN-SET-CLANMATCH-C') ||
           canSystem('CLANMATCH', 'SYS-SET-CLANMATCH-C'));
     }
-    if (to.path.startsWith('/clanmatch/accept/')) {
+    if (to.path.startsWith(`${clanMatchBasePath}/accept/`)) {
       canOpenPage = canReadClanMatch && canClan('CLANMATCH', 'CLAN-SET-CLANMATCH-U');
     }
 

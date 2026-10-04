@@ -35,13 +35,13 @@
     </v-card>
 
     <div class="d-flex flex-wrap align-center justify-space-between ga-3 mb-4">
-      <v-btn variant="text" prepend-icon="mdi-arrow-left" @click="router.push(CLAN_MATCH_PATH.BASE)"
+      <v-btn variant="text" prepend-icon="mdi-arrow-left" @click="router.push(clanMatchBasePath)"
         >목록</v-btn
       >
       <MatchManageActions
         :match="match"
         @updated="loadMatch"
-        @deleted="router.push(CLAN_MATCH_PATH.BASE)"
+        @deleted="router.push(clanMatchBasePath)"
       />
     </div>
 
@@ -295,6 +295,9 @@ import { canSystemUpdateClanMatch } from '@/utils/clanMatchPermission';
 const route = useRoute();
 const router = useRouter();
 const account = useAccountStore();
+const clanMatchBasePath = computed(() =>
+  CLAN_MATCH_PATH.BASE(String(route.params.name ?? account.clan?.name ?? '')),
+);
 
 type SlotKey = 'TOP' | 'JUG' | 'MID' | 'ADC' | 'SUP';
 type TeamSide = 'HOME' | 'AWAY';
