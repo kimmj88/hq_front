@@ -132,7 +132,7 @@ import {
   CONFIG_PERMISSION_SYSTEM_PATH,
   CONFIG_PERMISSION_CLAN_PATH,
 } from './permission/system/type';
-import { usePermissionStore } from '@/stores/usePermissionStore';
+import { can as canSystem, usePermissionStore } from '@/stores/usePermissionStore';
 import { can as canClan, useClanPermissionStore } from '@/stores/useClanPermissionStore';
 import type { SystemRole } from '@/data/types/systemrole';
 import { BOARD_PATH } from './board/type';
@@ -506,16 +506,21 @@ router.beforeEach(async (to, from, next) => {
   }
 
   if (to.path === '/clanmatch' || to.path.startsWith('/clanmatch/')) {
-    const canReadClanMatch = canClan('CLANMATCH', 'CLAN-SET-CLANMATCH-R');
+    const hasClanRead = canClan('CLANMATCH', 'CLAN-SET-CLANMATCH-R');
+    const hasSystemRead = canSystem('CLANMATCH', 'SYS-SET-CLANMATCH-R');
+    const canReadClanMatch = hasClanRead || hasSystemRead;
     let canOpenPage = canReadClanMatch;
     if (to.path === CLAN_MATCH_PATH.ADD) {
-      canOpenPage = canReadClanMatch && canClan('CLANMATCH', 'CLAN-SET-CLANMATCH-C');
+      canOpenPage =
+        canReadClanMatch &&
+        (canClan('CLANMATCH', 'CLAN-SET-CLANMATCH-C') ||
+          canSystem('CLANMATCH', 'SYS-SET-CLANMATCH-C'));
     }
     if (to.path.startsWith('/clanmatch/accept/')) {
       canOpenPage = canReadClanMatch && canClan('CLANMATCH', 'CLAN-SET-CLANMATCH-U');
     }
 
-    if (!ok || !account.clan?.id || !canOpenPage) {
+    if (!ok || !canOpenPage) {
       return next('/forbidden');
     }
   }

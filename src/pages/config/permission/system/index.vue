@@ -133,6 +133,11 @@ import { can } from '@/stores/usePermissionStore';
 import type { PermissionGroup, SystemRole } from '@/data/types/systemrole';
 import type { VDataTableServer } from 'vuetify/components';
 import ServerDataTable from '@/components/common/ServerDataTable.vue';
+import { useAccountStore } from '@/stores/useAccountStore';
+import { usePermissionStore } from '@/stores/usePermissionStore';
+
+const account = useAccountStore();
+const permissionStore = usePermissionStore();
 
 // 기존 변수들
 const itemsPerPage = ref(10);
@@ -205,6 +210,15 @@ async function savePermissions() {
         id: selectedRole.value?.id,
         permissionGroups: editedPermissions.value,
       });
+      if (selectedRole.value?.id === account.systemrole?.id) {
+        permissionStore.setPermissions(
+          editedPermissions.value.flatMap((group) =>
+            group.children
+              .filter((permission) => permission.access)
+              .map((permission) => ({ action: group.code, subject: permission.code })),
+          ),
+        );
+      }
     }
   } catch (error) {
     console.error('저장 실패:', error);

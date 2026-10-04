@@ -9,7 +9,9 @@
           <div class="text-caption text-medium-emphasis">
             {{
               isCreate
-                ? '티어 · 시간 · 우리 클랜 라인업(5인)만 먼저 등록'
+                ? canCreateForAnyClan
+                  ? '생성할 클랜과 티어 · 시간 · 라인업(5인)을 등록하세요'
+                  : '티어 · 시간 · 우리 클랜 라인업(5인)만 먼저 등록'
                 : '상대 클랜(Host) 정보 확인 후, 우리 라인업을 입력하고 수락하세요'
             }}
           </div>
@@ -22,6 +24,26 @@
       </div>
 
       <v-divider class="mb-4" />
+
+      <v-row v-if="isCreate && canCreateForAnyClan" dense class="mb-2">
+        <v-col cols="12">
+          <v-autocomplete
+            v-model="selectedHostClanId"
+            :items="clanOptions"
+            item-title="name"
+            item-value="id"
+            label="생성할 클랜"
+            variant="outlined"
+            density="comfortable"
+            prepend-inner-icon="mdi-account-group"
+            :loading="clansLoading"
+            no-data-text="선택할 수 있는 클랜이 없습니다."
+          />
+          <div class="text-caption text-medium-emphasis mt-1">
+            시스템 생성 권한으로 선택한 클랜의 클랜전을 등록합니다.
+          </div>
+        </v-col>
+      </v-row>
 
       <!-- 티어 / 시간 (Create에서는 입력, Detail에서는 readonly) -->
       <v-row dense class="mb-2">
@@ -90,7 +112,11 @@
       <!-- ===================== -->
       <div class="d-flex align-center justify-space-between mb-2">
         <div class="text-subtitle-1 font-weight-bold">
-          {{ isCreate ? '우리 클랜 라인업(Host)' : `${clanMatch?.host_clan.name} 라인업(Host)` }}
+          {{
+            isCreate
+              ? `${selectedHostClanName} 라인업(Host)`
+              : `${clanMatch?.host_clan.name} 라인업(Host)`
+          }}
         </div>
 
         <v-btn
@@ -103,6 +129,16 @@
           초기화
         </v-btn>
       </div>
+
+      <v-alert
+        v-if="isCreate && selectedHostClanId && !loading && hostPlayers.length === 0"
+        type="info"
+        variant="tonal"
+        density="compact"
+        class="mb-3"
+      >
+        선택한 클랜에 등록된 플레이어가 없습니다.
+      </v-alert>
 
       <v-row dense>
         <v-col v-for="slot in slots" :key="'host-' + slot.key" cols="12" md="6">
@@ -198,6 +234,7 @@
         <v-btn
           v-if="isCreate"
           color="primary"
+          :loading="submitting"
           :disabled="!canSubmitCreate"
           prepend-icon="mdi-check"
           @click="submitCreate"
@@ -229,14 +266,18 @@
 
 <script setup lang="ts">
 import { getBaseUrl } from '@/@core/composable/createUrl';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '@/@core/composable/useAxios';
 import { useAccountStore } from '@/stores/useAccountStore';
 import type { Player } from '@/data/types/player';
 import type { ClanMatch } from '@/data/types/clanmatch';
 import { CLAN_MATCH_PATH } from '@/router/clanmatch';
-import { can } from '@/stores/useClanPermissionStore';
+import { can as canClan } from '@/stores/useClanPermissionStore';
+import {
+  canCreateClanMatch,
+  canSystemCreateClanMatch,
+} from '@/utils/clanMatchPermission';
 
 const account = useAccountStore();
 const router = useRouter();
@@ -276,6 +317,16 @@ const errorMsg = ref('');
 const submitting = ref(false);
 const loading = ref(true);
 const clanMatch = ref<ClanMatch>();
+const canCreateForAnyClan = computed(() => canSystemCreateClanMatch());
+const selectedHostClanId = ref<number | null>(account.clan?.id ?? null);
+const clanOptions = ref<{ id: number; name: string }[]>([]);
+const clansLoading = ref(false);
+const selectedHostClanName = computed(
+  () =>
+    clanOptions.value.find((clan) => clan.id === selectedHostClanId.value)?.name ??
+    account.clan?.name ??
+    '클랜',
+);
 
 const form = ref({
   tier: null as number | null,
@@ -339,7 +390,8 @@ function resetLineup(team: 'host' | 'guest') {
 }
 
 const canSubmitCreate = computed(() => {
-  if (!can('CLANMATCH', 'CLAN-SET-CLANMATCH-C')) return false;
+  if (!canCreateClanMatch()) return false;
+  if (!selectedHostClanId.value || submitting.value) return false;
   if (!form.value.tier || !form.value.matchAt) return false;
   const v = form.value.hostLineup;
   return !!(v.TOP && v.JUG && v.MID && v.ADC && v.SUP);
@@ -348,7 +400,7 @@ const canSubmitCreate = computed(() => {
 const canSubmitGuest = computed(() => {
   const v = form.value.guestLineup;
   return (
-    can('CLANMATCH', 'CLAN-SET-CLANMATCH-U') &&
+    canClan('CLANMATCH', 'CLAN-SET-CLANMATCH-U') &&
     isGuestMode.value &&
     !!(v.TOP && v.JUG && v.MID && v.ADC && v.SUP) &&
     new Set(Object.values(v)).size === 5
@@ -358,22 +410,23 @@ const canSubmitGuest = computed(() => {
 async function submitCreate() {
   errorMsg.value = '';
 
-  if (!can('CLANMATCH', 'CLAN-SET-CLANMATCH-C')) {
+  if (!canCreateClanMatch()) {
     router.replace('/forbidden');
     return;
   }
 
-  if (!account.clan?.id) {
-    errorMsg.value = '클랜에 가입한 사용자만 클랜전을 생성할 수 있습니다.';
+  if (!selectedHostClanId.value) {
+    errorMsg.value = '클랜전을 생성할 클랜을 선택하세요.';
     return;
   }
 
+  submitting.value = true;
   try {
     // datetime-local → ISO(+09:00 유지)
     const matchAt = new Date(form.value.matchAt).toISOString();
 
     const payload = {
-      host_clan_id: account.clan.id,
+      host_clan_id: selectedHostClanId.value,
       match_at: matchAt,
       tier: form.value.tier,
       description: form.value.description?.trim() || null, // ✅ 추가
@@ -389,16 +442,62 @@ async function submitCreate() {
     await api.post(`${getBaseUrl('DATA')}/clanmatch/create`, payload);
 
     router.push('/clanmatch');
-  } catch (e) {
+  } catch (e: any) {
     console.error(e);
-    errorMsg.value = '등록에 실패했습니다.';
+    errorMsg.value = e?.response?.data?.message ?? '등록에 실패했습니다.';
+  } finally {
+    submitting.value = false;
   }
 }
+
+async function loadClanOptions() {
+  clansLoading.value = true;
+  try {
+    const { data } = await api.get(`${getBaseUrl('DATA')}/clan/search`, {
+      params: {
+        keyword: '',
+        page: 1,
+        itemsPerPage: 1000,
+        sortBy: 'name',
+        orderBy: 'asc',
+      },
+    });
+    clanOptions.value = (data.datas ?? []).map((clan: { id: number; name: string }) => ({
+      id: clan.id,
+      name: clan.name,
+    }));
+  } finally {
+    clansLoading.value = false;
+  }
+}
+
+async function loadHostPlayers(clanId: number | null) {
+  hostPlayers.value = [];
+  if (!clanId) return;
+  const { data } = await api.post(`${getBaseUrl('DATA')}/player/list`, {
+    clan: { id: clanId },
+  });
+  hostPlayers.value = data.datas ?? [];
+}
+
+watch(selectedHostClanId, async (clanId, previousClanId) => {
+  if (!isCreate.value || clanId === previousClanId) return;
+  resetLineup('host');
+  errorMsg.value = '';
+  loading.value = true;
+  try {
+    await loadHostPlayers(clanId);
+  } catch {
+    errorMsg.value = '선택한 클랜의 선수 정보를 불러오지 못했습니다.';
+  } finally {
+    loading.value = false;
+  }
+});
 
 async function submitAccept() {
   if (submitting.value || !canSubmitGuest.value) return;
   errorMsg.value = '';
-  if (!can('CLANMATCH', 'CLAN-SET-CLANMATCH-U')) {
+  if (!canClan('CLANMATCH', 'CLAN-SET-CLANMATCH-U')) {
     router.replace('/forbidden');
     return;
   }
@@ -475,12 +574,8 @@ onMounted(async () => {
       });
       guestPlayers.value = res2.data.datas;
     } else {
-      if (!account.clan?.id) return;
-      const res = await api.post(`${getBaseUrl('DATA')}/player/list`, {
-        clan: account.clan,
-      });
-
-      hostPlayers.value = res.data.datas;
+      if (canCreateForAnyClan.value) await loadClanOptions();
+      await loadHostPlayers(selectedHostClanId.value);
     }
   } catch {
     errorMsg.value = '매치와 선수 정보를 불러오지 못했습니다.';

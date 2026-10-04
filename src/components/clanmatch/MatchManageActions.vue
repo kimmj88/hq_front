@@ -1,7 +1,7 @@
 <template>
   <div v-if="canEdit || canDelete" class="d-flex flex-wrap ga-2">
     <v-btn v-if="canEdit" variant="tonal" prepend-icon="mdi-account-edit" @click="openEditor">{{
-      isHost ? '클랜전 수정' : '선수 수정'
+      editButtonLabel
     }}</v-btn>
     <v-btn
       v-if="canDelete"
@@ -13,15 +13,20 @@
     >
   </div>
   <v-dialog v-model="editOpen" max-width="620" :persistent="saving">
-    <v-card rounded="xl" :title="isHost ? '클랜전 수정' : '우리 클랜 선수 수정'">
+    <v-card rounded="xl" :title="editDialogTitle">
       <v-card-text>
         <p class="text-body-2 mb-4">
-          {{
-            isHost
-              ? '시간, 티어, 설명과 우리 팀 선수를 수정할 수 있습니다.'
-              : '각 포지션의 선수를 선택하세요. 저장하면 우리 팀 라인업에 반영됩니다.'
-          }}
+          {{ editDescription }}
         </p>
+        <v-select
+          v-if="canManageAnyMatch"
+          v-model="editingTeam"
+          :items="teamOptions"
+          label="수정할 클랜"
+          variant="outlined"
+          :disabled="loading || saving"
+          @update:model-value="loadEditorData"
+        />
         <v-progress-linear v-if="loading" indeterminate class="mb-4" />
         <v-alert
           v-if="!loading && hasUnavailablePlayers"
@@ -32,7 +37,7 @@
           현재 클랜 선수 목록에 없는 선수가 포함되어 있습니다. 선수를 변경하려면 해당 포지션의
           선수를 다시 선택하세요.
         </v-alert>
-        <template v-if="isHost">
+        <template v-if="canEditDetails">
           <v-select
             v-model="details.tier"
             :items="tierOptions"
@@ -57,7 +62,9 @@
             :disabled="loading || saving"
           />
           <v-divider class="mb-4" />
-          <div class="text-subtitle-1 font-weight-bold mb-3">우리 클랜 선수</div>
+          <div class="text-subtitle-1 font-weight-bold mb-3">
+            {{ selectedClan?.name }} 선수
+          </div>
         </template>
         <v-autocomplete
           v-for="slot in slots"
@@ -113,7 +120,11 @@ import { computed, ref } from 'vue';
 import api from '@/@core/composable/useAxios';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import { useAccountStore } from '@/stores/useAccountStore';
-import { can } from '@/stores/useClanPermissionStore';
+import { can as canClan } from '@/stores/useClanPermissionStore';
+import {
+  canSystemDeleteClanMatch,
+  canSystemUpdateClanMatch,
+} from '@/utils/clanMatchPermission';
 import type { ClanMini, MatchStatus, SlotKey } from '@/data/types/clanmatch';
 
 const props = defineProps<{
@@ -134,18 +145,49 @@ const editable = computed(
     ['WAITING', 'MATCHED'].includes(props.match.status),
 );
 const isHost = computed(() => !!account.clan?.id && account.clan.id === props.match.host_clan.id);
+const isGuest = computed(
+  () => !!account.clan?.id && account.clan.id === props.match.guest_clan?.id,
+);
+const canManageAnyMatch = computed(() => canSystemUpdateClanMatch());
 const canDelete = computed(
   () =>
     editable.value &&
-    isHost.value &&
-    can('CLANMATCH', 'CLAN-SET-CLANMATCH-D'),
+    (canSystemDeleteClanMatch() ||
+      (isHost.value && canClan('CLANMATCH', 'CLAN-SET-CLANMATCH-D'))),
 );
 const canEdit = computed(
   () =>
     editable.value &&
-    can('CLANMATCH', 'CLAN-SET-CLANMATCH-U') &&
-    !!account.clan?.id &&
-    (isHost.value || account.clan.id === props.match.guest_clan?.id),
+    (canManageAnyMatch.value ||
+      ((isHost.value || isGuest.value) &&
+        canClan('CLANMATCH', 'CLAN-SET-CLANMATCH-U'))),
+);
+type MatchTeam = 'HOST' | 'GUEST';
+const editingTeam = ref<MatchTeam>('HOST');
+const selectedClan = computed(() =>
+  editingTeam.value === 'HOST' ? props.match.host_clan : props.match.guest_clan,
+);
+const teamOptions = computed(() => [
+  { title: `HOST · ${props.match.host_clan.name}`, value: 'HOST' as const },
+  ...(props.match.guest_clan?.id
+    ? [{ title: `GUEST · ${props.match.guest_clan.name}`, value: 'GUEST' as const }]
+    : []),
+]);
+const canEditDetails = computed(
+  () => canManageAnyMatch.value || (isHost.value && editingTeam.value === 'HOST'),
+);
+const editButtonLabel = computed(() =>
+  canManageAnyMatch.value ? '클랜전 관리' : isHost.value ? '클랜전 수정' : '선수 수정',
+);
+const editDialogTitle = computed(() =>
+  canManageAnyMatch.value ? '클랜전 전체 관리' : isHost.value ? '클랜전 수정' : '우리 클랜 선수 수정',
+);
+const editDescription = computed(() =>
+  canManageAnyMatch.value
+    ? '관리할 클랜을 선택해 경기 정보와 라인업을 수정할 수 있습니다.'
+    : isHost.value
+      ? '시간, 티어, 설명과 우리 팀 선수를 수정할 수 있습니다.'
+      : '각 포지션의 선수를 선택하세요. 저장하면 우리 팀 라인업에 반영됩니다.',
 );
 const slots: { key: SlotKey; label: string }[] = [
   { key: 'TOP', label: '탑' },
@@ -180,7 +222,7 @@ const tierOptions = [
 ];
 const lineupChanged = computed(() => JSON.stringify(lineup.value) !== originalLineup.value);
 const detailsChanged = computed(
-  () => isHost.value && JSON.stringify(details.value) !== originalDetails.value,
+  () => canEditDetails.value && JSON.stringify(details.value) !== originalDetails.value,
 );
 const canSave = computed(
   () =>
@@ -251,7 +293,12 @@ function errorMessage(e: any, fallback: string) {
 }
 async function openEditor() {
   if (!canEdit.value) return;
+  editingTeam.value = isGuest.value && !isHost.value ? 'GUEST' : 'HOST';
   editOpen.value = true;
+  await loadEditorData();
+}
+async function loadEditorData() {
+  if (!canEdit.value || saving.value) return;
   loading.value = true;
   error.value = '';
   loaded.value = false;
@@ -260,11 +307,17 @@ async function openEditor() {
   registeredPlayers.value = [];
   for (const slot of slots) lineup.value[slot.key] = null;
   try {
+    if (!selectedClan.value?.id) {
+      throw new Error('수정할 클랜을 선택할 수 없습니다.');
+    }
     const [detail, pool] = await Promise.all([
       api.get(`${getBaseUrl('DATA')}/clanmatch/find`, { params: { id: props.match.id } }),
-      api.post(`${getBaseUrl('DATA')}/player/list`, { clan: { id: account.clan.id } }),
+      api.post(`${getBaseUrl('DATA')}/player/list`, { clan: { id: selectedClan.value.id } }),
     ]);
-    const members = isHost.value ? detail.data.datas.host_member : detail.data.datas.guest_member;
+    const members =
+      editingTeam.value === 'HOST'
+        ? detail.data.datas.host_member
+        : detail.data.datas.guest_member;
     for (const slot of slots) {
       const member = members?.[slot.key];
       if (!member) continue;
@@ -296,6 +349,7 @@ async function saveChanges() {
     const response = await api.post(`${getBaseUrl('DATA')}/clanmatch/lineup`, {
       id: props.match.id,
       account_id: account.id,
+      ...(canManageAnyMatch.value ? { team: editingTeam.value } : {}),
       ...(lineupChanged.value
         ? {
             match_members: slots.map((s) => ({ position: s.key, player_id: lineup.value[s.key] })),

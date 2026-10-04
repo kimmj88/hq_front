@@ -134,8 +134,10 @@ import type { VDataTableServer } from 'vuetify/components';
 import ServerDataTable from '@/components/common/ServerDataTable.vue';
 import type { PermissionGroup, ClanRole } from '@/data/types/clanrole';
 import { useAccountStore } from '@/stores/useAccountStore';
+import { useClanPermissionStore } from '@/stores/useClanPermissionStore';
 
 const account = useAccountStore();
+const clanPermissionStore = useClanPermissionStore();
 
 // 기존 변수들
 const itemsPerPage = ref(10);
@@ -208,6 +210,15 @@ async function savePermissions() {
         id: selectedRole.value?.id,
         permissionGroups: editedPermissions.value,
       });
+      if (selectedRole.value?.id === account.clanrole?.id) {
+        clanPermissionStore.setClanPermissions(
+          editedPermissions.value.flatMap((group) =>
+            group.children
+              .filter((permission) => permission.access)
+              .map((permission) => ({ action: group.code, subject: permission.code })),
+          ),
+        );
+      }
     }
   } catch (error) {
     console.error('저장 실패:', error);

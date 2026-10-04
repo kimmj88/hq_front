@@ -72,6 +72,11 @@ const messages = {
       'SYS-SET-REPORT-R': '사용자 제보 조회',
       'SYS-SET-REPORT-U': '사용자 제보 검토 및 수정',
       'SYS-SET-REPORT-D': '사용자 제보 삭제',
+
+      'SYS-SET-CLANMATCH-C': '클랜전 관리자 생성',
+      'SYS-SET-CLANMATCH-R': '모든 클랜전 조회',
+      'SYS-SET-CLANMATCH-U': '모든 클랜전 수정·결과 확정',
+      'SYS-SET-CLANMATCH-D': '모든 클랜전 삭제',
     },
     system_permission_group: {
       SETTING: '설정',
@@ -86,6 +91,7 @@ const messages = {
       ENQUIRE: '건의사항 관리',
       FORUM: '자유게시판 관리',
       PLAYER_REPORT: '사용자 제보 관리',
+      CLANMATCH: '클랜전 관리',
     },
 
     clan_permission: {
@@ -176,6 +182,10 @@ const messages = {
       'SYS-SET-REPORT-R': 'Player Report Read',
       'SYS-SET-REPORT-U': 'Player Report Review and Update',
       'SYS-SET-REPORT-D': 'Player Report Delete',
+      'SYS-SET-CLANMATCH-C': 'Create Clan Match as Administrator',
+      'SYS-SET-CLANMATCH-R': 'Read All Clan Matches',
+      'SYS-SET-CLANMATCH-U': 'Update All Clan Matches and Results',
+      'SYS-SET-CLANMATCH-D': 'Delete All Clan Matches',
     },
     system_permission_group: {
       SETTING: 'Settings',
@@ -190,6 +200,7 @@ const messages = {
       ENQUIRE: 'Enquiry Management',
       FORUM: 'Forum Management',
       PLAYER_REPORT: 'Player Report Management',
+      CLANMATCH: 'Clan Match Management',
     },
   },
 };

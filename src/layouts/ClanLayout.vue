@@ -101,7 +101,7 @@
           />
 
           <v-list-item
-            v-if="can('CLANMATCH', 'CLAN-SET-CLANMATCH-R')"
+            v-if="canReadClanMatchMenu"
             prepend-icon="mdi-shield-sword-outline"
             title="클랜전"
             :to="CLAN_MATCH_PATH.BASE"
@@ -228,10 +228,19 @@ import api from '@/@core/composable/useAxios';
 import { useRouter } from 'vue-router';
 import { CLAN_PATH } from '@/router/clan/type';
 import { CLAN_MATCH_PATH } from '@/router/clanmatch';
+import { usePermissionStore } from '@/stores/usePermissionStore';
+import { canReadClanMatch } from '@/utils/clanMatchPermission';
 
 const router = useRouter();
 const account = useAccountStore();
 const clanPermissionStore = useClanPermissionStore();
+const systemPermissionStore = usePermissionStore();
+
+const canReadClanMatchMenu = computed(() => {
+  const permissionRuleCount =
+    systemPermissionStore.rules.length + clanPermissionStore.rules.length;
+  return permissionRuleCount > 0 && canReadClanMatch();
+});
 
 const leaveDialog = ref(false);
 const supportDialog = ref(false);

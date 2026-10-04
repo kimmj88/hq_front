@@ -289,7 +289,8 @@ import api from '@/@core/composable/useAxios';
 import { useRoute, useRouter } from 'vue-router';
 import type { ClanMini, MatchStatus } from '@/data/types/clanmatch';
 import { formatDateTime } from '@/utils/date';
-import { can } from '@/stores/useClanPermissionStore';
+import { can as canClan } from '@/stores/useClanPermissionStore';
+import { canSystemUpdateClanMatch } from '@/utils/clanMatchPermission';
 
 const route = useRoute();
 const router = useRouter();
@@ -439,12 +440,18 @@ const match = ref({
 
 const saving = ref(false);
 const canSaveResult = computed(
-  () =>
-    match.value.status === 'MATCHED' &&
-    !match.value.is_confirm &&
-    can('CLANMATCH', 'CLAN-SET-CLANMATCH-U') &&
-    !!account.clan?.id &&
-    [match.value.host_clan.id, match.value.guest_clan.id].includes(account.clan.id),
+  () => {
+    const canSaveAsParticipant =
+      canClan('CLANMATCH', 'CLAN-SET-CLANMATCH-U') &&
+      !!account.clan?.id &&
+      [match.value.host_clan.id, match.value.guest_clan.id].includes(account.clan.id);
+
+    return (
+      match.value.status === 'MATCHED' &&
+      !match.value.is_confirm &&
+      (canSaveAsParticipant || canSystemUpdateClanMatch())
+    );
+  },
 );
 async function loadMatch() {
   try {
