@@ -152,7 +152,9 @@
             </div>
             <div class="info-row">
               <span class="label">솔랭 판수</span>
-              <span class="value">{{ result.totalGames }}판 ({{ result.wins }}승 {{ result.losses }}패)</span>
+              <span class="value"
+                >{{ result.totalGames }}판 ({{ result.wins }}승 {{ result.losses }}패)</span
+              >
             </div>
             <div class="info-row">
               <span class="label">판수 어드벤티지</span>
@@ -187,15 +189,29 @@
       <v-list density="comfortable">
         <v-list-item>
           <template #prepend><v-icon icon="mdi-circle-small" /></template>
-          <v-list-item-title class="text-wrap">등록된 플레이어의 클랜 티어를 사용합니다.</v-list-item-title>
+          <v-list-item-title class="text-wrap"
+            >등록된 플레이어의 클랜 티어를 사용합니다.</v-list-item-title
+          >
         </v-list-item>
         <v-list-item>
           <template #prepend><v-icon icon="mdi-circle-small" /></template>
-          <v-list-item-title class="text-wrap">클랜 티어와 선택 포지션으로 기본 점수를 산정합니다.</v-list-item-title>
+          <v-list-item-title class="text-wrap"
+            >클랜 티어와 선택 포지션으로 기본 점수를 산정합니다.</v-list-item-title
+          >
         </v-list-item>
         <v-list-item>
           <template #prepend><v-icon icon="mdi-circle-small" /></template>
-          <v-list-item-title class="text-wrap">현재 시즌 솔랭 승수와 패수를 합산해 100판 이상 1점, 200판 이상 1.3점, 300판 이상 1.7점, 400판 이상 2점을 차감합니다. 각 구간의 차감액은 최종 차감액입니다.</v-list-item-title>
+          <v-list-item-title class="text-wrap"
+            >같은 티어의 미드와 원딜은 기존 평균 점수를 유지하면서 포지션 간 점수 차이를 최대
+            2점으로 조정합니다.</v-list-item-title
+          >
+        </v-list-item>
+        <v-list-item>
+          <template #prepend><v-icon icon="mdi-circle-small" /></template>
+          <v-list-item-title class="text-wrap"
+            >현재 시즌 솔랭 승수와 패수를 합산해 100판 이상 1점, 200판 이상 1.3점, 300판 이상 1.7점,
+            400판 이상 2점을 차감합니다. 각 구간의 차감액은 최종 차감액입니다.</v-list-item-title
+          >
         </v-list-item>
       </v-list>
     </v-card>
@@ -256,60 +272,58 @@ const positionOptions = [
 
 const canSearch = computed(
   () =>
-    form.gameName.trim().length > 0 &&
-    form.tagLine.trim().length > 0 &&
-    !!selectedPosition.value
+    form.gameName.trim().length > 0 && form.tagLine.trim().length > 0 && !!selectedPosition.value
 );
 
 /**
- * 점수표 원본
+ * 점수표
  * key: 표의 티어 문자열
  * value: 포지션별 점수
  */
 const tierScoreTable: Record<string, Record<PositionKey, number>> = {
-  '마/그/챌 1800 이상': { TOP: 67, JUNGLE: 66, MID: 62, ADC: 65, SUP: 52 },
-  '마/그/챌 1700 ~ 1799': { TOP: 66, JUNGLE: 64.3, MID: 61.1, ADC: 64.7, SUP: 51.5 },
-  '마/그/챌 1600 ~ 1699': { TOP: 65.5, JUNGLE: 63.8, MID: 60.8, ADC: 64.4, SUP: 50.9 },
-  '마/그/챌 1500 ~ 1599': { TOP: 64.6, JUNGLE: 63.3, MID: 59.9, ADC: 64.2, SUP: 50.6 },
-  '마/그/챌 1400 ~ 1499': { TOP: 63.8, JUNGLE: 62.2, MID: 58.2, ADC: 63.9, SUP: 50.1 },
-  '마/그/챌 1300 ~ 1399': { TOP: 63.1, JUNGLE: 61.3, MID: 57.3, ADC: 63.3, SUP: 49.8 },
-  '마/그/챌 1200 ~ 1299': { TOP: 62.4, JUNGLE: 60.5, MID: 56, ADC: 62.7, SUP: 49.3 },
-  '마/그/챌 1100 ~ 1199': { TOP: 59.9, JUNGLE: 59.4, MID: 54.7, ADC: 62.2, SUP: 48.7 },
-  '마/그/챌 1000 ~ 1099': { TOP: 57.8, JUNGLE: 57.7, MID: 53.1, ADC: 61.3, SUP: 48 },
-  '마/그/챌 900 ~ 999': { TOP: 54.8, JUNGLE: 55.4, MID: 51.4, ADC: 58.8, SUP: 46.2 },
-  '마/그/챌 800 ~ 899': { TOP: 52.6, JUNGLE: 53.1, MID: 50.2, ADC: 56.1, SUP: 44.5 },
-  '마/그/챌 700 ~ 799': { TOP: 51.3, JUNGLE: 50.6, MID: 49.3, ADC: 53.7, SUP: 42.8 },
-  '마/그/챌 600 ~ 699': { TOP: 49.7, JUNGLE: 48.4, MID: 48, ADC: 51.1, SUP: 41.1 },
-  '마/그/챌 500 ~ 599': { TOP: 47.9, JUNGLE: 46.3, MID: 46.2, ADC: 48.6, SUP: 39 },
+  '마/그/챌 1800 이상': { TOP: 67, JUNGLE: 66, MID: 62.5, ADC: 64.5, SUP: 52 },
+  '마/그/챌 1700 ~ 1799': { TOP: 66, JUNGLE: 64.3, MID: 61.9, ADC: 63.9, SUP: 51.5 },
+  '마/그/챌 1600 ~ 1699': { TOP: 65.5, JUNGLE: 63.8, MID: 61.6, ADC: 63.6, SUP: 50.9 },
+  '마/그/챌 1500 ~ 1599': { TOP: 64.6, JUNGLE: 63.3, MID: 61, ADC: 63, SUP: 50.6 },
+  '마/그/챌 1400 ~ 1499': { TOP: 63.8, JUNGLE: 62.2, MID: 60, ADC: 62, SUP: 50.1 },
+  '마/그/챌 1300 ~ 1399': { TOP: 63.1, JUNGLE: 61.3, MID: 59.3, ADC: 61.3, SUP: 49.8 },
+  '마/그/챌 1200 ~ 1299': { TOP: 62.4, JUNGLE: 60.5, MID: 58.4, ADC: 60.4, SUP: 49.3 },
+  '마/그/챌 1100 ~ 1199': { TOP: 59.9, JUNGLE: 59.4, MID: 57.5, ADC: 59.5, SUP: 48.7 },
+  '마/그/챌 1000 ~ 1099': { TOP: 57.8, JUNGLE: 57.7, MID: 56.2, ADC: 58.2, SUP: 48 },
+  '마/그/챌 900 ~ 999': { TOP: 54.8, JUNGLE: 55.4, MID: 54.1, ADC: 56.1, SUP: 46.2 },
+  '마/그/챌 800 ~ 899': { TOP: 52.6, JUNGLE: 53.1, MID: 52.2, ADC: 54.2, SUP: 44.5 },
+  '마/그/챌 700 ~ 799': { TOP: 51.3, JUNGLE: 50.6, MID: 50.5, ADC: 52.5, SUP: 42.8 },
+  '마/그/챌 600 ~ 699': { TOP: 49.7, JUNGLE: 48.4, MID: 48.5, ADC: 50.5, SUP: 41.1 },
+  '마/그/챌 500 ~ 599': { TOP: 47.9, JUNGLE: 46.3, MID: 46.4, ADC: 48.4, SUP: 39 },
   '마/그/챌 400 ~ 499': { TOP: 45.2, JUNGLE: 44.3, MID: 45.2, ADC: 46.2, SUP: 37.7 },
   '마/그/챌 300 ~ 399': { TOP: 43, JUNGLE: 42.4, MID: 44.7, ADC: 43.5, SUP: 36.1 },
-  '마/그/챌 200 ~ 299': { TOP: 41.8, JUNGLE: 40.6, MID: 43, ADC: 40.6, SUP: 35 },
-  '마/그/챌 100 ~ 199': { TOP: 39.1, JUNGLE: 39.4, MID: 41.3, ADC: 38.3, SUP: 34 },
-  '마/그/챌 0 ~ 99': { TOP: 37.4, JUNGLE: 38.2, MID: 39.8, ADC: 36.1, SUP: 33.1 },
+  '마/그/챌 200 ~ 299': { TOP: 41.8, JUNGLE: 40.6, MID: 42.8, ADC: 40.8, SUP: 35 },
+  '마/그/챌 100 ~ 199': { TOP: 39.1, JUNGLE: 39.4, MID: 40.8, ADC: 38.8, SUP: 34 },
+  '마/그/챌 0 ~ 99': { TOP: 37.4, JUNGLE: 38.2, MID: 39, ADC: 37, SUP: 35.1 },
 
-  다이아1: { TOP: 35.7, JUNGLE: 36.8, MID: 36.7, ADC: 34, SUP: 32.2 },
-  다이아2: { TOP: 33.8, JUNGLE: 34.8, MID: 36, ADC: 32.1, SUP: 31.3 },
-  다이아3: { TOP: 31.6, JUNGLE: 32.5, MID: 35.1, ADC: 29.7, SUP: 30.3 },
-  다이아4: { TOP: 30.3, JUNGLE: 30.7, MID: 33.4, ADC: 27.6, SUP: 29.3 },
+  다이아1: { TOP: 35.7, JUNGLE: 36.8, MID: 36.4, ADC: 34.4, SUP: 34.2 },
+  다이아2: { TOP: 33.8, JUNGLE: 34.8, MID: 35, ADC: 33, SUP: 32.3 },
+  다이아3: { TOP: 31.6, JUNGLE: 32.5, MID: 33.4, ADC: 31.4, SUP: 30.3 },
+  다이아4: { TOP: 30.3, JUNGLE: 30.7, MID: 31.5, ADC: 29.5, SUP: 29.3 },
 
-  에메랄드1: { TOP: 28.6, JUNGLE: 28.8, MID: 32.6, ADC: 25.7, SUP: 28.2 },
-  에메랄드2: { TOP: 27.3, JUNGLE: 26.6, MID: 31, ADC: 24.3, SUP: 27 },
-  에메랄드3: { TOP: 26.5, JUNGLE: 24.8, MID: 29.8, ADC: 22.8, SUP: 26 },
-  에메랄드4: { TOP: 26, JUNGLE: 23.4, MID: 27.6, ADC: 21.6, SUP: 25.1 },
+  에메랄드1: { TOP: 28.6, JUNGLE: 28.8, MID: 30.1, ADC: 28.1, SUP: 28.2 },
+  에메랄드2: { TOP: 27.3, JUNGLE: 26.6, MID: 28.6, ADC: 26.6, SUP: 27 },
+  에메랄드3: { TOP: 26.5, JUNGLE: 24.8, MID: 27.3, ADC: 25.3, SUP: 26 },
+  에메랄드4: { TOP: 26, JUNGLE: 23.4, MID: 25.6, ADC: 23.6, SUP: 25.1 },
 
-  플래티넘1: { TOP: 25.2, JUNGLE: 21.9, MID: 25.1, ADC: 20.3, SUP: 24.2 },
-  플래티넘2: { TOP: 24.7, JUNGLE: 20.5, MID: 22.3, ADC: 18.7, SUP: 22.8 },
-  플래티넘3: { TOP: 24, JUNGLE: 19.3, MID: 20.7, ADC: 17.5, SUP: 22 },
-  플래티넘4: { TOP: 21.2, JUNGLE: 18.1, MID: 20.1, ADC: 16.4, SUP: 21.2 },
+  플래티넘1: { TOP: 25.2, JUNGLE: 21.9, MID: 23.7, ADC: 21.7, SUP: 24.2 },
+  플래티넘2: { TOP: 24.7, JUNGLE: 20.5, MID: 21.5, ADC: 19.5, SUP: 22.8 },
+  플래티넘3: { TOP: 24, JUNGLE: 19.3, MID: 20.1, ADC: 18.1, SUP: 22 },
+  플래티넘4: { TOP: 21.2, JUNGLE: 18.1, MID: 19.3, ADC: 17.3, SUP: 21.2 },
 
-  골드1: { TOP: 19, JUNGLE: 16.7, MID: 18.7, ADC: 15.1, SUP: 20.5 },
-  골드2: { TOP: 17.7, JUNGLE: 14.7, MID: 15.8, ADC: 13.4, SUP: 19.1 },
-  골드3: { TOP: 15.9, JUNGLE: 13.8, MID: 14.8, ADC: 12.6, SUP: 18.3 },
+  골드1: { TOP: 19, JUNGLE: 16.7, MID: 17.9, ADC: 15.9, SUP: 20.5 },
+  골드2: { TOP: 17.7, JUNGLE: 14.7, MID: 15.6, ADC: 13.6, SUP: 19.1 },
+  골드3: { TOP: 15.9, JUNGLE: 13.8, MID: 14.7, ADC: 12.7, SUP: 18.3 },
   골드4: { TOP: 14.6, JUNGLE: 12.8, MID: 13.9, ADC: 11.9, SUP: 17.6 },
 
   실버1: { TOP: 13, JUNGLE: 11.9, MID: 12.8, ADC: 11.3, SUP: 16.7 },
   실버2: { TOP: 12, JUNGLE: 11, MID: 11.9, ADC: 10.6, SUP: 15.9 },
-  '실버3 이하': { TOP: 11, JUNGLE: 10, MID: 13, ADC: 10, SUP: 15 },
+  '실버3 이하': { TOP: 11, JUNGLE: 10, MID: 12.5, ADC: 10.5, SUP: 15 },
 };
 
 function getPositionLabel(position: PositionKey): string {
@@ -397,9 +411,16 @@ function parseClanTier(tierName: string): { tier: string; rank: string; lp: numb
   const rank = rankMap[rawRank] ?? rawRank;
   const tierPart = rankMatch ? tierWithoutLp.slice(0, rankMatch.index).trim() : tierWithoutLp;
   const tierAliases: Record<string, string> = {
-    아이언: 'IRON', 브론즈: 'BRONZE', 실버: 'SILVER', 골드: 'GOLD',
-    플래티넘: 'PLATINUM', 에메랄드: 'EMERALD', 다이아: 'DIAMOND',
-    다이아몬드: 'DIAMOND', 마스터: 'MASTER', 그랜드마스터: 'GRANDMASTER',
+    아이언: 'IRON',
+    브론즈: 'BRONZE',
+    실버: 'SILVER',
+    골드: 'GOLD',
+    플래티넘: 'PLATINUM',
+    에메랄드: 'EMERALD',
+    다이아: 'DIAMOND',
+    다이아몬드: 'DIAMOND',
+    마스터: 'MASTER',
+    그랜드마스터: 'GRANDMASTER',
     챌린저: 'CHALLENGER',
   };
   const tier = tierAliases[tierPart] ?? tierPart;
@@ -440,12 +461,7 @@ async function searchPlayer() {
       return;
     }
     const parsedTier = parseClanTier(player.clan_tier.name);
-    const tierScore = getTierScore(
-      parsedTier.tier,
-      parsedTier.rank,
-      parsedTier.lp,
-      position
-    );
+    const tierScore = getTierScore(parsedTier.tier, parsedTier.rank, parsedTier.lp, position);
     const riotResponse = await api.get(`${getBaseUrl('DATA')}/riot/account`, {
       params: { nickname: player.nickname, tagname: player.tagname },
     });
