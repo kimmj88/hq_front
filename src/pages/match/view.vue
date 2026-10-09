@@ -153,11 +153,20 @@
             </td>
             <td>
               <div
+                class="player-cell"
                 :class="{ 'player-badge-card': !!team1[i - 1]?.player?.equipped_badge }"
                 :style="playerBadgeStyle(team1[i - 1]?.player)"
                 :title="team1[i - 1]?.player?.equipped_badge?.name"
               >
                 <BadgeFrame v-if="team1[i - 1]?.player?.equipped_badge" :badge="team1[i - 1].player.equipped_badge!" />
+              <span
+                v-if="team1[i - 1]?.player?.coin_booster_active"
+                class="coin-booster-badge"
+                :title="coinBoosterTitle(team1[i - 1].player)"
+              >
+                <v-icon size="12">mdi-lightning-bolt</v-icon>
+                COIN ×2
+              </span>
               <v-btn
                 color="indigo"
                 small
@@ -212,11 +221,20 @@
             <td>{{ team2[i - 1]?.player?.point }}</td>
             <td>
               <div
+                class="player-cell"
                 :class="{ 'player-badge-card': !!team2[i - 1]?.player?.equipped_badge }"
                 :style="playerBadgeStyle(team2[i - 1]?.player)"
                 :title="team2[i - 1]?.player?.equipped_badge?.name"
               >
                 <BadgeFrame v-if="team2[i - 1]?.player?.equipped_badge" :badge="team2[i - 1].player.equipped_badge!" />
+              <span
+                v-if="team2[i - 1]?.player?.coin_booster_active"
+                class="coin-booster-badge"
+                :title="coinBoosterTitle(team2[i - 1].player)"
+              >
+                <v-icon size="12">mdi-lightning-bolt</v-icon>
+                COIN ×2
+              </span>
               <v-btn
                 color="indigo"
                 small
@@ -353,6 +371,18 @@ function playerBadgeStyle(player?: Player) {
   if (!player?.equipped_badge) return undefined;
   const width = Math.max(1, Math.min(48, Number(player.equipped_badge.frame_width) || 24));
   return { padding: `${width + 4}px` };
+}
+
+function coinBoosterTitle(player?: Player) {
+  if (!player?.coin_booster_expires_at) return 'JAM 코인 2배 부스터 이용 중';
+  const expiresAt = new Intl.DateTimeFormat('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(player.coin_booster_expires_at));
+  return `JAM 코인 2배 부스터 · ${expiresAt}까지`;
 }
 
 const team1 = ref<MatchMember[]>([]);
@@ -729,13 +759,37 @@ onMounted(fetch);
 </script>
 
 <style scoped>
-.player-badge-card {
+.player-cell {
   position: relative;
-  isolation: isolate;
   min-width: 170px;
+}
+
+.player-badge-card {
+  isolation: isolate;
   border-radius: 8px;
   background: linear-gradient(180deg, #5b6472, #434c5a);
   color: #f8fafc;
+}
+
+.coin-booster-badge {
+  position: absolute;
+  z-index: 8;
+  top: -9px;
+  right: -7px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 7px 3px 5px;
+  border: 1px solid rgba(103, 232, 249, .72);
+  border-radius: 999px;
+  background: linear-gradient(135deg, #155e75, #0891b2);
+  box-shadow: 0 4px 12px rgba(8, 145, 178, .35);
+  color: #ecfeff;
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: .04em;
+  white-space: nowrap;
 }
 
 .text-center {

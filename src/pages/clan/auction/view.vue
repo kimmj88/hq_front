@@ -336,6 +336,8 @@
             cupCount: participant.player?.cupCount || 0,
             subCupCount: participant.player?.subCupCount || 0,
             avatarEffectEnabled: participant.player?.avatarEffectEnabled || false,
+            coinBoosterActive: participant.player?.coinBoosterActive || false,
+            coinBoosterExpiresAt: participant.player?.coinBoosterExpiresAt || null,
             teamCaptainAccountId: participant.teamCaptainAccountId,
             winningBid: participant.winningBid,
             isUnsold: participant.isUnsold,

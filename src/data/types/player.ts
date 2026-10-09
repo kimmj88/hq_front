@@ -7,6 +7,8 @@ export interface Player {
   avatar?: string | null;
   equipped_badge?: EquippedBadge | null;
   match_avatar_effect_enabled?: boolean;
+  coin_booster_active?: boolean;
+  coin_booster_expires_at?: string | null;
   nickname: string;
   tagname: string;
   point: number;

@@ -19,6 +19,8 @@ export interface AuctionParticipant {
     cupCount: number;
     subCupCount: number;
     avatarEffectEnabled: boolean;
+    coinBoosterActive: boolean;
+    coinBoosterExpiresAt: string | null;
   } | null;
   teamCaptainAccountId: number | null;
   winningBid: number | null;

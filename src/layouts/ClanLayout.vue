@@ -208,7 +208,8 @@
               class="support-dialog__qr"
             />
             <p class="support-dialog__guide">
-              카카오톡 또는 카카오페이의 코드 스캔으로 후원할 수 있습니다.
+              카카오톡 또는 카카오페이의 코드 스캔으로 자발적으로 후원할 수 있습니다.
+              후원에 따른 JAM이나 아이템은 지급되지 않습니다.
             </p>
           </v-card-text>
         </v-card>

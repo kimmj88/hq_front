@@ -13,6 +13,8 @@ export interface Account {
   updated_at: string;
   avatar: string;
   shop_coin?: number;
+  jam_balance?: number;
+  coin_booster_expires_at?: string | null;
   auction_avatar_effect_expires_at?: string | null;
   match_avatar_effect_expires_at?: string | null;
   party_avatar_effect_expires_at?: string | null;

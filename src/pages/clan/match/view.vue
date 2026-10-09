@@ -108,6 +108,14 @@
           <div class="player-top">
             <span class="team-badge">1팀</span>
             <span
+              v-if="team1[i - 1]?.player?.coin_booster_active"
+              class="coin-booster-badge"
+              :title="coinBoosterTitle(team1[i - 1].player)"
+            >
+              <v-icon size="13">mdi-lightning-bolt</v-icon>
+              COIN ×2
+            </span>
+            <span
               class="tier-text"
               :style="{ color: getTierColor(team1[i - 1]?.player?.tier?.name) }"
             >
@@ -208,6 +216,14 @@
               :style="{ color: getTierColor(team2[i - 1]?.player?.tier?.name) }"
             >
               {{ team2[i - 1]?.player?.tier?.name || 'EMPTY' }}
+            </span>
+            <span
+              v-if="team2[i - 1]?.player?.coin_booster_active"
+              class="coin-booster-badge"
+              :title="coinBoosterTitle(team2[i - 1].player)"
+            >
+              <v-icon size="13">mdi-lightning-bolt</v-icon>
+              COIN ×2
             </span>
             <span class="team-badge">2팀</span>
           </div>
@@ -472,6 +488,18 @@ function playerFrameStyle(player?: Player) {
   if (!player?.equipped_badge) return undefined;
   const width = Math.max(1, Math.min(48, Number(player.equipped_badge.frame_width) || 24));
   return { padding: `${Math.max(22, width + 2)}px ${Math.max(26, width + 4)}px` };
+}
+
+function coinBoosterTitle(player?: Player) {
+  if (!player?.coin_booster_expires_at) return 'JAM 코인 2배 부스터 이용 중';
+  const expiresAt = new Intl.DateTimeFormat('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(player.coin_booster_expires_at));
+  return `JAM 코인 2배 부스터 · ${expiresAt}까지`;
 }
 
 function getMemberTierPoint(member?: MatchMember): number {
@@ -1237,6 +1265,23 @@ onMounted(fetch);
   background: rgba(15, 23, 42, 0.12);
   font-size: 12px;
   font-weight: 900;
+}
+
+.coin-booster-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 24px;
+  padding: 0 9px 0 6px;
+  border: 1px solid rgba(103, 232, 249, 0.72);
+  border-radius: 999px;
+  background: linear-gradient(135deg, #155e75, #0891b2);
+  box-shadow: 0 4px 12px rgba(8, 145, 178, 0.28);
+  color: #ecfeff;
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 
 .tier-text {

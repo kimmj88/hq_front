@@ -124,6 +124,33 @@
         </v-card>
       </v-col>
 
+      <v-col v-if="profileTab === 'settings'" cols="12">
+        <v-card class="jam-admin-card pa-5" rounded="xl" elevation="2">
+          <div class="jam-admin-card__main">
+            <v-avatar size="54" color="cyan-darken-3" variant="tonal">
+              <v-icon size="30">mdi-diamond-stone</v-icon>
+            </v-avatar>
+            <div>
+              <span>JAM BALANCE</span>
+              <strong>{{ (account.datas.jam_balance ?? 0).toLocaleString() }} JAM</strong>
+              <small>
+                코인 2배 부스터
+                {{ coinBoosterActive ? `${formatLinkedAt(account.datas.coin_booster_expires_at!)}까지` : '미사용' }}
+              </small>
+            </div>
+          </div>
+          <v-btn
+            v-if="can('ACCOUNT', 'SYS-SET-ACC-U')"
+            color="cyan-darken-2"
+            variant="flat"
+            prepend-icon="mdi-diamond-stone"
+            @click="openJamDialog"
+          >
+            JAM 수동 지급
+          </v-btn>
+        </v-card>
+      </v-col>
+
       <!-- PLAYER INFO -->
       <v-col v-if="profileTab === 'game'" cols="12">
         <v-card class="pa-5" rounded="xl" elevation="2">
@@ -398,6 +425,58 @@
       </v-card>
     </v-dialog>
 
+    <v-dialog v-model="jamDialog" max-width="560">
+      <v-card rounded="xl">
+        <v-card-title class="jam-dialog-title">
+          <v-avatar color="cyan-darken-3" variant="tonal"><v-icon>mdi-diamond-stone</v-icon></v-avatar>
+          <div><small>관리자 전용</small><strong>JAM 수동 지급</strong></div>
+        </v-card-title>
+        <v-card-text>
+          <div class="jam-dialog-balance">
+            <span>{{ account.datas.nickname || account.datas.name }} 보유 잼</span>
+            <strong>{{ (account.datas.jam_balance ?? 0).toLocaleString() }} JAM</strong>
+          </div>
+          <v-text-field
+            v-model.number="jamGrantAmount"
+            class="mt-5"
+            label="지급할 JAM"
+            type="number"
+            min="1"
+            max="1000000"
+            step="1"
+            variant="outlined"
+            suffix="JAM"
+          />
+          <v-textarea
+            v-model="jamGrantReason"
+            label="지급 사유"
+            maxlength="200"
+            counter="200"
+            rows="2"
+            variant="outlined"
+            placeholder="이벤트 보상 등 지급 사유를 입력하세요."
+          />
+          <v-alert v-if="jamError" type="error" variant="tonal" density="compact" class="mb-4">{{ jamError }}</v-alert>
+
+          <div class="jam-history-head"><strong>최근 지급·사용 내역</strong><v-progress-circular v-if="jamHistoryLoading" indeterminate size="20" /></div>
+          <div v-if="jamTransactions.length" class="jam-history-list">
+            <div v-for="transaction in jamTransactions" :key="transaction.id" class="jam-history-row">
+              <v-icon :color="transaction.jam_change > 0 ? 'cyan' : 'warning'" size="20">
+                {{ transaction.jam_change > 0 ? 'mdi-plus-circle-outline' : 'mdi-lightning-bolt' }}
+              </v-icon>
+              <div><strong>{{ transaction.description }}</strong><span>{{ formatLinkedAt(transaction.created_at) }}</span></div>
+              <b :class="{ minus: transaction.jam_change < 0 }">{{ transaction.jam_change > 0 ? '+' : '' }}{{ transaction.jam_change.toLocaleString() }}</b>
+            </div>
+          </div>
+          <div v-else-if="!jamHistoryLoading" class="text-body-2 text-medium-emphasis py-4 text-center">JAM 내역이 없습니다.</div>
+        </v-card-text>
+        <v-card-actions class="pa-6 pt-0 justify-end">
+          <v-btn variant="text" :disabled="jamSaving" @click="jamDialog = false">취소</v-btn>
+          <v-btn color="cyan-darken-2" variant="flat" :loading="jamSaving" :disabled="!canGrantJam" @click="grantJam">지급하기</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- 역할 변경 다이얼로그 -->
     <v-dialog v-model="dialog" max-width="480">
       <v-card rounded="xl">
@@ -591,6 +670,14 @@ interface PlayerActivity {
   counts: Record<ActivityCategory, number>;
   events: Array<{ category: ActivityCategory; id: number; title: string; occurredAt: string }>;
 }
+interface JamTransactionItem {
+  id: number;
+  type: string;
+  jam_change: number;
+  balance_after: number;
+  description: string;
+  created_at: string;
+}
 const activityData = ref<PlayerActivity | null>(null);
 const selectedActivityCategory = ref<'ALL' | ActivityCategory>('ALL');
 const activityCategories = [
@@ -614,6 +701,13 @@ const selectedActivityLabel = computed(() =>
 );
 
 const dialog = ref(false);
+const jamDialog = ref(false);
+const jamSaving = ref(false);
+const jamHistoryLoading = ref(false);
+const jamGrantAmount = ref<number | null>(null);
+const jamGrantReason = ref('');
+const jamError = ref('');
+const jamTransactions = ref<JamTransactionItem[]>([]);
 const nicknameDialog = ref(false);
 const avatarDialog = ref(false);
 const avatarSubmitting = ref(false);
@@ -653,6 +747,8 @@ const account = ref<{
     player?: Player | null;
     clan?: { id: number; name: string } | null;
     clanrole?: { id: number; name?: string } | null;
+    jam_balance?: number;
+    coin_booster_expires_at?: string | null;
   };
 }>({
   datas: {
@@ -666,6 +762,8 @@ const account = ref<{
     player: null,
     clan: null,
     clanrole: null,
+    jam_balance: 0,
+    coin_booster_expires_at: null,
   },
 });
 
@@ -680,6 +778,14 @@ const nicknameGate = ref({
 const clone = (v: any) => JSON.parse(JSON.stringify(v));
 
 const player = computed<Player | null>(() => account.value.datas.player ?? null);
+const coinBoosterActive = computed(() => {
+  const expiresAt = account.value.datas.coin_booster_expires_at;
+  return !!expiresAt && new Date(expiresAt).getTime() > Date.now();
+});
+const canGrantJam = computed(() => {
+  const amount = Number(jamGrantAmount.value);
+  return Number.isSafeInteger(amount) && amount > 0 && amount <= 1_000_000 && jamGrantReason.value.trim().length >= 2;
+});
 const canManageClanRole = computed(
   () => accountStore.isClanMaster || canClan('ACCOUNT', 'CLAN-SET-ACC-U'),
 );
@@ -744,7 +850,10 @@ async function submitClanRole() {
       id: Number(props.id),
       clanrole_id: selectedClanRole.value.id,
     });
-    account.value.datas.clanrole = { ...selectedClanRole.value };
+    account.value.datas.clanrole = {
+      id: selectedClanRole.value.id,
+      name: selectedClanRole.value.name,
+    };
     clanRoleDialog.value = false;
   } catch (error) {
     console.error('클랜 권한 변경 실패:', error);
@@ -847,6 +956,58 @@ function formatLinkedAt(value: string) {
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(value));
+}
+
+function apiErrorMessage(error: unknown, fallback: string) {
+  const response = (error as { response?: { data?: { message?: unknown } } })?.response;
+  return typeof response?.data?.message === 'string' ? response.data.message : fallback;
+}
+
+async function loadJamAdmin() {
+  jamHistoryLoading.value = true;
+  jamError.value = '';
+  try {
+    const response = await api.get(`${getBaseUrl('DATA')}/shop/jam/admin`, {
+      params: { account_id: Number(props.id) },
+    });
+    const data = response.data?.datas;
+    account.value.datas.jam_balance = data?.account?.jam_balance ?? account.value.datas.jam_balance ?? 0;
+    account.value.datas.coin_booster_expires_at = data?.account?.coin_booster_expires_at ?? null;
+    jamTransactions.value = data?.transactions ?? [];
+  } catch (error: unknown) {
+    jamError.value = apiErrorMessage(error, 'JAM 정보를 불러오지 못했습니다.');
+    jamTransactions.value = [];
+  } finally {
+    jamHistoryLoading.value = false;
+  }
+}
+
+async function openJamDialog() {
+  jamGrantAmount.value = null;
+  jamGrantReason.value = '';
+  jamError.value = '';
+  jamDialog.value = true;
+  await loadJamAdmin();
+}
+
+async function grantJam() {
+  if (!canGrantJam.value || jamSaving.value) return;
+  jamSaving.value = true;
+  jamError.value = '';
+  try {
+    await api.post(`${getBaseUrl('DATA')}/shop/jam/admin/grant`, {
+      account_id: Number(props.id),
+      amount: Number(jamGrantAmount.value),
+      reason: jamGrantReason.value.trim(),
+    });
+    jamGrantAmount.value = null;
+    jamGrantReason.value = '';
+    await loadJamAdmin();
+  } catch (error: unknown) {
+    jamError.value = apiErrorMessage(error, 'JAM을 지급하지 못했습니다.');
+  } finally {
+    jamSaving.value = false;
+  }
 }
 
 const canSubmitNickname = computed(() => {
@@ -1019,6 +1180,34 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.jam-admin-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border: 1px solid rgba(34, 211, 238, 0.2);
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.09), rgba(var(--v-theme-surface), 0.96));
+}
+.jam-admin-card__main { display: flex; align-items: center; gap: 15px; }
+.jam-admin-card__main > div { display: flex; flex-direction: column; }
+.jam-admin-card__main span { color: rgb(34, 211, 238); font-size: 0.65rem; font-weight: 900; letter-spacing: 0.12em; }
+.jam-admin-card__main strong { font-size: 1.35rem; }
+.jam-admin-card__main small { color: rgba(var(--v-theme-on-surface), 0.52); }
+.jam-dialog-title { display: flex; align-items: center; gap: 12px; padding: 24px 24px 12px; }
+.jam-dialog-title > div { display: flex; flex-direction: column; }
+.jam-dialog-title small { color: rgba(var(--v-theme-on-surface), 0.5); font-size: 0.68rem; }
+.jam-dialog-balance { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-radius: 14px; background: rgba(6, 182, 212, 0.08); }
+.jam-dialog-balance span { color: rgba(var(--v-theme-on-surface), 0.62); }
+.jam-dialog-balance strong { color: rgb(34, 211, 238); font-size: 1.2rem; }
+.jam-history-head { display: flex; min-height: 28px; align-items: center; justify-content: space-between; }
+.jam-history-list { max-height: 240px; overflow-y: auto; margin-top: 8px; border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); border-radius: 14px; }
+.jam-history-row { display: grid; grid-template-columns: 24px 1fr auto; align-items: center; gap: 8px; padding: 11px 13px; border-bottom: 1px solid rgba(var(--v-border-color), 0.55); }
+.jam-history-row:last-child { border-bottom: 0; }
+.jam-history-row > div { display: flex; min-width: 0; flex-direction: column; }
+.jam-history-row > div strong { overflow: hidden; font-size: 0.8rem; text-overflow: ellipsis; white-space: nowrap; }
+.jam-history-row > div span { color: rgba(var(--v-theme-on-surface), 0.48); font-size: 0.68rem; }
+.jam-history-row b { color: rgb(34, 211, 238); }
+.jam-history-row b.minus { color: rgb(251, 191, 36); }
 .link-history-list {
   display: grid;
   gap: 8px;
@@ -1094,6 +1283,7 @@ onMounted(async () => {
 .activity-empty { display: flex; min-height: 190px; align-items: center; justify-content: center; gap: 10px; color: rgba(226, 232, 240, .55); flex-direction: column; }
 .player-activity-actions { display: flex; justify-content: flex-end; padding: 18px 24px 22px; }
 @media (max-width: 600px) {
+  .jam-admin-card { align-items: stretch; flex-direction: column; }
   .activity-category-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .activity-category { min-height: 84px; }
   .player-activity-head, .player-activity-body, .player-activity-actions { padding-inline: 16px; }

@@ -64,6 +64,14 @@
                     />
                     <span v-else class="text-h4 font-weight-black">{{ initials(playerDisplayName(currentPlayer)) }}</span>
                   </v-avatar>
+                  <span
+                    v-if="currentPlayer.coinBoosterActive"
+                    class="coin-booster-badge"
+                    :title="coinBoosterTitle(currentPlayer)"
+                  >
+                    <v-icon size="13">mdi-lightning-bolt</v-icon>
+                    COIN ×2
+                  </span>
                   <div class="text-h5 font-weight-black mt-4">
                     {{ playerDisplayName(currentPlayer) }}
                   </div>
@@ -631,6 +639,8 @@ const props = withDefaults(
       positions?: string[];
       cupCount?: number;
       subCupCount?: number;
+      coinBoosterActive?: boolean;
+      coinBoosterExpiresAt?: string | null;
       teamCaptainAccountId: number | null;
       winningBid: number | null;
       isUnsold: boolean;
@@ -682,6 +692,8 @@ interface AuctionPlayer {
   positions?: Position[];
   cupCount?: number;
   subCupCount?: number;
+  coinBoosterActive?: boolean;
+  coinBoosterExpiresAt?: string | null;
   tier: string;
   winRate: number;
   kda: number;
@@ -936,6 +948,18 @@ function playerDisplayName(player: AuctionPlayer) {
   return player.tag ? `${player.nickname}#${player.tag}` : player.nickname;
 }
 
+function coinBoosterTitle(player: AuctionPlayer) {
+  if (!player.coinBoosterExpiresAt) return 'JAM 코인 2배 부스터 이용 중';
+  const expiresAt = new Intl.DateTimeFormat('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(player.coinBoosterExpiresAt));
+  return `JAM 코인 2배 부스터 · ${expiresAt}까지`;
+}
+
 function playerPositions(player: AuctionPlayer): Position[] {
   const positions = player.positions?.length ? player.positions : [player.position];
   return blindActive.value ? positions.slice(0, 2) : positions;
@@ -1114,14 +1138,15 @@ function applyBid(team: AuctionTeam, nextBid: number) {
 }
 
 async function manualAward(team: AuctionTeam) {
-  if (!props.isOwner || !currentPlayer.value?.accountId || manualAwardingTeamId.value !== null) {
+  const player = currentPlayer.value;
+  const playerAccountId = player?.accountId;
+  if (!props.isOwner || !playerAccountId || manualAwardingTeamId.value !== null) {
     return;
   }
 
-  const player = currentPlayer.value;
   manualAwardingTeamId.value = team.id;
   const saved = await props.awardPlayer({
-    playerAccountId: player.accountId,
+    playerAccountId,
     captainAccountId: team.captainAccountId,
     winningBid: 0,
   });
@@ -1433,6 +1458,27 @@ onBeforeUnmount(() => {
     linear-gradient(145deg, rgba(var(--tier-rgb), 0.2), rgba(var(--tier-rgb), 0.055) 72%),
     rgba(255, 255, 255, 0.025);
   box-shadow: inset 0 0 30px rgba(var(--tier-rgb), 0.08);
+}
+
+.coin-booster-badge {
+  position: absolute;
+  z-index: 4;
+  top: 16px;
+  right: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 24px;
+  padding: 0 9px 0 6px;
+  border: 1px solid rgba(103, 232, 249, 0.72);
+  border-radius: 999px;
+  background: linear-gradient(135deg, #155e75, #0891b2);
+  box-shadow: 0 4px 12px rgba(8, 145, 178, 0.28);
+  color: #ecfeff;
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 
 .animated-avatar-demo {
