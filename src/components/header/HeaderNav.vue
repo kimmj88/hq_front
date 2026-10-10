@@ -114,12 +114,12 @@ const menuItems = computed(() => {
     });
   }
 
-  items.push({
-    key: 'selfscore',
-    title: '멸망전',
-    icon: 'mdi-sword-cross',
-    to: '/selfscore',
-  });
+  // items.push({
+  //   key: 'selfscore',
+  //   title: '멸망전',
+  //   icon: 'mdi-sword-cross',
+  //   to: '/selfscore',
+  // });
 
   if (account.isLoggedIn) {
     items.push({
