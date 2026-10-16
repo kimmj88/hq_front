@@ -5,6 +5,15 @@
         <div class="d-flex align-center ga-2 mb-1">
           <v-chip size="small" color="deep-purple-accent-2" variant="flat">DEMO</v-chip>
           <span class="text-overline text-medium-emphasis">AUCTION SCRIM</span>
+          <v-chip
+            v-if="webSocketUrl"
+            size="small"
+            :color="liveSynced ? 'success' : 'warning'"
+            variant="tonal"
+            :prepend-icon="liveSynced ? 'mdi-check-network-outline' : 'mdi-sync'"
+          >
+            {{ liveStatusLabel }}
+          </v-chip>
         </div>
         <h1 class="text-h4 font-weight-black">경매 내전</h1>
         <p class="text-body-2 text-medium-emphasis mt-1">
@@ -13,6 +22,15 @@
       </div>
 
       <div class="d-flex ga-2">
+        <v-btn
+          v-if="webSocketUrl"
+          variant="text"
+          prepend-icon="mdi-sync"
+          :disabled="!liveConnected"
+          @click="requestLiveState"
+        >
+          상태 동기화
+        </v-btn>
         <v-btn
           v-if="isOwner"
           variant="tonal"
@@ -25,7 +43,7 @@
           v-if="isOwner"
           color="deep-purple-accent-2"
           prepend-icon="mdi-gavel"
-          :disabled="unassignedPlayerCount === 0 || isRunning"
+          :disabled="unassignedPlayerCount === 0 || isRunning || !liveInteractionReady"
           @click="nominateNext"
         >
           랜덤 선수 지명
@@ -239,13 +257,14 @@
                 hide-details
                 style="width: 125px"
               />
-              <v-btn v-if="isOwner && currentPlayer" variant="text" :disabled="isRunning" @click="cancelNomination">
+              <v-btn v-if="isOwner && currentPlayer" variant="text" :disabled="isRunning || !liveInteractionReady" @click="cancelNomination">
                 선수 변경
               </v-btn>
               <v-btn
                 v-if="isOwner && currentPlayer && !isRunning"
                 color="deep-purple-accent-2"
                 prepend-icon="mdi-timer-play"
+                :disabled="!liveInteractionReady"
                 @click="startAuction"
               >
                 초시계 시작
@@ -296,13 +315,13 @@
                 class="pool-player"
                 :class="{
                   selected: currentPlayer?.id === player.id,
-                  disabled: isRunning || !isOwner,
+                  disabled: isRunning || !isOwner || !liveInteractionReady,
                 }"
                 :style="tierCardStyle(player.tier)"
                 role="button"
                 tabindex="0"
-                @click="!isRunning && isOwner && nominate(player)"
-                @keydown.enter="!isRunning && isOwner && nominate(player)"
+                @click="!isRunning && isOwner && liveInteractionReady && nominate(player)"
+                @keydown.enter="!isRunning && isOwner && liveInteractionReady && nominate(player)"
               >
                 <v-tooltip activator="parent" location="top">
                   {{ positionLabel(player.position) }} · {{ player.tier }}
@@ -717,6 +736,22 @@ interface AuctionTeam {
   members: TeamMember[];
 }
 
+interface LiveAuctionSnapshot {
+  playerAccountId: number;
+  amount: number;
+  captainAccountId: number | null;
+  timerStatus: 'idle' | 'running' | 'paused';
+  configuredSeconds: number;
+  seconds: number;
+}
+
+interface LiveMessageData extends Partial<LiveAuctionSnapshot> {
+  startedAt?: number;
+  paused?: boolean;
+  winningBid?: number;
+  winnerCaptainAccountId?: number;
+}
+
 const initialPlayers: AuctionPlayer[] = [
   { id: 1, nickname: '검은별', tag: 'KR1', position: 'TOP', tier: 'Diamond IV', winRate: 54, kda: 2.8 },
   { id: 2, nickname: '정글차이', tag: 'JUG', position: 'JUG', tier: 'Emerald I', winRate: 58, kda: 3.4 },
@@ -835,7 +870,10 @@ const blindActive = computed(
 const winnerSubmittingTeamId = ref<number | null>(null);
 let timerId: ReturnType<typeof setInterval> | null = null;
 let socket: WebSocket | null = null;
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let liveDisposed = false;
 const liveConnected = ref(false);
+const liveSynced = ref(false);
 
 const positionFilters = ['전체', 'TOP', 'JUG', 'MID', 'ADC', 'SUP'];
 const availablePlayers = computed(() =>
@@ -867,6 +905,13 @@ const timerProgress = computed(() => (seconds.value / configuredSeconds.value) *
 const soldCount = computed(() => soldPlayerIds.value.length);
 const unassignedPlayerCount = computed(
   () => availablePlayers.value.length + unsoldPlayers.value.length
+);
+const liveStatusLabel = computed(() => {
+  if (liveSynced.value) return '실시간 준비 완료';
+  return liveConnected.value ? '상태 동기화 중' : '실시간 연결 중';
+});
+const liveInteractionReady = computed(
+  () => !props.webSocketUrl || liveSynced.value
 );
 
 watch(currentBid, (bid) => {
@@ -1016,6 +1061,10 @@ async function selectUnsoldPlayer(player: AuctionPlayer) {
     );
     return;
   }
+  if (!liveInteractionReady.value) {
+    showSnack('실시간 상태 동기화가 끝난 후 다시 시도해 주세요.', 'warning');
+    return;
+  }
   nominate(player);
   await nextTick();
   stageCard.value?.$el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1023,7 +1072,7 @@ async function selectUnsoldPlayer(player: AuctionPlayer) {
 }
 
 function nominate(player: AuctionPlayer) {
-  if (isRunning.value || !props.isOwner) return;
+  if (isRunning.value || !props.isOwner || !liveInteractionReady.value) return;
   if (liveConnected.value && props.isOwner && player.accountId) {
     sendLive('select-player', {
       auctionId: props.auctionId,
@@ -1045,6 +1094,15 @@ function applyNomination(player: AuctionPlayer) {
   addLog(`${playerDisplayName(player)} 선수가 경매에 지명되었습니다.`);
 }
 
+function findAuctionPlayer(accountId: number) {
+  return (
+    (currentPlayer.value?.accountId === accountId ? currentPlayer.value : null) ||
+    players.value.find((item) => item.accountId === accountId) ||
+    unsoldPlayers.value.find((item) => item.accountId === accountId) ||
+    null
+  );
+}
+
 function nominateNext() {
   const source = availablePlayers.value.length ? availablePlayers.value : unsoldPlayers.value;
   if (!source.length) return;
@@ -1054,14 +1112,27 @@ function nominateNext() {
 }
 
 function cancelNomination() {
+  if (liveConnected.value && props.isOwner) {
+    sendLive('clear-selection', {
+      auctionId: props.auctionId,
+      ownerId: props.currentAccountId,
+    });
+  }
+  applySelectionCleared();
+}
+
+function applySelectionCleared() {
+  stopTimerInterval();
   currentPlayer.value = null;
   highestTeamId.value = null;
   currentBid.value = startBid;
   seconds.value = configuredSeconds.value;
+  isRunning.value = false;
+  isPaused.value = false;
 }
 
 function startAuction() {
-  if (!currentPlayer.value || isRunning.value) return;
+  if (!currentPlayer.value || isRunning.value || !liveInteractionReady.value) return;
   if (liveConnected.value && props.isOwner) {
     sendLive('start-timer', {
       auctionId: props.auctionId,
@@ -1073,20 +1144,30 @@ function startAuction() {
   applyTimerStart(configuredSeconds.value);
 }
 
-function applyTimerStart(duration: number) {
+function applyTimerStart(duration: number, startedAt?: number) {
   if (!currentPlayer.value) return;
 
+  stopTimerInterval();
   isRunning.value = true;
   isPaused.value = false;
   configuredSeconds.value = Math.min(300, Math.max(5, Number(duration) || 20));
-  seconds.value = configuredSeconds.value;
+  const elapsedSeconds = startedAt
+    ? Math.max(0, Math.floor((Date.now() - Number(startedAt)) / 1000))
+    : 0;
+  seconds.value = Math.max(0, configuredSeconds.value - elapsedSeconds);
   addLog(`${playerDisplayName(currentPlayer.value)} 선수 경매가 시작되었습니다.`);
+  if (seconds.value <= 0) {
+    if (props.isOwner) void finishAuction();
+    else clearTimer();
+    return;
+  }
   runTimer();
 }
 
 function runTimer() {
+  stopTimerInterval();
   timerId = setInterval(() => {
-    seconds.value -= 1;
+    seconds.value = Math.max(0, seconds.value - 1);
     if (seconds.value <= 0) {
       if (props.isOwner) {
         finishAuction();
@@ -1098,7 +1179,12 @@ function runTimer() {
 }
 
 function canBid(team: AuctionTeam) {
-  if (!isRunning.value || isPaused.value || team.members.length >= rosterLimit) return false;
+  if (
+    !liveInteractionReady.value ||
+    !isRunning.value ||
+    isPaused.value ||
+    team.members.length >= rosterLimit
+  ) return false;
   const nextBid = highestTeamId.value === null ? startBid : currentBid.value + bidStep.value;
   return (
     team.id !== highestTeamId.value &&
@@ -1130,17 +1216,24 @@ function placeBid(team: AuctionTeam) {
   applyBid(team, nextBid);
 }
 
-function applyBid(team: AuctionTeam, nextBid: number) {
+function applyBid(team: AuctionTeam, nextBid: number, remainingSeconds?: number) {
   currentBid.value = nextBid;
   highestTeamId.value = team.id;
-  seconds.value = Math.max(seconds.value, 8);
+  seconds.value = remainingSeconds === undefined
+    ? Math.max(seconds.value, 8)
+    : Math.max(0, Number(remainingSeconds));
   addLog(`${team.name} 팀이 ${nextBid}P를 입찰했습니다.`);
 }
 
 async function manualAward(team: AuctionTeam) {
   const player = currentPlayer.value;
   const playerAccountId = player?.accountId;
-  if (!props.isOwner || !playerAccountId || manualAwardingTeamId.value !== null) {
+  if (
+    !props.isOwner ||
+    !liveInteractionReady.value ||
+    !playerAccountId ||
+    manualAwardingTeamId.value !== null
+  ) {
     return;
   }
 
@@ -1159,9 +1252,13 @@ async function manualAward(team: AuctionTeam) {
   applyAward(team, player, 0);
 }
 
-function clearTimer() {
+function stopTimerInterval() {
   if (timerId) clearInterval(timerId);
   timerId = null;
+}
+
+function clearTimer() {
+  stopTimerInterval();
   isRunning.value = false;
   isPaused.value = false;
 }
@@ -1181,15 +1278,21 @@ function toggleTimer() {
 }
 
 function applyTimerToggle(paused: boolean, remainingSeconds: number) {
-  seconds.value = remainingSeconds;
+  stopTimerInterval();
+  seconds.value = Math.max(0, Number(remainingSeconds));
   if (!paused) {
+    isRunning.value = true;
     isPaused.value = false;
     addLog('초시계를 재개했습니다.');
+    if (seconds.value <= 0) {
+      if (props.isOwner) void finishAuction();
+      else clearTimer();
+      return;
+    }
     runTimer();
     return;
   }
-  if (timerId) clearInterval(timerId);
-  timerId = null;
+  isRunning.value = true;
   isPaused.value = true;
   addLog('초시계를 일시정지했습니다.');
 }
@@ -1200,61 +1303,141 @@ function sendLive(event: string, data: unknown) {
   }
 }
 
+function requestLiveState() {
+  if (!liveConnected.value) {
+    connectLiveAuction();
+    return;
+  }
+  liveSynced.value = false;
+  sendLive('request-state', { auctionId: props.auctionId });
+}
+
+function applyLiveState(state: LiveAuctionSnapshot | null) {
+  liveSynced.value = true;
+  if (!state) {
+    applySelectionCleared();
+    return;
+  }
+
+  configuredSeconds.value = Math.min(
+    300,
+    Math.max(5, Number(state.configuredSeconds) || props.bidSeconds)
+  );
+  const player = findAuctionPlayer(Number(state.playerAccountId));
+  if (!player) {
+    showSnack('현재 경매 대상자 정보를 동기화하지 못했습니다.', 'warning');
+    return;
+  }
+  if (currentPlayer.value?.accountId !== player.accountId) {
+    applyNomination(player);
+  }
+
+  currentBid.value = state.amount > 0 ? Number(state.amount) : startBid;
+  highestTeamId.value =
+    teams.value.find(
+      (team) => team.captainAccountId === Number(state.captainAccountId)
+    )?.id ?? null;
+  stopTimerInterval();
+  seconds.value = Math.max(0, Number(state.seconds));
+
+  if (state.timerStatus === 'running') {
+    isRunning.value = true;
+    isPaused.value = false;
+    if (seconds.value <= 0) {
+      if (props.isOwner) void finishAuction();
+      return;
+    }
+    runTimer();
+    return;
+  }
+  isRunning.value = state.timerStatus === 'paused';
+  isPaused.value = state.timerStatus === 'paused';
+}
+
+function handleLiveMessage(payload: { event?: string; data?: LiveMessageData | null }) {
+  if (payload.event === 'auction-state') {
+    applyLiveState((payload.data ?? null) as LiveAuctionSnapshot | null);
+    return;
+  }
+  const data = payload.data;
+  if (!data) return;
+
+  if (payload.event === 'player-selected') {
+    configuredSeconds.value = Math.min(
+      300,
+      Math.max(5, Number(data.seconds) || props.bidSeconds)
+    );
+    const player = findAuctionPlayer(Number(data.playerAccountId));
+    if (player && currentPlayer.value?.accountId !== player.accountId) {
+      applyNomination(player);
+    }
+  } else if (payload.event === 'selection-cleared') {
+    applySelectionCleared();
+  } else if (payload.event === 'timer-started') {
+    applyTimerStart(Number(data.seconds), data.startedAt);
+  } else if (payload.event === 'bid-updated') {
+    const team = teams.value.find(
+      (item) => item.captainAccountId === Number(data.captainAccountId)
+    );
+    if (team && Number(data.amount) > 0) {
+      applyBid(team, Number(data.amount), data.seconds);
+    }
+  } else if (payload.event === 'timer-toggled') {
+    applyTimerToggle(Boolean(data.paused), Number(data.seconds));
+  } else if (payload.event === 'player-awarded') {
+    const team = teams.value.find(
+      (item) => item.captainAccountId === Number(data.captainAccountId)
+    );
+    const player = findAuctionPlayer(Number(data.playerAccountId));
+    if (team && player) applyAward(team, player, Number(data.winningBid));
+  } else if (payload.event === 'player-unsold') {
+    const player = findAuctionPlayer(Number(data.playerAccountId));
+    if (player) applyUnsold(player);
+  } else if (payload.event === 'auction-winner') {
+    winnerCaptainAccountId.value = Number(data.winnerCaptainAccountId);
+    const team = teams.value.find(
+      (item) => item.captainAccountId === Number(data.winnerCaptainAccountId)
+    );
+    if (team) showSnack(`${team.name} 팀이 승리했습니다.`, 'success');
+  } else if (payload.event === 'auction-reset') {
+    resetLocalState(false);
+  }
+}
+
 function connectLiveAuction() {
-  if (!props.webSocketUrl || !props.auctionId) return;
-  socket = new WebSocket(props.webSocketUrl);
-  socket.addEventListener('open', () => {
+  if (
+    liveDisposed ||
+    !props.webSocketUrl ||
+    !props.auctionId ||
+    socket?.readyState === WebSocket.OPEN ||
+    socket?.readyState === WebSocket.CONNECTING
+  ) return;
+
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
+  const connection = new WebSocket(props.webSocketUrl);
+  socket = connection;
+  connection.addEventListener('open', () => {
+    if (socket !== connection) return;
     liveConnected.value = true;
+    liveSynced.value = false;
     sendLive('join', { auctionId: props.auctionId });
   });
-  socket.addEventListener('close', () => {
+  connection.addEventListener('close', () => {
+    if (socket !== connection) return;
+    socket = null;
     liveConnected.value = false;
+    liveSynced.value = false;
+    if (!liveDisposed) {
+      reconnectTimer = setTimeout(connectLiveAuction, 1500);
+    }
   });
-  socket.addEventListener('message', (message) => {
+  connection.addEventListener('error', () => connection.close());
+  connection.addEventListener('message', (message) => {
     try {
-      const payload = JSON.parse(String(message.data));
-      if (payload.event === 'player-selected') {
-        const player =
-          players.value.find((item) => item.accountId === payload.data.playerAccountId) ||
-          unsoldPlayers.value.find((item) => item.accountId === payload.data.playerAccountId);
-        if (player && currentPlayer.value?.accountId !== player.accountId) {
-          applyNomination(player);
-        }
-      } else if (payload.event === 'timer-started') {
-        applyTimerStart(payload.data.seconds);
-      } else if (payload.event === 'bid-updated') {
-        const team = teams.value.find(
-          (item) => item.captainAccountId === payload.data.captainAccountId
-        );
-        if (team && payload.data.amount > 0) applyBid(team, payload.data.amount);
-      } else if (payload.event === 'timer-toggled') {
-        applyTimerToggle(payload.data.paused, payload.data.seconds);
-      } else if (payload.event === 'player-awarded') {
-        const team = teams.value.find(
-          (item) => item.captainAccountId === payload.data.captainAccountId
-        );
-        const player =
-          (currentPlayer.value?.accountId === payload.data.playerAccountId
-            ? currentPlayer.value
-            : null) ||
-          players.value.find((item) => item.accountId === payload.data.playerAccountId) ||
-          unsoldPlayers.value.find((item) => item.accountId === payload.data.playerAccountId);
-        if (team && player) applyAward(team, player, payload.data.winningBid);
-      } else if (payload.event === 'player-unsold') {
-        const player =
-          (currentPlayer.value?.accountId === payload.data.playerAccountId
-            ? currentPlayer.value
-            : null) ||
-          players.value.find((item) => item.accountId === payload.data.playerAccountId) ||
-          unsoldPlayers.value.find((item) => item.accountId === payload.data.playerAccountId);
-        if (player) applyUnsold(player);
-      } else if (payload.event === 'auction-winner') {
-        winnerCaptainAccountId.value = payload.data.winnerCaptainAccountId;
-        const team = teams.value.find(
-          (item) => item.captainAccountId === payload.data.winnerCaptainAccountId
-        );
-        if (team) showSnack(`${team.name} 팀이 승리했습니다.`, 'success');
-      }
+      handleLiveMessage(JSON.parse(String(message.data)));
     } catch {
       showSnack('실시간 경매 메시지를 처리하지 못했습니다.', 'error');
     }
@@ -1355,7 +1538,7 @@ function dismissResultDialog() {
   resultDialog.value = false;
 }
 
-function resetLocalState() {
+function resetLocalState(notify = true) {
   clearTimer();
   teams.value = createTeams();
   soldPlayerIds.value = [];
@@ -1366,7 +1549,7 @@ function resetLocalState() {
   logs.value = [];
   lastResult.value = null;
   resultDialog.value = false;
-  showSnack('경매가 초기화되었습니다.');
+  if (notify) showSnack('경매가 초기화되었습니다.');
 }
 
 async function confirmReset() {
@@ -1390,10 +1573,17 @@ function openResetDialog() {
   resetDialog.value = true;
 }
 
-onMounted(connectLiveAuction);
+onMounted(() => {
+  liveDisposed = false;
+  connectLiveAuction();
+});
 onBeforeUnmount(() => {
+  liveDisposed = true;
   clearTimer();
+  if (reconnectTimer) clearTimeout(reconnectTimer);
+  reconnectTimer = null;
   socket?.close();
+  socket = null;
 });
 </script>
 
