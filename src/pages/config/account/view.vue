@@ -125,30 +125,54 @@
       </v-col>
 
       <v-col v-if="profileTab === 'settings'" cols="12">
-        <v-card class="jam-admin-card pa-5" rounded="xl" elevation="2">
-          <div class="jam-admin-card__main">
-            <v-avatar size="54" color="cyan-darken-3" variant="tonal">
-              <v-icon size="30">mdi-diamond-stone</v-icon>
-            </v-avatar>
-            <div>
-              <span>JAM BALANCE</span>
-              <strong>{{ (account.datas.jam_balance ?? 0).toLocaleString() }} JAM</strong>
-              <small>
-                코인 2배 부스터
-                {{ coinBoosterActive ? `${formatLinkedAt(account.datas.coin_booster_expires_at!)}까지` : '미사용' }}
-              </small>
+        <div class="currency-admin-grid">
+          <v-card class="jam-admin-card coin-admin-card pa-5" rounded="xl" elevation="2">
+            <div class="jam-admin-card__main coin-admin-card__main">
+              <v-avatar size="54" color="amber-darken-3" variant="tonal">
+                <v-icon size="30">mdi-coins</v-icon>
+              </v-avatar>
+              <div>
+                <span>COIN BALANCE</span>
+                <strong>{{ (account.datas.shop_coin ?? 0).toLocaleString() }} C</strong>
+                <small>경기 보상 및 상점에서 사용하는 코인</small>
+              </div>
             </div>
-          </div>
-          <v-btn
-            v-if="can('ACCOUNT', 'SYS-SET-ACC-U')"
-            color="cyan-darken-2"
-            variant="flat"
-            prepend-icon="mdi-diamond-stone"
-            @click="openJamDialog"
-          >
-            JAM 수동 지급
-          </v-btn>
-        </v-card>
+            <v-btn
+              v-if="can('ACCOUNT', 'SYS-SET-ACC-U')"
+              color="amber-darken-2"
+              variant="flat"
+              prepend-icon="mdi-coins"
+              @click="openCoinDialog"
+            >
+              코인 수동 지급
+            </v-btn>
+          </v-card>
+
+          <v-card class="jam-admin-card pa-5" rounded="xl" elevation="2">
+            <div class="jam-admin-card__main">
+              <v-avatar size="54" color="cyan-darken-3" variant="tonal">
+                <v-icon size="30">mdi-diamond-stone</v-icon>
+              </v-avatar>
+              <div>
+                <span>JAM BALANCE</span>
+                <strong>{{ (account.datas.jam_balance ?? 0).toLocaleString() }} JAM</strong>
+                <small>
+                  코인 2배 부스터
+                  {{ coinBoosterActive ? `${formatLinkedAt(account.datas.coin_booster_expires_at!)}까지` : '미사용' }}
+                </small>
+              </div>
+            </div>
+            <v-btn
+              v-if="can('ACCOUNT', 'SYS-SET-ACC-U')"
+              color="cyan-darken-2"
+              variant="flat"
+              prepend-icon="mdi-diamond-stone"
+              @click="openJamDialog"
+            >
+              JAM 수동 지급
+            </v-btn>
+          </v-card>
+        </div>
       </v-col>
 
       <!-- PLAYER INFO -->
@@ -425,6 +449,58 @@
       </v-card>
     </v-dialog>
 
+    <v-dialog v-model="coinDialog" max-width="560">
+      <v-card rounded="xl">
+        <v-card-title class="jam-dialog-title">
+          <v-avatar color="amber-darken-3" variant="tonal"><v-icon>mdi-coins</v-icon></v-avatar>
+          <div><small>관리자 전용</small><strong>코인 수동 지급</strong></div>
+        </v-card-title>
+        <v-card-text>
+          <div class="jam-dialog-balance coin-dialog-balance">
+            <span>{{ account.datas.nickname || account.datas.name }} 보유 코인</span>
+            <strong>{{ (account.datas.shop_coin ?? 0).toLocaleString() }} C</strong>
+          </div>
+          <v-text-field
+            v-model.number="coinGrantAmount"
+            class="mt-5"
+            label="지급할 코인"
+            type="number"
+            min="1"
+            max="1000000"
+            step="1"
+            variant="outlined"
+            suffix="C"
+          />
+          <v-textarea
+            v-model="coinGrantReason"
+            label="지급 사유"
+            maxlength="200"
+            counter="200"
+            rows="2"
+            variant="outlined"
+            placeholder="이벤트 보상 등 지급 사유를 입력하세요."
+          />
+          <v-alert v-if="coinError" type="error" variant="tonal" density="compact" class="mb-4">{{ coinError }}</v-alert>
+
+          <div class="jam-history-head"><strong>최근 지급·사용 내역</strong><v-progress-circular v-if="coinHistoryLoading" indeterminate size="20" /></div>
+          <div v-if="coinTransactions.length" class="jam-history-list">
+            <div v-for="transaction in coinTransactions" :key="transaction.id" class="jam-history-row coin-history-row">
+              <v-icon :color="transaction.coin_change > 0 ? 'amber' : 'warning'" size="20">
+                {{ transaction.coin_change > 0 ? 'mdi-plus-circle-outline' : 'mdi-cart-outline' }}
+              </v-icon>
+              <div><strong>{{ transaction.description || '코인 변동' }}</strong><span>{{ formatLinkedAt(transaction.created_at) }}</span></div>
+              <b :class="{ minus: transaction.coin_change < 0 }">{{ transaction.coin_change > 0 ? '+' : '' }}{{ transaction.coin_change.toLocaleString() }}</b>
+            </div>
+          </div>
+          <div v-else-if="!coinHistoryLoading" class="text-body-2 text-medium-emphasis py-4 text-center">코인 내역이 없습니다.</div>
+        </v-card-text>
+        <v-card-actions class="pa-6 pt-0 justify-end">
+          <v-btn variant="text" :disabled="coinSaving" @click="coinDialog = false">취소</v-btn>
+          <v-btn color="amber-darken-2" variant="flat" :loading="coinSaving" :disabled="!canGrantCoin" @click="grantCoin">지급하기</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <v-dialog v-model="jamDialog" max-width="560">
       <v-card rounded="xl">
         <v-card-title class="jam-dialog-title">
@@ -678,6 +754,14 @@ interface JamTransactionItem {
   description: string;
   created_at: string;
 }
+interface CoinTransactionItem {
+  id: number;
+  type: string;
+  coin_change: number;
+  balance_after: number;
+  description: string | null;
+  created_at: string;
+}
 const activityData = ref<PlayerActivity | null>(null);
 const selectedActivityCategory = ref<'ALL' | ActivityCategory>('ALL');
 const activityCategories = [
@@ -701,6 +785,13 @@ const selectedActivityLabel = computed(() =>
 );
 
 const dialog = ref(false);
+const coinDialog = ref(false);
+const coinSaving = ref(false);
+const coinHistoryLoading = ref(false);
+const coinGrantAmount = ref<number | null>(null);
+const coinGrantReason = ref('');
+const coinError = ref('');
+const coinTransactions = ref<CoinTransactionItem[]>([]);
 const jamDialog = ref(false);
 const jamSaving = ref(false);
 const jamHistoryLoading = ref(false);
@@ -747,6 +838,7 @@ const account = ref<{
     player?: Player | null;
     clan?: { id: number; name: string } | null;
     clanrole?: { id: number; name?: string } | null;
+    shop_coin?: number;
     jam_balance?: number;
     coin_booster_expires_at?: string | null;
   };
@@ -762,6 +854,7 @@ const account = ref<{
     player: null,
     clan: null,
     clanrole: null,
+    shop_coin: 0,
     jam_balance: 0,
     coin_booster_expires_at: null,
   },
@@ -781,6 +874,10 @@ const player = computed<Player | null>(() => account.value.datas.player ?? null)
 const coinBoosterActive = computed(() => {
   const expiresAt = account.value.datas.coin_booster_expires_at;
   return !!expiresAt && new Date(expiresAt).getTime() > Date.now();
+});
+const canGrantCoin = computed(() => {
+  const amount = Number(coinGrantAmount.value);
+  return Number.isSafeInteger(amount) && amount > 0 && amount <= 1_000_000 && coinGrantReason.value.trim().length >= 2;
 });
 const canGrantJam = computed(() => {
   const amount = Number(jamGrantAmount.value);
@@ -961,6 +1058,52 @@ function formatLinkedAt(value: string) {
 function apiErrorMessage(error: unknown, fallback: string) {
   const response = (error as { response?: { data?: { message?: unknown } } })?.response;
   return typeof response?.data?.message === 'string' ? response.data.message : fallback;
+}
+
+async function loadCoinAdmin() {
+  coinHistoryLoading.value = true;
+  coinError.value = '';
+  try {
+    const response = await api.get(`${getBaseUrl('DATA')}/shop/coin/admin`, {
+      params: { account_id: Number(props.id) },
+    });
+    const data = response.data?.datas;
+    account.value.datas.shop_coin = data?.account?.shop_coin ?? account.value.datas.shop_coin ?? 0;
+    coinTransactions.value = data?.transactions ?? [];
+  } catch (error: unknown) {
+    coinError.value = apiErrorMessage(error, '코인 정보를 불러오지 못했습니다.');
+    coinTransactions.value = [];
+  } finally {
+    coinHistoryLoading.value = false;
+  }
+}
+
+async function openCoinDialog() {
+  coinGrantAmount.value = null;
+  coinGrantReason.value = '';
+  coinError.value = '';
+  coinDialog.value = true;
+  await loadCoinAdmin();
+}
+
+async function grantCoin() {
+  if (!canGrantCoin.value || coinSaving.value) return;
+  coinSaving.value = true;
+  coinError.value = '';
+  try {
+    await api.post(`${getBaseUrl('DATA')}/shop/coin/admin/grant`, {
+      account_id: Number(props.id),
+      amount: Number(coinGrantAmount.value),
+      reason: coinGrantReason.value.trim(),
+    });
+    coinGrantAmount.value = null;
+    coinGrantReason.value = '';
+    await loadCoinAdmin();
+  } catch (error: unknown) {
+    coinError.value = apiErrorMessage(error, '코인을 지급하지 못했습니다.');
+  } finally {
+    coinSaving.value = false;
+  }
 }
 
 async function loadJamAdmin() {
@@ -1180,6 +1323,11 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.currency-admin-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
 .jam-admin-card {
   display: flex;
   align-items: center;
@@ -1193,12 +1341,19 @@ onMounted(async () => {
 .jam-admin-card__main span { color: rgb(34, 211, 238); font-size: 0.65rem; font-weight: 900; letter-spacing: 0.12em; }
 .jam-admin-card__main strong { font-size: 1.35rem; }
 .jam-admin-card__main small { color: rgba(var(--v-theme-on-surface), 0.52); }
+.coin-admin-card {
+  border-color: rgba(251, 191, 36, 0.22);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(var(--v-theme-surface), 0.96));
+}
+.coin-admin-card__main span { color: rgb(251, 191, 36); }
 .jam-dialog-title { display: flex; align-items: center; gap: 12px; padding: 24px 24px 12px; }
 .jam-dialog-title > div { display: flex; flex-direction: column; }
 .jam-dialog-title small { color: rgba(var(--v-theme-on-surface), 0.5); font-size: 0.68rem; }
 .jam-dialog-balance { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-radius: 14px; background: rgba(6, 182, 212, 0.08); }
 .jam-dialog-balance span { color: rgba(var(--v-theme-on-surface), 0.62); }
 .jam-dialog-balance strong { color: rgb(34, 211, 238); font-size: 1.2rem; }
+.coin-dialog-balance { background: rgba(245, 158, 11, 0.09); }
+.coin-dialog-balance strong { color: rgb(251, 191, 36); }
 .jam-history-head { display: flex; min-height: 28px; align-items: center; justify-content: space-between; }
 .jam-history-list { max-height: 240px; overflow-y: auto; margin-top: 8px; border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); border-radius: 14px; }
 .jam-history-row { display: grid; grid-template-columns: 24px 1fr auto; align-items: center; gap: 8px; padding: 11px 13px; border-bottom: 1px solid rgba(var(--v-border-color), 0.55); }
@@ -1207,7 +1362,9 @@ onMounted(async () => {
 .jam-history-row > div strong { overflow: hidden; font-size: 0.8rem; text-overflow: ellipsis; white-space: nowrap; }
 .jam-history-row > div span { color: rgba(var(--v-theme-on-surface), 0.48); font-size: 0.68rem; }
 .jam-history-row b { color: rgb(34, 211, 238); }
+.coin-history-row b { color: rgb(251, 191, 36); }
 .jam-history-row b.minus { color: rgb(251, 191, 36); }
+.coin-history-row b.minus { color: rgb(251, 146, 60); }
 .link-history-list {
   display: grid;
   gap: 8px;
@@ -1282,6 +1439,9 @@ onMounted(async () => {
 .activity-history-list :deep(.v-list-item) { border-bottom: 1px solid rgba(148, 163, 184, .08); }
 .activity-empty { display: flex; min-height: 190px; align-items: center; justify-content: center; gap: 10px; color: rgba(226, 232, 240, .55); flex-direction: column; }
 .player-activity-actions { display: flex; justify-content: flex-end; padding: 18px 24px 22px; }
+@media (max-width: 960px) {
+  .currency-admin-grid { grid-template-columns: 1fr; }
+}
 @media (max-width: 600px) {
   .jam-admin-card { align-items: stretch; flex-direction: column; }
   .activity-category-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
