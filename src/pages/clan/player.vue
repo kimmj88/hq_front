@@ -34,7 +34,26 @@
             chips
             closable-chips
             prepend-inner-icon="mdi-filter-variant"
-            @update:modelValue="handleSearch"
+            @update:model-value="handleSearch"
+          />
+
+          <!-- Position Filter -->
+          <v-select
+            v-model="selectedPositionCodes"
+            class="toolbar__select"
+            :items="positions"
+            item-title="name"
+            item-value="code"
+            label="포지션"
+            density="compact"
+            variant="outlined"
+            hide-details
+            clearable
+            multiple
+            chips
+            closable-chips
+            prepend-inner-icon="mdi-account-search"
+            @update:model-value="handleSearch"
           />
 
           <!-- Buttons -->
@@ -221,7 +240,7 @@
               v-model="edit.form.name"
               variant="outlined"
               density="compact"
-              disabled="true"
+              disabled
             />
           </v-col>
 
@@ -240,9 +259,8 @@
               item-value="id"
               variant="outlined"
               density="compact"
-              return-object="{false}"
+              return-object
               clearable
-              disabled="true"
               :menu-props="{ maxHeight: 300 }"
             >
               <template #selection="{ item }">
@@ -288,7 +306,7 @@
           variant="outlined"
           density="compact"
           clearable
-          return-object="{false}"
+          return-object
           :menu-props="{ maxHeight: 300 }"
         >
           <template #selection="{ item }">
@@ -509,6 +527,7 @@ async function loadItems(options: FetchParams) {
         orderBy: sortOrder,
         clan: account.clan.name,
         tier: selectedClanTierGroups.value.length ? selectedClanTierGroups.value : undefined,
+        position: selectedPositionCodes.value.length ? selectedPositionCodes.value : undefined,
       },
     });
 
@@ -543,7 +562,8 @@ const selectedTier = ref<Tier>();
 const selectedCustomTier = ref<Tier>();
 
 const positions = ref<Position[]>([]);
-const selectedPositions = ref<Position[] | null>([]);
+const selectedPositions = ref<Position[]>([]);
+const selectedPositionCodes = ref<string[]>([]);
 
 async function fetch() {
   try {
@@ -618,10 +638,10 @@ const clanTierGroupOptions = computed(() => {
   return Array.from(groups).map((g) => ({ title: g, value: g }));
 });
 
-async function handleResetFilters() {
-  await api.post(`${getBaseUrl('DATA')}/player/all_refresh`, {
-    clan_id: account.clan.id,
-  });
+function handleResetFilters() {
+  search.value = '';
+  selectedClanTierGroups.value = [];
+  selectedPositionCodes.value = [];
   handleSearch();
 }
 
@@ -655,7 +675,7 @@ onMounted(fetch);
 }
 .toolbar {
   display: grid;
-  grid-template-columns: 320px 220px 1fr;
+  grid-template-columns: minmax(240px, 320px) repeat(2, minmax(180px, 220px)) 1fr;
   gap: 12px;
   align-items: center;
 }
@@ -667,11 +687,23 @@ onMounted(fetch);
   gap: 10px;
 }
 
-@media (max-width: 960px) {
+@media (max-width: 1280px) {
+  .toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .toolbar__actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 600px) {
   .toolbar {
     grid-template-columns: 1fr;
   }
   .toolbar__actions {
+    grid-column: auto;
     justify-content: flex-start;
     flex-wrap: wrap;
   }
