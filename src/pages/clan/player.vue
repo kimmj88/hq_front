@@ -245,7 +245,16 @@
           </v-col>
 
           <v-col cols="3" class="text-right">
-            <v-btn variant="text" @click="refreshTier" style="min-width: 80px"> 갱신 </v-btn>
+            <v-btn
+              variant="text"
+              prepend-icon="mdi-refresh"
+              :loading="tierRefreshing"
+              :disabled="edit.loading"
+              style="min-width: 80px"
+              @click="refreshTier"
+            >
+              갱신
+            </v-btn>
           </v-col>
         </v-row>
 
@@ -357,6 +366,10 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
+
+  <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="2600">
+    {{ snackbar.message }}
+  </v-snackbar>
 </template>
 
 <script setup lang="ts">
@@ -560,6 +573,8 @@ function handleAdd() {
 const tierList = ref<Tier[]>([]);
 const selectedTier = ref<Tier>();
 const selectedCustomTier = ref<Tier>();
+const tierRefreshing = ref(false);
+const snackbar = ref({ show: false, message: '', color: 'success' });
 
 const positions = ref<Position[]>([]);
 const selectedPositions = ref<Position[]>([]);
@@ -645,20 +660,62 @@ function handleResetFilters() {
   handleSearch();
 }
 
+function notify(message: string, color = 'success') {
+  snackbar.value = { show: true, message, color };
+}
+
 async function refreshTier() {
+  if (!edit.value.form.id || tierRefreshing.value) return;
+
   try {
+    tierRefreshing.value = true;
     const [nick, tag] = edit.value.form.name.split('#');
 
     const res = await api.post(`${getBaseUrl('DATA')}/player/refresh`, {
       id: edit.value.form.id,
+      nickname: nick,
+      tagname: tag,
     });
 
-    const clone = (v: any) => JSON.parse(JSON.stringify(v));
-    selectedTier.value = clone(res.data.datas ?? null);
-  } catch (e) {
-    console.error(e);
+    // 이전 API는 플레이어 객체를, 현재 API는 티어 객체를 직접 반환한다.
+    const refreshedTier = res.data?.datas?.tier ?? res.data?.datas;
+    if (!refreshedTier?.id || !refreshedTier?.name) {
+      throw new Error('갱신된 티어 정보가 없습니다.');
+    }
+
+    const nextTier = { ...refreshedTier } as Tier;
+    selectedTier.value = nextTier;
+
+    // 저장 버튼을 누르지 않아도 목록에 갱신 결과가 바로 보이도록 반영한다.
+    const player = serverItems.value.find((item) => item.id === edit.value.form.id);
+    if (player) player.tier = { ...nextTier };
+    if (edit.value.target) edit.value.target.tier = { ...nextTier };
+
+    notify(`${refreshedTier.name} 티어로 갱신했습니다.`);
+  } catch (error: unknown) {
+    console.error(error);
+    const responseMessage =
+      typeof error === 'object' &&
+      error !== null &&
+      'response' in error &&
+      typeof error.response === 'object' &&
+      error.response !== null &&
+      'data' in error.response &&
+      typeof error.response.data === 'object' &&
+      error.response.data !== null &&
+      'message' in error.response.data &&
+      typeof error.response.data.message === 'string'
+        ? error.response.data.message
+        : undefined;
+
+    notify(
+      responseMessage ??
+        (error instanceof Error ? error.message : undefined) ??
+        '티어를 갱신하지 못했습니다. 잠시 후 다시 시도해 주세요.',
+      'error'
+    );
   } finally {
-    edit.value.loading = false;
+    tierRefreshing.value = false;
   }
 }
 
