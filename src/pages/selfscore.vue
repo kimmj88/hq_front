@@ -118,7 +118,7 @@
               </div>
               <v-icon size="38" icon="mdi-trophy" />
             </div>
-            <div class="mt-3 text-body-2">클랜 티어와 포지션 기준 점수</div>
+            <div class="mt-3 text-body-2">내전 매치 어드벤티지를 반영한 최종 점수</div>
           </v-card>
         </v-col>
       </v-row>
@@ -145,6 +145,10 @@
               <span class="label">기본 점수</span>
               <span class="value">{{ result.peakScore }}점</span>
             </div>
+            <div class="info-row">
+              <span class="label">내전 매치 어드벤티지 ({{ result.matchCount }}판)</span>
+              <span class="value">{{ -result.matchDiscount }}점</span>
+            </div>
           </v-col>
 
           <v-col cols="12" md="6">
@@ -160,6 +164,13 @@
     <v-card rounded="xl" elevation="1" class="pa-5">
       <div class="text-h6 font-weight-bold mb-3">점수 기준</div>
       <v-list density="comfortable">
+        <v-list-item>
+          <template #prepend><v-icon icon="mdi-circle-small" /></template>
+          <v-list-item-title class="text-wrap">
+            내전 매치 누적 {{ matchThreshold }}판 이상이면 기본 점수에서 {{ matchAdvantage }}점을 한
+            번 차감합니다.
+          </v-list-item-title>
+        </v-list-item>
         <v-list-item>
           <template #prepend><v-icon icon="mdi-circle-small" /></template>
           <v-list-item-title class="text-wrap"
@@ -194,12 +205,17 @@ type ScoreResult = {
   tagLine: string;
   tier: string;
   peakScore: number;
+  matchCount: number;
+  matchDiscount: number;
   meltdownScore: number;
   updatedAt: string;
   positionLabel: string;
 };
 
 type PositionKey = 'TOP' | 'JUNGLE' | 'MID' | 'ADC' | 'SUP';
+
+const matchThreshold = 100;
+const matchAdvantage = 1.2;
 
 const loading = ref(false);
 const errorMessage = ref('');
@@ -229,7 +245,10 @@ function getSearchRiotId(): { gameName: string; tagLine: string } | null {
   if (separatorIndex > 0) {
     gameName = rawGameName.slice(0, separatorIndex).trim();
     if (!tagLine) {
-      tagLine = rawGameName.slice(separatorIndex + 1).trim().replace(/^#+/, '');
+      tagLine = rawGameName
+        .slice(separatorIndex + 1)
+        .trim()
+        .replace(/^#+/, '');
     }
   }
 
@@ -270,8 +289,8 @@ const tierScoreTable: Record<string, Record<PositionKey, number>> = {
   다이아4: { TOP: 30.3, JUNGLE: 31.7, MID: 31.5, ADC: 30.9, SUP: 29.3 },
 
   에메랄드1: { TOP: 28.6, JUNGLE: 29.8, MID: 30.1, ADC: 29.7, SUP: 30.1 },
-  에메랄드2: { TOP: 27.3, JUNGLE: 27.6, MID: 28.6, ADC: 27.6, SUP: 28 },
-  에메랄드3: { TOP: 26.5, JUNGLE: 25.8, MID: 27.3, ADC: 26.8, SUP: 27 },
+  에메랄드2: { TOP: 27.3, JUNGLE: 27.6, MID: 28.9, ADC: 27.6, SUP: 28 },
+  에메랄드3: { TOP: 26.5, JUNGLE: 25.8, MID: 27.7, ADC: 26.8, SUP: 27 },
   에메랄드4: { TOP: 26, JUNGLE: 24.4, MID: 25.6, ADC: 24.6, SUP: 26.1 },
 
   플래티넘1: { TOP: 24.2, JUNGLE: 23.9, MID: 23.7, ADC: 23.7, SUP: 25.2 },
@@ -420,7 +439,9 @@ async function searchPlayer() {
     }
     const parsedTier = parseClanTier(player.clan_tier.name);
     const tierScore = getTierScore(parsedTier.tier, parsedTier.rank, parsedTier.lp, position);
-    const finalScore = Number(tierScore.toFixed(1));
+    const matchCount = player.match_count ?? 0;
+    const matchDiscount = matchCount >= matchThreshold ? matchAdvantage : 0;
+    const finalScore = Number((tierScore - matchDiscount).toFixed(1));
 
     result.value = {
       gameName: player.nickname,
@@ -428,6 +449,8 @@ async function searchPlayer() {
       tier: player.clan_tier.name,
       positionLabel: getPositionLabel(position),
       peakScore: tierScore,
+      matchCount,
+      matchDiscount,
       meltdownScore: finalScore,
       updatedAt: `${new Date().toLocaleString('ko-KR')} / ${getPositionLabel(position)}`,
     };
@@ -474,5 +497,4 @@ async function searchPlayer() {
   font-weight: 700;
   text-align: right;
 }
-
 </style>

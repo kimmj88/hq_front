@@ -21,6 +21,7 @@ export interface Player {
   is_active: boolean;
   cupmember_id: number;
   cup_count: number;
+  match_count?: number;
   sub_cup_count: number;
   clan_tier: Tier | null;
 }
