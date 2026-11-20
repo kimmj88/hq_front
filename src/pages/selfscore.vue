@@ -294,8 +294,8 @@ const tierScoreTable: Record<string, Record<PositionKey, number>> = {
   에메랄드4: { TOP: 26.1, JUNGLE: 24.4, MID: 25.6, ADC: 24.6, SUP: 26.1 },
 
   플래티넘1: { TOP: 25.2, JUNGLE: 23.9, MID: 23.7, ADC: 23.7, SUP: 25.2 },
-  플래티넘2: { TOP: 23.7, JUNGLE: 21.5, MID: 21.5, ADC: 22.4, SUP: 23.8 },
-  플래티넘3: { TOP: 24, JUNGLE: 20.3, MID: 20.1, ADC: 20.2, SUP: 22 },
+  플래티넘2: { TOP: 23.9, JUNGLE: 21.5, MID: 21.5, ADC: 22.4, SUP: 23.8 },
+  플래티넘3: { TOP: 22.4, JUNGLE: 20.3, MID: 20.1, ADC: 20.2, SUP: 22 },
   플래티넘4: { TOP: 21.2, JUNGLE: 19.1, MID: 19.3, ADC: 19.3, SUP: 21.2 },
 
   골드1: { TOP: 19, JUNGLE: 17.7, MID: 17.9, ADC: 17.9, SUP: 20.5 },
