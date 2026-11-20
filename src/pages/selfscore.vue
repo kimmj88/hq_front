@@ -5,7 +5,7 @@
         <div>
           <div class="text-h4 font-weight-bold mb-2">롤 멸망전 점수 조회</div>
           <div class="text-body-1 text-medium-emphasis">
-            등록된 플레이어의 클랜 티어와 솔랭 판수 기준 점수를 확인할 수 있습니다.
+            등록된 플레이어의 클랜 티어와 포지션 기준 점수를 확인할 수 있습니다.
           </div>
         </div>
 
@@ -15,22 +15,23 @@
 
     <v-card rounded="xl" elevation="2" class="pa-5 mb-6">
       <v-row>
-        <v-col cols="12" md="5">
+        <v-col cols="12" md="4">
           <v-text-field
             v-model="form.gameName"
-            label="소환사명"
+            label="소환사명 또는 Riot ID"
             variant="outlined"
             density="comfortable"
             prepend-inner-icon="mdi-account"
             clearable
+            placeholder="소환사명 또는 소환사명#태그"
             @keyup.enter="searchPlayer"
           />
         </v-col>
 
-        <v-col cols="12" md="4">
+        <v-col cols="12" md="3">
           <v-text-field
             v-model="form.tagLine"
-            label="태그"
+            label="태그 (# 포함 가능)"
             variant="outlined"
             density="comfortable"
             prepend-inner-icon="mdi-pound"
@@ -50,7 +51,7 @@
           />
         </v-col>
 
-        <v-col cols="12" md="3" class="d-flex align-center">
+        <v-col cols="12" md="2" class="d-flex align-center">
           <v-btn
             color="indigo"
             block
@@ -64,7 +65,9 @@
         </v-col>
       </v-row>
 
-      <div class="text-caption text-medium-emphasis mt-2">예시: Hide on bush / KR1</div>
+      <div class="text-caption text-medium-emphasis mt-2">
+        예시: Hide on bush / KR1 또는 Hide on bush#KR1
+      </div>
     </v-card>
 
     <v-alert
@@ -115,7 +118,7 @@
               </div>
               <v-icon size="38" icon="mdi-trophy" />
             </div>
-            <div class="mt-3 text-body-2">솔랭 판수 어드벤티지 적용 점수</div>
+            <div class="mt-3 text-body-2">클랜 티어와 포지션 기준 점수</div>
           </v-card>
         </v-col>
       </v-row>
@@ -134,14 +137,6 @@
 
         <v-row>
           <v-col cols="12" md="6">
-            <!-- <div class="info-row">
-              <span class="label">현재 티어</span>
-              <span class="value">{{ result.tier }} {{ result.rank }}</span>
-            </div> -->
-            <!-- <div class="info-row">
-              <span class="label">현재 LP</span>
-              <span class="value">{{ result.lp }}</span>
-            </div> -->
             <div class="info-row">
               <span class="label">클랜 티어</span>
               <span class="value">{{ result.tier }}</span>
@@ -150,33 +145,11 @@
               <span class="label">기본 점수</span>
               <span class="value">{{ result.peakScore }}점</span>
             </div>
-            <div class="info-row">
-              <span class="label">솔랭 판수</span>
-              <span class="value"
-                >{{ result.totalGames }}판 ({{ result.wins }}승 {{ result.losses }}패)</span
-              >
-            </div>
-            <div class="info-row">
-              <span class="label">판수 어드벤티지</span>
-              <span class="value">{{ result.soloCountPanalty }}점</span>
-            </div>
           </v-col>
 
           <v-col cols="12" md="6">
-            <!-- <div class="info-row">
-              <span class="label">탑 레이팅</span>
-              <span class="value">{{ result.peakTier }} {{ result.peakRank }}</span>
-            </div> -->
-            <!-- <div class="info-row">
-              <span class="label">최고 LP</span>
-              <span class="value">{{ result.peakLp }}</span>
-            </div> -->
-            <!-- <div class="info-row">
-              <span class="label">멸망전 점수</span>
-              <span class="value score-text">{{ result.meltdownScore }}</span>
-            </div> -->
             <div class="info-row">
-              <span class="label">최근 갱신</span>
+              <span class="label">조회 기준</span>
               <span class="value">{{ result.updatedAt }}</span>
             </div>
           </v-col>
@@ -206,13 +179,6 @@
             2점으로 조정합니다.</v-list-item-title
           >
         </v-list-item>
-        <v-list-item>
-          <template #prepend><v-icon icon="mdi-circle-small" /></template>
-          <v-list-item-title class="text-wrap"
-            >현재 시즌 솔랭 승수와 패수를 합산해 100판 이상 1점, 200판 이상 1.3점, 300판 이상 1.7점,
-            400판 이상 2점을 차감합니다. 각 구간의 차감액은 최종 차감액입니다.</v-list-item-title
-          >
-        </v-list-item>
       </v-list>
     </v-card>
   </v-container>
@@ -222,31 +188,16 @@
 import { computed, reactive, ref } from 'vue';
 import { getBaseUrl } from '@/@core/composable/createUrl';
 import api from '@/@core/composable/useAxios';
+import type { Player } from '@/data/types/player';
 
 type ScoreResult = {
   gameName: string;
   tagLine: string;
   tier: string;
-  rank: string;
-  lp: number;
-  wins: number;
-  losses: number;
-  totalGames: number;
-  peakTier: string;
-  peakRank: string;
-  peakLp: number;
   peakScore: number;
   meltdownScore: number;
   updatedAt: string;
-  playerPoint: number;
-  cupCount: number;
-  subCupCount: number;
   positionLabel: string;
-
-  soloPanalty: number;
-  soloCountPanalty: number;
-  maincupPanalty: number;
-  subcupPanalty: number;
 };
 
 type PositionKey = 'TOP' | 'JUNGLE' | 'MID' | 'ADC' | 'SUP';
@@ -270,10 +221,23 @@ const positionOptions = [
   { title: '서폿', value: 'SUP' },
 ];
 
-const canSearch = computed(
-  () =>
-    form.gameName.trim().length > 0 && form.tagLine.trim().length > 0 && !!selectedPosition.value
-);
+function getSearchRiotId(): { gameName: string; tagLine: string } | null {
+  const rawGameName = form.gameName.trim();
+  let gameName = rawGameName;
+  let tagLine = form.tagLine.trim().replace(/^#+/, '');
+  const separatorIndex = rawGameName.lastIndexOf('#');
+
+  if (separatorIndex > 0) {
+    gameName = rawGameName.slice(0, separatorIndex).trim();
+    if (!tagLine) {
+      tagLine = rawGameName.slice(separatorIndex + 1).trim().replace(/^#+/, '');
+    }
+  }
+
+  return gameName && tagLine ? { gameName, tagLine } : null;
+}
+
+const canSearch = computed(() => getSearchRiotId() !== null && !!selectedPosition.value);
 
 /**
  * 점수표
@@ -393,14 +357,6 @@ function getTierScore(tier: string, rank: string, lp: number, position: Position
   return tierScoreTable[key]?.[position] ?? 0;
 }
 
-function getGamePenalty(totalGames: number): number {
-  if (totalGames >= 400) return -2;
-  if (totalGames >= 300) return -1.7;
-  if (totalGames >= 200) return -1.3;
-  if (totalGames >= 100) return -1;
-  return 0;
-}
-
 function parseClanTier(tierName: string): { tier: string; rank: string; lp: number } {
   const normalized = tierName.trim().toUpperCase().replace(/\s+/g, ' ');
   const lpMatch = normalized.match(/\s+(\d+)\s*(?:LP|점)$/);
@@ -430,15 +386,17 @@ function parseClanTier(tierName: string): { tier: string; rank: string; lp: numb
 async function searchPlayer() {
   if (loading.value || !canSearch.value) return;
 
+  const riotId = getSearchRiotId();
+  if (!riotId) return;
+
   loading.value = true;
   errorMessage.value = '';
   result.value = null;
   const position = selectedPosition.value;
-  const gameName = form.gameName.trim();
-  const tagLine = form.tagLine.trim();
+  const { gameName, tagLine } = riotId;
 
   try {
-    const response = await api.get(`${getBaseUrl('DATA')}/player/search`, {
+    const response = await api.get<{ datas: Player[] }>(`${getBaseUrl('DATA')}/player/search`, {
       params: {
         keyword: gameName,
         page: 1,
@@ -447,10 +405,11 @@ async function searchPlayer() {
         orderBy: 'desc',
       },
     });
-    const player = (Array.isArray(response.data?.datas) ? response.data.datas : []).find(
-      (item: any) =>
+    const players = Array.isArray(response.data?.datas) ? response.data.datas : [];
+    const player = players.find(
+      (item) =>
         item.nickname?.trim().toLowerCase() === gameName.toLowerCase() &&
-        item.tagname?.trim().toLowerCase() === tagLine.toLowerCase()
+        item.tagname?.trim().replace(/^#+/, '').toLowerCase() === tagLine.toLowerCase()
     );
     if (!player) {
       errorMessage.value = '등록된 플레이어를 찾을 수 없습니다.';
@@ -462,42 +421,12 @@ async function searchPlayer() {
     }
     const parsedTier = parseClanTier(player.clan_tier.name);
     const tierScore = getTierScore(parsedTier.tier, parsedTier.rank, parsedTier.lp, position);
-    const riotResponse = await api.get(`${getBaseUrl('DATA')}/riot/account`, {
-      params: { nickname: player.nickname, tagname: player.tagname },
-    });
-    const riotAccount = riotResponse.data?.datas;
-    const ranked = riotAccount?.ranked;
-    if (!riotAccount || ranked === undefined) {
-      throw new Error('솔랭 판수 응답이 올바르지 않습니다.');
-    }
-    const wins = ranked === null ? 0 : ranked.wins;
-    const losses = ranked === null ? 0 : ranked.losses;
-    if (!Number.isInteger(wins) || wins < 0 || !Number.isInteger(losses) || losses < 0) {
-      throw new Error('솔랭 승패 정보가 올바르지 않습니다.');
-    }
-    const totalGames = wins + losses;
-    const gamePenalty = getGamePenalty(totalGames);
-    const finalScore = Number((tierScore + gamePenalty).toFixed(1));
+    const finalScore = Number(tierScore.toFixed(1));
 
     result.value = {
-      gameName,
-      tagLine,
+      gameName: player.nickname,
+      tagLine: player.tagname.replace(/^#+/, ''),
       tier: player.clan_tier.name,
-      rank: '',
-      lp: parsedTier.lp,
-      wins,
-      losses,
-      totalGames,
-      peakTier: player.clan_tier.name,
-      peakRank: '',
-      peakLp: parsedTier.lp,
-      soloPanalty: 0,
-      soloCountPanalty: gamePenalty,
-      maincupPanalty: 0,
-      subcupPanalty: 0,
-      playerPoint: Number(player.point ?? 0),
-      cupCount: Number(player.cup_count ?? 0),
-      subCupCount: Number(player.sub_cup_count ?? 0),
       positionLabel: getPositionLabel(position),
       peakScore: tierScore,
       meltdownScore: finalScore,
@@ -505,7 +434,7 @@ async function searchPlayer() {
     };
   } catch (e) {
     console.error('플레이어 조회 실패', e);
-    errorMessage.value = '플레이어 또는 솔랭 판수 조회에 실패했습니다. 잠시 후 다시 시도해 주세요.';
+    errorMessage.value = '플레이어 조회에 실패했습니다. 잠시 후 다시 시도해 주세요.';
   } finally {
     loading.value = false;
   }
@@ -547,7 +476,4 @@ async function searchPlayer() {
   text-align: right;
 }
 
-.score-text {
-  color: rgb(255, 179, 0);
-}
 </style>
