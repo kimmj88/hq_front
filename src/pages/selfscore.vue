@@ -175,8 +175,7 @@
         <v-list-item>
           <template #prepend><v-icon icon="mdi-circle-small" /></template>
           <v-list-item-title class="text-wrap"
-            >같은 티어의 미드와 원딜은 기존 평균 점수를 유지하면서 포지션 간 점수 차이를 최대
-            2점으로 조정합니다.</v-list-item-title
+            >같은 티어에서 미드와 원딜의 점수 차이는 최대 2점입니다.</v-list-item-title
           >
         </v-list-item>
       </v-list>
@@ -265,29 +264,29 @@ const tierScoreTable: Record<string, Record<PositionKey, number>> = {
   '마/그/챌 100 ~ 199': { TOP: 39.1, JUNGLE: 39.4, MID: 40.8, ADC: 38.8, SUP: 34 },
   '마/그/챌 0 ~ 99': { TOP: 37.4, JUNGLE: 38.2, MID: 39, ADC: 37, SUP: 35.1 },
 
-  다이아1: { TOP: 35.7, JUNGLE: 36.8, MID: 36.4, ADC: 34.4, SUP: 34.2 },
-  다이아2: { TOP: 33.8, JUNGLE: 34.8, MID: 35, ADC: 33, SUP: 32.3 },
-  다이아3: { TOP: 31.6, JUNGLE: 32.5, MID: 33.4, ADC: 31.4, SUP: 30.3 },
-  다이아4: { TOP: 30.3, JUNGLE: 30.7, MID: 31.5, ADC: 29.5, SUP: 29.3 },
+  다이아1: { TOP: 35.7, JUNGLE: 36.8, MID: 36.4, ADC: 35.4, SUP: 34.2 },
+  다이아2: { TOP: 33.8, JUNGLE: 34.6, MID: 35, ADC: 33.6, SUP: 32.3 },
+  다이아3: { TOP: 31.6, JUNGLE: 32.9, MID: 33.4, ADC: 32.8, SUP: 30.3 },
+  다이아4: { TOP: 30.3, JUNGLE: 31.7, MID: 31.5, ADC: 30.9, SUP: 29.3 },
 
-  에메랄드1: { TOP: 28.6, JUNGLE: 28.8, MID: 30.1, ADC: 28.1, SUP: 28.2 },
-  에메랄드2: { TOP: 27.3, JUNGLE: 26.6, MID: 28.6, ADC: 26.6, SUP: 27 },
-  에메랄드3: { TOP: 26.5, JUNGLE: 24.8, MID: 27.3, ADC: 25.3, SUP: 26 },
-  에메랄드4: { TOP: 26, JUNGLE: 23.4, MID: 25.6, ADC: 23.6, SUP: 25.1 },
+  에메랄드1: { TOP: 28.6, JUNGLE: 29.8, MID: 30.1, ADC: 29.7, SUP: 30.1 },
+  에메랄드2: { TOP: 27.3, JUNGLE: 27.6, MID: 28.6, ADC: 27.6, SUP: 28 },
+  에메랄드3: { TOP: 26.5, JUNGLE: 25.8, MID: 27.3, ADC: 26.8, SUP: 27 },
+  에메랄드4: { TOP: 26, JUNGLE: 24.4, MID: 25.6, ADC: 24.6, SUP: 26.1 },
 
-  플래티넘1: { TOP: 25.2, JUNGLE: 21.9, MID: 23.7, ADC: 21.7, SUP: 24.2 },
-  플래티넘2: { TOP: 24.7, JUNGLE: 20.5, MID: 21.5, ADC: 19.5, SUP: 22.8 },
-  플래티넘3: { TOP: 24, JUNGLE: 19.3, MID: 20.1, ADC: 18.1, SUP: 22 },
-  플래티넘4: { TOP: 21.2, JUNGLE: 18.1, MID: 19.3, ADC: 17.3, SUP: 21.2 },
+  플래티넘1: { TOP: 24.2, JUNGLE: 23.9, MID: 23.7, ADC: 23.7, SUP: 25.2 },
+  플래티넘2: { TOP: 23.7, JUNGLE: 21.5, MID: 21.5, ADC: 22.4, SUP: 23.8 },
+  플래티넘3: { TOP: 24, JUNGLE: 20.3, MID: 20.1, ADC: 20.2, SUP: 22 },
+  플래티넘4: { TOP: 21.2, JUNGLE: 19.1, MID: 19.3, ADC: 19.3, SUP: 21.2 },
 
-  골드1: { TOP: 19, JUNGLE: 16.7, MID: 17.9, ADC: 15.9, SUP: 20.5 },
-  골드2: { TOP: 17.7, JUNGLE: 14.7, MID: 15.6, ADC: 13.6, SUP: 19.1 },
-  골드3: { TOP: 15.9, JUNGLE: 13.8, MID: 14.7, ADC: 12.7, SUP: 18.3 },
-  골드4: { TOP: 14.6, JUNGLE: 12.8, MID: 13.9, ADC: 11.9, SUP: 17.6 },
+  골드1: { TOP: 19, JUNGLE: 17.7, MID: 17.9, ADC: 17.9, SUP: 20.5 },
+  골드2: { TOP: 17.7, JUNGLE: 15.7, MID: 15.6, ADC: 15.6, SUP: 19.1 },
+  골드3: { TOP: 15.9, JUNGLE: 14.8, MID: 14.7, ADC: 14.7, SUP: 18.3 },
+  골드4: { TOP: 14.6, JUNGLE: 13.8, MID: 13.9, ADC: 13.9, SUP: 17.6 },
 
-  실버1: { TOP: 13, JUNGLE: 11.9, MID: 12.8, ADC: 11.3, SUP: 16.7 },
-  실버2: { TOP: 12, JUNGLE: 11, MID: 11.9, ADC: 10.6, SUP: 15.9 },
-  '실버3 이하': { TOP: 11, JUNGLE: 10, MID: 12.5, ADC: 10.5, SUP: 15 },
+  실버1: { TOP: 13, JUNGLE: 12.9, MID: 12.8, ADC: 12.3, SUP: 16.7 },
+  실버2: { TOP: 12, JUNGLE: 11, MID: 11.9, ADC: 11.6, SUP: 15.9 },
+  '실버3 이하': { TOP: 11, JUNGLE: 10, MID: 12.5, ADC: 11.5, SUP: 15 },
 };
 
 function getPositionLabel(position: PositionKey): string {
