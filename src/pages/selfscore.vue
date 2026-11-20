@@ -439,7 +439,15 @@ async function searchPlayer() {
     }
     const parsedTier = parseClanTier(player.clan_tier.name);
     const tierScore = getTierScore(parsedTier.tier, parsedTier.rank, parsedTier.lp, position);
-    const matchCount = player.match_count ?? 0;
+    const { data: record } = await api.get<{ totalMatchCount: number | null }>(
+      `${getBaseUrl('DATA')}/Clan/player_match_count`,
+      { params: { player_id: player.id } }
+    );
+    const matchCount = record.totalMatchCount;
+    if (matchCount === null || !Number.isInteger(matchCount) || matchCount < 0) {
+      errorMessage.value = '내전 전적을 확인할 수 없습니다.';
+      return;
+    }
     const matchDiscount = matchCount >= matchThreshold ? matchAdvantage : 0;
     const finalScore = Number((tierScore - matchDiscount).toFixed(1));
 
