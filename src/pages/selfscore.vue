@@ -285,10 +285,10 @@ const tierScoreTable: Record<string, Record<PositionKey, number>> = {
 
   다이아1: { TOP: 35.7, JUNGLE: 36.8, MID: 36.4, ADC: 35.4, SUP: 34.2 },
   다이아2: { TOP: 33.8, JUNGLE: 34.6, MID: 35, ADC: 33.6, SUP: 32.3 },
-  다이아3: { TOP: 31.6, JUNGLE: 32.9, MID: 33.4, ADC: 32.8, SUP: 30.3 },
-  다이아4: { TOP: 30.7, JUNGLE: 31.7, MID: 31.5, ADC: 30.9, SUP: 29.3 },
+  다이아3: { TOP: 31.6, JUNGLE: 32.9, MID: 33.4, ADC: 32.8, SUP: 31.3 },
+  다이아4: { TOP: 30.7, JUNGLE: 31.7, MID: 31.5, ADC: 30.9, SUP: 30.3 },
 
-  에메랄드1: { TOP: 28.9, JUNGLE: 29.8, MID: 30.1, ADC: 29.7, SUP: 30.1 },
+  에메랄드1: { TOP: 28.9, JUNGLE: 29.8, MID: 30.1, ADC: 29.7, SUP: 29.1 },
   에메랄드2: { TOP: 28.3, JUNGLE: 27.6, MID: 28.9, ADC: 27.6, SUP: 28 },
   에메랄드3: { TOP: 27.2, JUNGLE: 25.8, MID: 27.7, ADC: 26.8, SUP: 27 },
   에메랄드4: { TOP: 26.1, JUNGLE: 24.4, MID: 25.6, ADC: 24.6, SUP: 26.1 },
